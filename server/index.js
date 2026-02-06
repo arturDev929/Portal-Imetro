@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
+const path = require("path"); // ← ADICIONE ESTA LINHA
 require('dotenv').config();
 const RouterGet = require("./routes/RouterGet");
 const RouterPost = require("./routes/RouterPost");
@@ -14,7 +15,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://192.168.100.167:3000'
+  'http://192.168.18.6:3000'
 ];
 
 app.use(cors({
@@ -31,9 +32,10 @@ app.use(cors({
   credentials: true
 }));
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api/img/professores', express.static(path.join(__dirname, '../client/src/img/professores')));
 
 app.use(fileUpload({
   useTempFiles: true,
@@ -55,5 +57,6 @@ app.listen(port, (e) => {
     } else {
         console.log(`Servidor conectado com sucesso na porta ${port}!`);
         console.log(`Acesse: http://localhost:${port}`);
+        console.log(`Imagens disponíveis em: http://localhost:${port}/api/img/professores/`);
     }
 });

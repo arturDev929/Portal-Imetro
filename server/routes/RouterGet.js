@@ -349,5 +349,69 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
     });
 });
 
+// Rota para professores VINCULADOS a uma disciplina
+router.get('/professorVinculado/:id', async (req,res)=>{
+    const {id} = req.params;
+    const sql = `
+        SELECT 
+            disc_prof.iddiscprof,
+            professor.nomeprofessor,
+            professor.fotoprofessor,
+            disciplina.disciplina,
+            disciplina.iddisciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        INNER JOIN professor ON professor.idprofessor = disc_prof.idprofessor 
+        WHERE disciplina.iddisciplina = ?
+        ORDER BY professor.nomeprofessor ASC
+    `;
+    
+    conexao.query(sql, [id], (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores vinculados:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const professoresComFoto = result.map(a =>({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(result);
+        }
+    });
+});
+
+// Rota para professores NÃO VINCULADOS (disponíveis)
+router.get('/professorDisponivel/:id', async (req,res)=>{
+    const {id} = req.params;
+    const sql = `
+        SELECT 
+            professor.idprofessor,
+            professor.nomeprofessor,
+            professor.fotoprofessor
+        FROM professor
+        WHERE professor.idprofessor NOT IN (
+            SELECT disc_prof.idprofessor 
+            FROM disc_prof 
+            WHERE disc_prof.iddisciplina = ?
+        )
+        ORDER BY professor.nomeprofessor ASC
+    `;
+    
+    conexao.query(sql, [id], (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores disponíveis:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
+
 
 module.exports = router;
