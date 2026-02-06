@@ -357,6 +357,57 @@ router.delete('/disciplinaSemestre/:idsemestre', (req, res) => {
     });
 });
 
+router.delete('/disciplina/:id', async (req,res)=>{
+    const {id} = req.params;
+    
+    try {
+        // Primeiro deleta os registros relacionados na tabela semestre
+        const sqlSemestre = "DELETE FROM semestre WHERE iddisciplina = ?";
+        
+        conexao.query(sqlSemestre, [id], (error, result) => {
+            if(error){
+                console.error("Erro ao excluir semestres relacionados:", error);
+                return res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: error.message
+                });
+            }
+            
+            console.log(`Semestres deletados: ${result.affectedRows}`);
+            
+            // Depois deleta a disciplina
+            const sqlDisciplina = "DELETE FROM disciplina WHERE iddisciplina = ?";
+            conexao.query(sqlDisciplina, [id], (error, result) => {
+                if(error){
+                    console.error("Erro ao excluir a disciplina:", error);
+                    return res.status(500).json({
+                        error: "Erro interno do servidor",
+                        details: error.message
+                    });
+                }
+                
+                if(result.affectedRows === 0){
+                    return res.status(404).json({
+                        error: "Disciplina não encontrada"
+                    });
+                }
+                
+                res.status(200).json({
+                    message: "Disciplina deletada com Sucesso",
+                    disciplinaAfetada: result.affectedRows
+                });
+            });
+        });
+        
+    } catch (error) {
+        console.error("Erro geral:", error);
+        res.status(500).json({
+            error: "Erro interno do servidor",
+            details: error.message
+        });
+    }
+});
+
 
 
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Axios from "axios";
 
 function CategoriaCursoAno({ onChange }) {
@@ -12,6 +12,21 @@ function CategoriaCursoAno({ onChange }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
+    // Usar useRef para armazenar a versão atual de onChange
+    const onChangeRef = useRef(onChange);
+    
+    // Atualizar a ref quando onChange mudar
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
+
+    // Notificar o pai APENAS quando formData mudar (e não depender de onChange)
+    useEffect(() => {
+        if (onChangeRef.current) {
+            onChangeRef.current(formData);
+        }
+    }, [formData]); // Removido onChange das dependências
+
     const uniqueCategorias = Array.from(
         new Map(allData.map(item => [item.idcategoriacurso, item])).values()
     );
@@ -41,7 +56,6 @@ function CategoriaCursoAno({ onChange }) {
                 ...(field === 'idcurso' && { idanocurricular: "" })
             };
             
-            if (onChange) onChange(newData);
             return newData;
         });
     };
@@ -61,7 +75,7 @@ function CategoriaCursoAno({ onChange }) {
         };
 
         fetchData();
-        const interval = setInterval(fetchData, 5000); // Atualiza a cada 5 segundos
+        const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
     }, []);
 

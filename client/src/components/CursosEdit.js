@@ -413,7 +413,7 @@ function CursosEdit() {
                                             >
                                                 <FaBook />
                                             </button>
-                                        </td>
+                                        </td> 
                                         <td className="text-center">
                                             <button 
                                                 className="btn btn-sm btn-outline-primary"
