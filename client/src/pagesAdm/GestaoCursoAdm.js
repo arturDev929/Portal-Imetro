@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import 'react-toastify/dist/ReactToastify.css';
 import SidebarAdm from "../components/SidebarAdm";
 import NavbarAdm from "../components/NavbarAdm";
-import { SiGoogleclassroom } from "react-icons/si";
 import { 
   IoMdStats,
   IoMdBusiness,
@@ -21,7 +20,6 @@ import { showErrorToast } from '../components/CustomToast';
 import Departamento from "../components/DepartamentosEdit";
 import CursosEdit from "../components/CursosEdit";
 import DisciplinasEdit from "../components/DisciplinasEdit";
-import TurmaEdit from "../components/TurmaEdit";
 
 const API_BASE_URL = 'http://localhost:8080';
 
@@ -467,8 +465,6 @@ function GestaoCursoAdm() {
         return <CursosEdit />;
       case 'disciplinas':
         return <DisciplinasEdit />;
-      case 'turmas':
-        return <TurmaEdit />;
       default:
         return <GeralSection 
           departments={departments}
@@ -524,12 +520,6 @@ function GestaoCursoAdm() {
                   onClick={() => setActiveTab('disciplinas')}
                   icon={IoMdBook}
                   label="Disciplinas"
-                />
-                <TabButton
-                  active={activeTab === 'turmas'}
-                  onClick={() => setActiveTab('turmas')}
-                  icon={SiGoogleclassroom}
-                  label="Turmas"
                 />
               </div>
             </div>
