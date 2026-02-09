@@ -144,6 +144,7 @@ function DisciplinaEdit() {
 
     // Função para vincular professor
     const vincularProfessor = (professorId) => {
+        console.log("Vinculando professor com ID:", professorId, "à disciplina ID:", professor.iddisciplina);
         Axios.post('http://localhost:8080/post/vincularProfessor', {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
@@ -179,16 +180,15 @@ function DisciplinaEdit() {
     }
 
     // Função para desvincular professor
-    const desvincularProfessor = (professorId, discProfId) => {
-        Axios.delete(`http://localhost:8080/delete/desvincularProfessor/${discProfId}`)
+    const desvincularProfessor = (idprofessor) => {
+        console.log("Desvinculando professor com ID de vínculo:", idprofessor);
+        Axios.delete(`http://localhost:8080/delete/desvincularProfessor/${idprofessor}`)
         .then((response) => {
             showSuccessToast("Sucesso", "Professor desvinculado com sucesso!");
-            
-            // Atualizar listas
-            const professorParaDesvincular = professoresVinculados.find(p => p.idprofessor === professorId);
+            const professorParaDesvincular = professoresVinculados.find(p => p.idprofessor === idprofessor);
             
             // Remover da lista de vinculados
-            setProfessoresVinculados(prev => prev.filter(p => p.idprofessor !== professorId));
+            setProfessoresVinculados(prev => prev.filter(p => p.idprofessor !== idprofessor));
             
             // Adicionar na lista de disponíveis (removendo campos extras)
             const { iddisciplina, disciplina, iddisc_prof, ...professorLimpo } = professorParaDesvincular;
@@ -385,11 +385,12 @@ function DisciplinaEdit() {
                                                                 />
                                                                 <div>
                                                                     <h6 className="mb-0">{prof.nomeprofessor}</h6>
+                                                                    <small className="text-muted">{prof.titulacaoprofessor}</small>
                                                                 </div>
                                                             </div>
                                                             <button 
                                                                 className="btn btn-white btn-sm d-flex align-items-center gap-1"
-                                                                onClick={() => desvincularProfessor(prof.idprofessor, prof.iddisc_prof)}
+                                                                onClick={() => desvincularProfessor(prof.idprofessor)}
                                                                 title="Remover vinculação"
                                                             >
                                                                 <CiCircleMinus className="text-danger" size={30}/>
@@ -413,13 +414,14 @@ function DisciplinaEdit() {
                                                         <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">
                                                             <div className="d-flex align-items-center">
                                                                 <img 
-                                                                    src={img}
+                                                                    src={getProfessorImagem(prof)}
                                                                     alt={prof.nomeprofessor} 
                                                                     className="rounded-circle me-3"
                                                                     style={{width: '50px', height: '50px', objectFit: 'cover'}}
                                                                 />
                                                                 <div>
                                                                     <h6 className="mb-0">{prof.nomeprofessor}</h6>
+                                                                    <small className="text-muted">{prof.titulacaoprofessor}</small>
                                                                 </div>
                                                             </div>
                                                             <button 

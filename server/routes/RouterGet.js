@@ -20,7 +20,7 @@ router.get('/categoriaCurso', (req, res) => {
 
 // 2. Para ver todos os cursos registrados e editar e eliminar
 router.get('/Cursos', (req, res) => {
-    const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY curso ASC LIMIT 100";
+    const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar cursos:", error);
@@ -357,6 +357,8 @@ router.get('/professorVinculado/:id', async (req,res)=>{
             disc_prof.iddiscprof,
             professor.nomeprofessor,
             professor.fotoprofessor,
+            professor.idprofessor,
+            professor.titulacaoprofessor,
             disciplina.disciplina,
             disciplina.iddisciplina
         FROM disc_prof 
@@ -390,6 +392,7 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
         SELECT 
             professor.idprofessor,
             professor.nomeprofessor,
+            professor.titulacaoprofessor,
             professor.fotoprofessor
         FROM professor
         WHERE professor.idprofessor NOT IN (
@@ -408,7 +411,11 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
                 details: error.message 
             });
         }else{
-            res.status(200).json(result);
+            const professoresComFoto = result.map(a =>({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
         }
     });
 });

@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const { createCanvas } = require("canvas");
+const { error } = require("console");
 
 const gerarImagemIniciais = (nome) => {
     try {
@@ -1064,9 +1065,9 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
 });
 
 router.post('/registrarPeriodo', async (req, res) => {
-    const { idanocurricular, idcurso, idcategoriacurso, turma, periodo } = req.body;
+    const { idanocurricular, idcurso, idcategoriacurso, turma, periodo,anoletivo } = req.body;
     
-    if (!idanocurricular || !idcurso || !idcategoriacurso || !turma || !periodo) {
+    if (!idanocurricular || !idcurso || !idcategoriacurso || !turma || !periodo || !anoletivo) {
         return res.status(400).json({
             sucesso: false,
             tipo: "erro",
@@ -1129,11 +1130,11 @@ router.post('/registrarPeriodo', async (req, res) => {
         const verificarDuplicadoSQL = `
             SELECT idperiodo 
             FROM periodo 
-            WHERE idanocurricular = ? AND idcurso = ? AND turma = ? AND periodo = ?
+            WHERE idanocurricular = ? AND idcurso = ? AND turma = ? AND periodo = ? AND anoletivo = ?
         `;
         const [resultadosDuplicado] = await conexao.promise().query(
             verificarDuplicadoSQL, 
-            [idanocurricular, idcurso, turma, periodo]
+            [idanocurricular, idcurso, turma, periodo,anoletivo]
         );
         
         if (resultadosDuplicado.length > 0) {
@@ -1147,11 +1148,11 @@ router.post('/registrarPeriodo', async (req, res) => {
 
         // Inserir na tabela periodo
         const inserirSQL = `
-            INSERT INTO periodo (idanocurricular, idcategoriacurso, idcurso, turma, periodo) 
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO periodo (idanocurricular, idcategoriacurso, idcurso, turma, periodo,anoletivo) 
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
         const [resultados] = await conexao.promise().query(inserirSQL, 
-            [idanocurricular, idcategoriacurso, idcurso, turma, periodo]
+            [idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo]
         );
 
         // Obter dados completos para a resposta
@@ -1175,6 +1176,7 @@ router.post('/registrarPeriodo', async (req, res) => {
                 id: resultados.insertId,
                 idanocurricular: idanocurricular,
                 idcurso: idcurso,
+                anoletivo:anoletivo,
                 idcategoriacurso: idcategoriacurso,
                 turma: turma,
                 periodo: periodo,
@@ -1312,6 +1314,95 @@ router.post('/registrarfuncionarioMatricular', async (req, res) => {
             tipo: "erro",
             titulo: "Erro no servidor",
             mensagem: "Erro interno ao registrar funcionário: " + (erro.message || "Erro desconhecido")
+        });
+    }
+});
+
+router.post('/vincularProfessor', async (req, res) => {
+    const { idprofessor, iddisciplina } = req.body;
+    
+    // Validação dos dados
+    if (!idprofessor || !iddisciplina) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Dados incompletos",
+            mensagem: "Por favor, selecione um professor e uma disciplina"
+        });
+    }
+
+    try {
+        // 1. Primeiro, verificar se o vínculo já existe (evitar duplicidade)
+        const verificaSql = "SELECT * FROM disc_prof WHERE idprofessor = ? AND iddisciplina = ?";
+        
+        conexao.query(verificaSql, [idprofessor, iddisciplina], (verificaError, verificaResult) => {
+            if (verificaError) {
+                console.error("Erro ao verificar vínculo existente:", verificaError);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro interno",
+                    mensagem: "Erro ao verificar vínculo existente"
+                });
+            }
+            
+            // Se já existe um vínculo
+            if (verificaResult.length > 0) {
+                return res.status(409).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Vínculo existente",
+                    mensagem: "Este professor já está vinculado a esta disciplina"
+                });
+            }
+            
+            // 2. Se não existe, criar o vínculo
+            const insertSql = "INSERT INTO disc_prof (idprofessor, iddisciplina) VALUES (?, ?)";
+            
+            conexao.query(insertSql, [idprofessor, iddisciplina], (insertError, result) => {
+                if (insertError) {
+                    console.error("Erro ao vincular professor:", insertError);
+                    
+                    // Verificar se é erro de chave estrangeira
+                    if (insertError.code === 'ER_NO_REFERENCED_ROW_2') {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Dados inválidos",
+                            mensagem: "Professor ou disciplina não encontrado no sistema"
+                        });
+                    }
+                    
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro interno",
+                        mensagem: "Não foi possível vincular o professor à disciplina"
+                    });
+                }
+                
+                // Sucesso
+                return res.status(201).json({
+                    sucesso: true,
+                    tipo: "sucesso",
+                    titulo: "Vinculação realizada",
+                    mensagem: "Professor vinculado à disciplina com sucesso",
+                    dados: {
+                        idVinculo: result.insertId,
+                        idprofessor,
+                        iddisciplina
+                    }
+                });
+            });
+        });
+        
+    } catch (error) {
+        console.error("Erro inesperado:", error);
+        return res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro interno",
+            mensagem: "Ocorreu um erro inesperado no servidor"
         });
     }
 });

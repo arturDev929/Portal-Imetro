@@ -19,6 +19,7 @@ function CursosAdmRegistrer() {
     const [idCategoriaSelecionada, setIdCategoriaSelecionada] = useState("");
     const [idCurso, setIdCurso] = useState("");
     const [turma, setTurma] = useState("");
+    const [anoletivo, setAnoLetivo] = useState("");
     const [periodo, setPeriodo] = useState("")
     const [loading, setLoading] = useState(false);
     
@@ -331,6 +332,7 @@ function CursosAdmRegistrer() {
                 idcurso: formDataDisciplinaCurso.idcurso,
                 idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,
                 turma: turma.trim(),
+                anoletivo: anoletivo.trim(),
                 periodo: periodo
             }, {
                 headers: {
@@ -625,6 +627,9 @@ function CursosAdmRegistrer() {
                                     />
                                     <div className="col-12 mb-2">
                                         <input type="text" name="turma" className="form-control form-control-sm" value={turma} placeholder="Turma..." onChange={(e)=>setTurma(e.target.value)}/>
+                                    </div>
+                                    <div className="col-12 mb-2">
+                                        <input type="text" name="anoletivo" className="form-control form-control-sm" value={anoletivo} placeholder="Ano Lectivo..." onChange={(e)=>setAnoLetivo(e.target.value)}/>
                                     </div>
                                     <div className="col-12">
                                         <select 

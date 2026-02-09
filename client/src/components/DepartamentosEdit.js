@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { MdEdit, MdDeleteForever, MdRefresh } from "react-icons/md";
+import { IoMdBusiness } from "react-icons/io";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 
@@ -177,12 +178,12 @@ function Departamento() {
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcategoriacurso !== '';
 
-    return (
+    return ( 
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="h4 mb-0 text-primary">
-                        <i className="bi bi-building me-2 text-primary"></i>
+                        <IoMdBusiness className="me-2 mb-2" />
                         Departamentos
                     </h2>
                     <div className="d-flex gap-2">

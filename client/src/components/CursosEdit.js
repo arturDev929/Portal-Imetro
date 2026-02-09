@@ -7,6 +7,7 @@ import {
     MdExpandLess,
     MdRemoveCircleOutline 
 } from "react-icons/md";
+import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
@@ -346,7 +347,7 @@ function CursosEdit() {
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="h4 mb-0 text-primary">
-                        <i className="bi bi-mortarboard me-2 text-primary"></i>
+                        <IoMdSchool className="me-2 mb-2"/>
                         Licenciaturas
                     </h2>
                     <div className="d-flex gap-2">

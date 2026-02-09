@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import 'react-toastify/dist/ReactToastify.css';
 import SidebarAdm from "../components/SidebarAdm";
 import NavbarAdm from "../components/NavbarAdm";
+import { SiGoogleclassroom } from "react-icons/si";
 import { 
   IoMdStats,
   IoMdBusiness,
@@ -516,7 +517,7 @@ function GestaoCursoAdm() {
                   active={activeTab === 'licenciaturas'}
                   onClick={() => setActiveTab('licenciaturas')}
                   icon={IoMdSchool}
-                  label="Cursos"
+                  label="Lincenciaturas"
                 />
                 <TabButton
                   active={activeTab === 'disciplinas'}
@@ -527,7 +528,7 @@ function GestaoCursoAdm() {
                 <TabButton
                   active={activeTab === 'turmas'}
                   onClick={() => setActiveTab('turmas')}
-                  icon={IoMdBook}
+                  icon={SiGoogleclassroom}
                   label="Turmas"
                 />
               </div>
