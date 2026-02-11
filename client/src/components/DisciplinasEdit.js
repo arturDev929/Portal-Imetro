@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import Axios from "axios";
 import { FaBook } from "react-icons/fa";
-import { MdEdit, MdDeleteForever } from "react-icons/md";
+import { MdEdit, MdDeleteForever, MdSearch } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
 import { showErrorToast, showSuccessToast, useConfirmToast} from "./CustomToast";
 import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
 
 function DisciplinaEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
+    const [listaFiltrada, setListaFiltrada] = useState([]);
+    const [termoPesquisa, setTermoPesquisa] = useState('');
     const [isModalOpen, setModalOpen] = useState(false);
     const [isModalOpenProfessor, setIsModalOpenProfessor] = useState(false)
     const [disciplinaSelecionada, setDisciplinaSelecionada] = useState(null);
@@ -24,14 +26,48 @@ function DisciplinaEdit() {
         const fetchData = () => {
             Axios.get('http://localhost:8080/get/Disciplinas').then((response) => {
                 setListaDisciplina(response.data);
+                setListaFiltrada(response.data);
             });
         };
         fetchData();
-        const interval = setInterval(fetchData, 2000);
+        const interval = setInterval(fetchData, 20000);
         return () => {
             clearInterval(interval);
         };
     }, []);
+
+    // Função de pesquisa
+    const handlePesquisa = (e) => {
+        const termo = e.target.value;
+        setTermoPesquisa(termo);
+        
+        if (termo.trim() === '') {
+            setListaFiltrada(listaDisciplina);
+        } else {
+            const filtrados = listaDisciplina.filter(item => 
+                item.disciplina.toLowerCase().includes(termo.toLowerCase())
+            );
+            setListaFiltrada(filtrados);
+        }
+    };
+
+    // Limpar pesquisa
+    const limparPesquisa = () => {
+        setTermoPesquisa('');
+        setListaFiltrada(listaDisciplina);
+    };
+
+    // Atualiza lista filtrada quando a lista original muda
+    useEffect(() => {
+        if (termoPesquisa.trim() === '') {
+            setListaFiltrada(listaDisciplina);
+        } else {
+            const filtrados = listaDisciplina.filter(item => 
+                item.disciplina.toLowerCase().includes(termoPesquisa.toLowerCase())
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [listaDisciplina, termoPesquisa]);
 
     const openModal = (disciplina) => {
         setDisciplinaSelecionada(disciplina);
@@ -174,6 +210,7 @@ function DisciplinaEdit() {
         if (professor.fotoprofessor) {
             return `http://localhost:8080/api/img/professores/${professor.fotoprofessor}`;
         }
+        return '/default-avatar.png';
     }
 
     // Função para desvincular professor
@@ -183,11 +220,9 @@ function DisciplinaEdit() {
         .then((response) => {
             showSuccessToast("Sucesso", "Professor desvinculado com sucesso!");
             const professorParaDesvincular = professoresVinculados.find(p => p.idprofessor === idprofessor);
-            
-            // Remover da lista de vinculados
+
             setProfessoresVinculados(prev => prev.filter(p => p.idprofessor !== idprofessor));
-            
-            // Adicionar na lista de disponíveis (removendo campos extras)
+
             const { iddisciplina, disciplina, iddisc_prof, ...professorLimpo } = professorParaDesvincular;
             setProfessoresDisponiveis(prev => [...prev, professorLimpo]);
         })
@@ -201,6 +236,8 @@ function DisciplinaEdit() {
         setprofessor(null)
     }
 
+    // States derivados
+    const semResultados = listaFiltrada.length === 0 && termoPesquisa !== '';
 
     return (
         <div className="row mb-4">
@@ -211,6 +248,56 @@ function DisciplinaEdit() {
                         Disciplinas/Cadeiras
                     </h2>
                 </div>
+
+                {/* BARRA DE PESQUISA */}
+                <div className="row mb-4">
+                    <div className="col-md-8 mx-auto">
+                        <div className="card shadow-sm border-0">
+                            <div className="card-body p-3">
+                                <div className="d-flex align-items-center gap-2">
+                                    <div className="position-relative flex-grow-1">
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-white border-end-0">
+                                                <MdSearch className="text-muted" size={20} />
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className="form-control border-start-0 ps-0"
+                                                placeholder="Pesquisar disciplina por nome..."
+                                                value={termoPesquisa}
+                                                onChange={handlePesquisa}
+                                                style={{ 
+                                                    borderLeft: 'none',
+                                                    boxShadow: 'none'
+                                                }}
+                                            />
+                                            {termoPesquisa && (
+                                                <button 
+                                                    className="btn btn-outline-secondary border-start-0" 
+                                                    type="button"
+                                                    onClick={limparPesquisa}
+                                                    style={{ borderLeft: 'none' }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* INDICADOR DE RESULTADOS */}
+                                {termoPesquisa && listaFiltrada.length > 0 && (
+                                    <div className="mt-2 text-muted small">
+                                        <span className="badge bg-light text-dark p-2">
+                                            {listaFiltrada.length} {listaFiltrada.length === 1 ? 'disciplina encontrada' : 'disciplinas encontradas'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="d-flex col-12 table-responsive">
                     <table className="table table-hover table-striped">
                         <thead className="table-primary">
@@ -222,8 +309,8 @@ function DisciplinaEdit() {
                             </tr>
                         </thead>
                         <tbody>
-                            {listaDisciplina && listaDisciplina.length > 0 ? (
-                                listaDisciplina.map((disciplina) => (
+                            {listaFiltrada && listaFiltrada.length > 0 ? (
+                                listaFiltrada.map((disciplina) => (
                                     <tr key={disciplina.iddisciplina}>
                                         <td>
                                             <FaBook className="mb-1 me-2 text-primary" />
@@ -261,8 +348,21 @@ function DisciplinaEdit() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="text-center text-muted">
-                                        Nenhuma disciplina cadastrada
+                                    <td colSpan="4" className="text-center py-4">
+                                        {semResultados ? (
+                                            <>
+                                                <MdSearch size={48} className="text-muted mb-3" />
+                                                <p className="text-muted mb-2">Nenhuma disciplina encontrada para "{termoPesquisa}"</p>
+                                                <button 
+                                                    className="btn btn-outline-primary btn-sm"
+                                                    onClick={limparPesquisa}
+                                                >
+                                                    Limpar pesquisa
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <span className="text-muted">Nenhuma disciplina cadastrada</span>
+                                        )}
                                     </td>
                                 </tr>
                             )}
@@ -369,7 +469,7 @@ function DisciplinaEdit() {
                                         {/* Lado Esquerdo - Professores Vinculados */}
                                         <div className="col-12 col-md-6 border-end">
                                             <h4 className="text-center mb-4">Professores Vinculados</h4>
-                                            <div className="professores-list">
+                                            <div className="professores-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                                                 {professoresVinculados && professoresVinculados.length > 0 ? (
                                                     professoresVinculados.map((prof) => (
                                                         <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">

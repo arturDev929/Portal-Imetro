@@ -5,7 +5,8 @@ import {
     MdRefresh, 
     MdExpandMore, 
     MdExpandLess,
-    MdRemoveCircleOutline 
+    MdRemoveCircleOutline,
+    MdSearch 
 } from "react-icons/md";
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
@@ -17,6 +18,8 @@ const API_TIMEOUT = 5000;
 
 function CursosEdit() {
     const [lista, setLista] = useState([]);
+    const [listaFiltrada, setListaFiltrada] = useState([]);
+    const [termoPesquisa, setTermoPesquisa] = useState('');
     const [departamentos, setDepartamentos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
@@ -76,6 +79,7 @@ function CursosEdit() {
             setLoading(true);
             const response = await apiClient.get('/get/cursos');
             setLista(response.data || []);
+            setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
             
             if (mostrarNotificacao && response.data && response.data.length > 0) {
@@ -102,6 +106,41 @@ function CursosEdit() {
             showErrorToast("Erro", "Não foi possível carregar departamentos");
         }
     }, [apiClient]);
+
+    // Função de pesquisa
+    const handlePesquisa = useCallback((e) => {
+        const termo = e.target.value;
+        setTermoPesquisa(termo);
+        
+        if (termo.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            const filtrados = lista.filter(item => 
+                item.curso.toLowerCase().includes(termo.toLowerCase()) ||
+                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termo.toLowerCase()))
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [lista]);
+
+    // Limpar pesquisa
+    const limparPesquisa = useCallback(() => {
+        setTermoPesquisa('');
+        setListaFiltrada(lista);
+    }, [lista]);
+
+    // Atualiza lista filtrada quando a lista original muda
+    useEffect(() => {
+        if (termoPesquisa.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            const filtrados = lista.filter(item => 
+                item.curso.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termoPesquisa.toLowerCase()))
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [lista, termoPesquisa]);
 
     // ✅ Fetch anos curriculares
     const fetchAnosCurriculares = useCallback(async (idCurso) => {
@@ -339,6 +378,7 @@ function CursosEdit() {
     // States derivados
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcurso !== '';
+    const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
     return (
         <div className="row mb-4">
@@ -365,6 +405,57 @@ function CursosEdit() {
                     </div>
                 </div>
 
+                {/* BARRA DE PESQUISA */}
+                <div className="row mb-4">
+                    <div className="col-md-8 mx-auto">
+                        <div className="card shadow-sm border-0">
+                            <div className="card-body p-3">
+                                <div className="d-flex align-items-center gap-2">
+                                    <div className="position-relative flex-grow-1">
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-white border-end-0">
+                                                <MdSearch className="text-muted" size={20} />
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className="form-control border-start-0 ps-0"
+                                                placeholder="Pesquisar licenciatura por nome ou departamento..."
+                                                value={termoPesquisa}
+                                                onChange={handlePesquisa}
+                                                disabled={loading}
+                                                style={{ 
+                                                    borderLeft: 'none',
+                                                    boxShadow: 'none'
+                                                }}
+                                            />
+                                            {termoPesquisa && (
+                                                <button 
+                                                    className="btn btn-outline-secondary border-start-0" 
+                                                    type="button"
+                                                    onClick={limparPesquisa}
+                                                    disabled={loading}
+                                                    style={{ borderLeft: 'none' }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* INDICADOR DE RESULTADOS */}
+                                {!loading && termoPesquisa && listaFiltrada.length > 0 && (
+                                    <div className="mt-2 text-muted small">
+                                        <span className="badge bg-light text-dark p-2">
+                                            {listaFiltrada.length} {listaFiltrada.length === 1 ? 'licenciatura encontrada' : 'licenciaturas encontradas'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="table-responsive">
                     <table className="table table-hover table-striped border">
                         <thead className="table-primary">
@@ -386,21 +477,34 @@ function CursosEdit() {
                                         <p className="text-muted mb-0">Carregando cursos...</p>
                                     </td>
                                 </tr>
+                            ) : semResultados ? (
+                                <tr>
+                                    <td colSpan="5" className="text-center py-5">
+                                        <MdSearch size={48} className="text-muted mb-3" />
+                                        <p className="text-muted mb-2">Nenhuma licenciatura encontrada para "{termoPesquisa}"</p>
+                                        <button 
+                                            className="btn btn-outline-primary btn-sm"
+                                            onClick={limparPesquisa}
+                                        >
+                                            Limpar pesquisa
+                                        </button>
+                                    </td>
+                                </tr>
                             ) : isEmpty ? (
                                 <tr>
                                     <td colSpan="5" className="text-center py-5">
                                         <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                                        <p className="text-muted mb-3">Nenhum curso encontrado</p>
+                                        <p className="text-muted mb-3">Nenhuma licenciatura encontrada</p>
                                         <button className="btn btn-outline-primary" onClick={() => fetchCursos(true)}>
                                             <MdRefresh className="me-1" />
-                                            Carregar cursos
+                                            Carregar licenciaturas
                                         </button>
                                     </td>
                                 </tr>
                             ) : (
-                                lista.map((item) => (
+                                listaFiltrada.map((item) => (
                                     <tr key={item.idcurso}>
-                                        <td className="align-middle fw-semibold">{item.curso}</td>
+                                        <td className="align-middle fw-semibold"><IoMdSchool className="me-2 mb-2 text-primary"/>{item.curso}</td>
                                         <td className="align-middle">{item.categoriacurso}</td>
                                         
                                         <td className="text-center">

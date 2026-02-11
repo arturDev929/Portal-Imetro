@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { MdEdit, MdDeleteForever, MdRefresh } from "react-icons/md";
+import { MdEdit, MdDeleteForever, MdRefresh, MdSearch } from "react-icons/md";
 import { IoMdBusiness } from "react-icons/io";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
@@ -9,6 +9,8 @@ const API_TIMEOUT = 5000;
 
 function Departamento() {
     const [lista, setLista] = useState([]);
+    const [listaFiltrada, setListaFiltrada] = useState([]);
+    const [termoPesquisa, setTermoPesquisa] = useState('');
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
     const [dadosEdicao, setDadosEdicao] = useState({
@@ -54,6 +56,7 @@ function Departamento() {
             setLoading(true);
             const response = await apiClient.get('/get/categoriaCurso');
             setLista(response.data || []);
+            setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
             
             // Só mostra notificação se explicitamente solicitado (botão de atualizar)
@@ -72,21 +75,62 @@ function Departamento() {
         }
     }, [apiClient]);
 
+    // Função de pesquisa
+    const handlePesquisa = useCallback((e) => {
+        const termo = e.target.value;
+        setTermoPesquisa(termo);
+        
+        if (termo.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            const filtrados = lista.filter(item => 
+                item.categoriacurso.toLowerCase().includes(termo.toLowerCase()) ||
+                (item.idcategoriacurso && item.idcategoriacurso.toString().includes(termo))
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [lista]);
+
+    // Limpar pesquisa
+    const limparPesquisa = useCallback(() => {
+        setTermoPesquisa('');
+        setListaFiltrada(lista);
+    }, [lista]);
+
     // Carrega apenas uma vez na montagem do componente SEM notificação
     useEffect(() => {
         fetchData(false); // false = não mostrar notificação
     }, [fetchData]);
 
+    // Atualiza lista filtrada quando a lista original muda
+    useEffect(() => {
+        if (termoPesquisa.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            const filtrados = lista.filter(item => 
+                item.categoriacurso.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                (item.idcategoriacurso && item.idcategoriacurso.toString().includes(termoPesquisa))
+            );
+            setListaFiltrada(filtrados);
+        }
+    }, [lista, termoPesquisa]);
+
     const atualizarItemLocal = useCallback((id, novoNome) => {
-        setLista(prev => prev.map(item => 
-            item.idcategoriacurso === id 
-                ? { ...item, categoriacurso: novoNome }
-                : item
-        ));
+        setLista(prev => {
+            const updatedList = prev.map(item => 
+                item.idcategoriacurso === id 
+                    ? { ...item, categoriacurso: novoNome }
+                    : item
+            );
+            return updatedList;
+        });
     }, []);
 
     const removerItemLocal = useCallback((id) => {
-        setLista(prev => prev.filter(item => item.idcategoriacurso !== id));
+        setLista(prev => {
+            const updatedList = prev.filter(item => item.idcategoriacurso !== id);
+            return updatedList;
+        });
     }, []);
 
     const abrirModalEditar = useCallback((item) => {
@@ -177,6 +221,7 @@ function Departamento() {
     // States derivados
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcategoriacurso !== '';
+    const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
     return ( 
         <div className="row mb-4">
@@ -203,11 +248,62 @@ function Departamento() {
                     </div>
                 </div>
 
+                {/* BARRA DE PESQUISA */}
+                <div className="row mb-4">
+                    <div className="col-md-8 mx-auto">
+                        <div className="card shadow-sm border-0">
+                            <div className="card-body p-3">
+                                <div className="d-flex align-items-center gap-2">
+                                    <div className="position-relative flex-grow-1">
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-white border-end-0">
+                                                <MdSearch className="text-muted" size={20} />
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className="form-control border-start-0 ps-0"
+                                                placeholder="Pesquisar departamento por nome ou código..."
+                                                value={termoPesquisa}
+                                                onChange={handlePesquisa}
+                                                disabled={loading}
+                                                style={{ 
+                                                    borderLeft: 'none',
+                                                    boxShadow: 'none'
+                                                }}
+                                            />
+                                            {termoPesquisa && (
+                                                <button 
+                                                    className="btn btn-outline-secondary border-start-0" 
+                                                    type="button"
+                                                    onClick={limparPesquisa}
+                                                    disabled={loading}
+                                                    style={{ borderLeft: 'none' }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* INDICADOR DE RESULTADOS */}
+                                {!loading && termoPesquisa && listaFiltrada.length > 0 && (
+                                    <div className="mt-2 text-muted small">
+                                        <span className="badge bg-light text-dark p-2">
+                                            {listaFiltrada.length} {listaFiltrada.length === 1 ? 'departamento encontrado' : 'departamentos encontrados'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="table-responsive">
                     <table className="table table-hover table-striped border">
                         <thead className="table-primary">
                             <tr>
-                                <th className="col-8">Nome</th>
+                                <th className="col-7">Nome</th>
                                 <th className="col-2 text-center">Editar</th>
                                 <th className="col-2 text-center">Apagar</th>
                             </tr>
@@ -215,16 +311,29 @@ function Departamento() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="3" className="text-center py-5">
+                                    <td colSpan="4" className="text-center py-5">
                                         <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
                                             <span className="visually-hidden">Carregando...</span>
                                         </div>
                                         <p className="text-muted mb-0">Carregando departamentos...</p>
                                     </td>
                                 </tr>
+                            ) : semResultados ? (
+                                <tr>
+                                    <td colSpan="4" className="text-center py-5">
+                                        <MdSearch size={48} className="text-muted mb-3" />
+                                        <p className="text-muted mb-2">Nenhum departamento encontrado para "{termoPesquisa}"</p>
+                                        <button 
+                                            className="btn btn-outline-primary btn-sm"
+                                            onClick={limparPesquisa}
+                                        >
+                                            Limpar pesquisa
+                                        </button>
+                                    </td>
+                                </tr>
                             ) : isEmpty ? (
                                 <tr>
-                                    <td colSpan="3" className="text-center py-5">
+                                    <td colSpan="4" className="text-center py-5">
                                         <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
                                         <p className="text-muted mb-3">Nenhum departamento encontrado</p>
                                         <button className="btn btn-outline-primary" onClick={() => fetchData(true)}>
@@ -234,9 +343,9 @@ function Departamento() {
                                     </td>
                                 </tr>
                             ) : (
-                                lista.map((item) => (
+                                listaFiltrada.map((item) => (
                                     <tr key={item.idcategoriacurso}>
-                                        <td className="align-middle fw-semibold">{item.categoriacurso}</td>
+                                        <td className="align-middle fw-semibold"><IoMdBusiness className="me-2 mb-2 text-primary" />{item.categoriacurso}</td>
                                         <td className="text-center">
                                             <button 
                                                 className="btn btn-sm btn-outline-primary"
@@ -264,7 +373,6 @@ function Departamento() {
                     </table>
                 </div>
             </div>
-
 
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>

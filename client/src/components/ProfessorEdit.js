@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Axios from 'axios';
-import { FaInfoCircle } from "react-icons/fa";
+import { FaInfoCircle, FaSearch } from "react-icons/fa";
 import { MdDeleteForever, MdEdit } from "react-icons/md";
 import { FaBook } from "react-icons/fa";
 import { CiCircleMinus } from "react-icons/ci";
@@ -8,6 +8,8 @@ import {showSuccessToast, useConfirmToast, showErrorToast} from './CustomToast';
 
 function ProfessorEdit() {
     const [professores, setProfessores] = useState([]);
+    const [professoresFiltrados, setProfessoresFiltrados] = useState([]);
+    const [termoPesquisa, setTermoPesquisa] = useState('');
     const [professorSelecionado, setProfessorSelecionado] = useState(null);
     const [professorSelecionado2, setProfessorSelecionado2] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -22,6 +24,7 @@ function ProfessorEdit() {
                 setLoading(true);
                 const response = await Axios.get('http://localhost:8080/get/Professores');
                 setProfessores(response.data);
+                setProfessoresFiltrados(response.data);
                 setError(null);
             } catch (err) {
                 console.error('Erro ao buscar professores:', err);
@@ -39,6 +42,28 @@ function ProfessorEdit() {
             if (interval) clearInterval(interval);
         };
     }, []);
+
+    // Função de pesquisa
+    const handlePesquisa = (e) => {
+        const termo = e.target.value;
+        setTermoPesquisa(termo);
+        
+        if (termo.trim() === '') {
+            setProfessoresFiltrados(professores);
+        } else {
+            const filtrados = professores.filter(prof => 
+                prof.nomeprofessor.toLowerCase().includes(termo.toLowerCase()) ||
+                (prof.codigoprofessor && prof.codigoprofessor.toLowerCase().includes(termo.toLowerCase()))
+            );
+            setProfessoresFiltrados(filtrados);
+        }
+    };
+
+    // Limpar pesquisa
+    const limparPesquisa = () => {
+        setTermoPesquisa('');
+        setProfessoresFiltrados(professores);
+    };
 
     useEffect(() => {
         if (modalOpen || modalOpenInfo) {
@@ -119,6 +144,55 @@ function ProfessorEdit() {
 
     return (
         <div>
+            {/* BARRA DE PESQUISA */}
+            <div className="row mb-4">
+                <div className="col-md-8 mx-auto">
+                    <div className="card shadow-sm border-0">
+                        <div className="card-body p-3">
+                            <div className="d-flex align-items-center gap-2">
+                                <div className="position-relative flex-grow-1">
+                                    <div className="input-group">
+                                        <span className="input-group-text bg-white border-end-0">
+                                            <FaSearch className="text-muted" />
+                                        </span>
+                                        <input
+                                            type="text"
+                                            className="form-control border-start-0 ps-0"
+                                            placeholder="Pesquisar professor por nome ou código..."
+                                            value={termoPesquisa}
+                                            onChange={handlePesquisa}
+                                            style={{ 
+                                                borderLeft: 'none',
+                                                boxShadow: 'none'
+                                            }}
+                                        />
+                                        {termoPesquisa && (
+                                            <button 
+                                                className="btn btn-outline-secondary border-start-0" 
+                                                type="button"
+                                                onClick={limparPesquisa}
+                                                style={{ borderLeft: 'none' }}
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* INDICADOR DE RESULTADOS */}
+                            {!loading && termoPesquisa && (
+                                <div className="mt-2 text-muted small">
+                                    <span className="badge bg-light text-dark p-2">
+                                        {professoresFiltrados.length} {professoresFiltrados.length === 1 ? 'professor encontrado' : 'professores encontrados'}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="table-responsive">
                 {loading && <div className="text-center">Carregando...</div>}
                 {error && <div className="alert alert-danger">{error}</div>}
@@ -135,8 +209,8 @@ function ProfessorEdit() {
                         </tr>
                     </thead>
                     <tbody>
-                        {!loading && professores && professores.length > 0 ? (
-                            professores.map((prof) => (
+                        {!loading && professoresFiltrados && professoresFiltrados.length > 0 ? (
+                            professoresFiltrados.map((prof) => (
                                 <tr key={`prof-${prof.idprofessor}`}>
                                     <td>
                                         <img 
@@ -149,7 +223,16 @@ function ProfessorEdit() {
                                             }}
                                         />
                                     </td>
-                                    <td className="align-middle">{prof.nomeprofessor}</td>
+                                    <td className="align-middle">
+                                        <div className="d-flex flex-column">
+                                            <span>{prof.nomeprofessor}</span>
+                                            {prof.codigoprofessor && (
+                                                <small className="text-muted">
+                                                    Código: {prof.codigoprofessor}
+                                                </small>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="text-center align-middle">
                                         <button 
                                             onClick={() => openModal(prof)}
@@ -183,8 +266,21 @@ function ProfessorEdit() {
                         ) : (
                             !loading && (
                                 <tr>
-                                    <td colSpan="6" className="text-center">
-                                        Nenhum professor cadastrado.
+                                    <td colSpan="6" className="text-center py-4">
+                                        {termoPesquisa ? (
+                                            <div className="text-muted">
+                                                <FaSearch className="mb-2" size={24} />
+                                                <p className="mb-0">Nenhum professor encontrado para "{termoPesquisa}"</p>
+                                                <button 
+                                                    className="btn btn-link mt-2"
+                                                    onClick={limparPesquisa}
+                                                >
+                                                    Limpar pesquisa
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <span>Nenhum professor cadastrado.</span>
+                                        )}
                                     </td>
                                 </tr>
                             )
@@ -473,26 +569,6 @@ function ProfessorEdit() {
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* DISCIPLINAS
-                                        {professorSelecionado2.disciplinas && professorSelecionado2.disciplinas.length > 0 && (
-                                            <>
-                                                <hr className="my-4" />
-                                                <h6 className="text-primary fw-bold mb-3">
-                                                    <FaBook className="me-2" />
-                                                    Disciplinas Ministradas
-                                                </h6>
-                                                <div className="row mb-4">
-                                                    {professorSelecionado2.disciplinas.map((disciplina) => (
-                                                        <div key={disciplina.iddisciplina} className="col-md-4 mb-2">
-                                                            <span className="badge bg-light text-dark p-2 border">
-                                                                {disciplina.disciplina}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )} */}
 
                                     </div>
                                 </div>
