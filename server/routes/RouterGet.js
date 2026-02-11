@@ -241,7 +241,11 @@ router.get('/Professores', (req, res) => {
                 details: error.message 
             });
         }else{
-            res.status(200).json(result);
+            const professoresComFoto = result.map(professor =>({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
         }
     });
 });
@@ -420,5 +424,293 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
     });
 });
 
+router.get('/estatisticasProfessores', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalProfessores,
+            COUNT(CASE WHEN fotoprofessor IS NOT NULL THEN 1 END) as professoresComFoto,
+            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as professoresComTitulacao
+        FROM professor
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar estatísticas de professores:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+// Rota para distribuição de professores por titulação
+router.get('/distribuicaoTitulacao', (req, res) => {
+    const sql = `
+        SELECT 
+            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
+            COUNT(*) as quantidade
+        FROM professor
+        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
+        ORDER BY quantidade DESC
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar distribuição por titulação:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
+
+// Rota para professores por disciplina
+router.get('/professoresPorDisciplina', (req, res) => {
+    const sql = `
+        SELECT 
+            d.disciplina,
+            d.iddisciplina,
+            COUNT(dp.idprofessor) as totalProfessores,
+            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professores
+        FROM disc_prof dp
+        RIGHT JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        LEFT JOIN professor p ON dp.idprofessor = p.idprofessor
+        GROUP BY d.iddisciplina, d.disciplina
+        ORDER BY totalProfessores DESC, d.disciplina ASC
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores por disciplina:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
+
+// Rota para disciplinas mais ministradas (com mais professores)
+router.get('/disciplinasMaisMinistradas', (req, res) => {
+    const sql = `
+        SELECT 
+            d.disciplina,
+            COUNT(DISTINCT dp.idprofessor) as totalProfessores,
+            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professoresNomes
+        FROM disc_prof dp
+        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        INNER JOIN professor p ON dp.idprofessor = p.idprofessor
+        GROUP BY d.iddisciplina, d.disciplina
+        HAVING totalProfessores > 0
+        ORDER BY totalProfessores DESC
+        LIMIT 10
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar disciplinas mais ministradas:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
+
+// Rota para professores com mais disciplinas
+router.get('/professoresMaisAtivos', (req, res) => {
+    const sql = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.titulacaoprofessor,
+            p.fotoprofessor,
+            COUNT(DISTINCT dp.iddisciplina) as totalDisciplinas,
+            GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') as disciplinas
+        FROM disc_prof dp
+        INNER JOIN professor p ON dp.idprofessor = p.idprofessor
+        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        GROUP BY p.idprofessor, p.nomeprofessor, p.titulacaoprofessor
+        HAVING totalDisciplinas > 0
+        ORDER BY totalDisciplinas DESC
+        LIMIT 10
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores mais ativos:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const professoresComFoto = result.map(a =>({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+// Rota para professores sem disciplinas
+router.get('/professoresSemDisciplinas', (req, res) => {
+    const sql = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.titulacaoprofessor
+        FROM professor p
+        LEFT JOIN disc_prof dp ON p.idprofessor = dp.idprofessor
+        WHERE dp.idprofessor IS NULL
+        ORDER BY p.nomeprofessor ASC
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores sem disciplinas:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    const sql = `
+        SELECT 
+            disc_prof.iddiscprof,
+            disciplina.disciplina,
+            disciplina.iddisciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        WHERE disc_prof.idprofessor = ?
+        ORDER BY disciplina.disciplina ASC
+    `;
+    
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas vinculadas:", error);
+            return res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }
+        
+        res.status(200).json(result);
+    });
+});
+
+// Rota para InformacoesProfessor
+router.get('/InformacoesProfessor/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    // Query para dados do professor
+    const sqlProfessor = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.fotoprofessor,
+            p.codigoprofessor,
+            p.generoprofessor,
+            p.nacionalidadeprofessor,
+            p.estadocivilprofessor,
+            p.nomepaiprofessor,
+            p.nomemaeprofessor,
+            p.nbiprofessor,
+            p.datanascimentoprofessor,
+            p.bipdfprofessor,
+            p.residenciaprofessor,
+            p.telefoneprofessor,
+            p.whatsappprofessor,
+            p.emailprofessor,
+            p.anoexperienciaprofessor,
+            p.titulacaoprofessor,
+            p.dataadmissaoprofessor,
+            p.tiposanguineoprofessor,
+            p.ibanprofessor,
+            p.condicoesprofessor,
+            contactoemergenciaprofessor
+        FROM professor p
+        WHERE p.idprofessor = ?
+    `;
+    
+    // Query para disciplinas
+    const sqlDisciplinas = `
+        SELECT 
+            disciplina.iddisciplina,
+            disciplina.disciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        WHERE disc_prof.idprofessor = ?
+        ORDER BY disciplina.disciplina ASC
+    `;
+    
+    conexao.query(sqlProfessor, [id], (error, professorResult) => {
+        if (error) {
+            console.error("Erro ao buscar dados do professor:", error);
+            return res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }
+        
+        if (professorResult.length === 0) {
+            return res.status(404).json({ error: "Professor não encontrado" });
+        }
+        
+        const professor = professorResult[0];
+        
+        // Buscar disciplinas
+        conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
+            if (error) {
+                console.error("Erro ao buscar disciplinas:", error);
+                return res.status(500).json({ 
+                    error: "Erro interno do servidor", 
+                    details: error.message 
+                });
+            }
+            
+            // CORREÇÃO AQUI - URL DINÂMICA DO PDF
+            let curriculoUrl = null;
+            if (professor.bipdfprofessor) {
+                curriculoUrl = `http://localhost:8080/api/img/professores/${professor.bipdfprofessor}`;
+            }
+            
+            // Montar objeto completo
+            const professorCompleto = {
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? 
+                    `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : 
+                    '/default-avatar.png',
+                curriculoUrl: curriculoUrl,
+                datanascimentoFormatada: professor.datanascimentoprofessor ? 
+                    new Date(professor.datanascimentoprofessor).toISOString().split('T')[0] : 
+                    null,
+                dataadmissaoFormatada: professor.dataadmissaoprofessor ? 
+                    new Date(professor.dataadmissaoprofessor).toISOString().split('T')[0] : 
+                    null,
+                disciplinas: disciplinasResult
+            };
+            
+            res.status(200).json(professorCompleto);
+        });
+    });
+});
 
 module.exports = router;

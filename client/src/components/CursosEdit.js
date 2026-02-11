@@ -30,7 +30,6 @@ function CursosEdit() {
     // Estados para anos curriculares
     const [anosCurriculares, setAnosCurriculares] = useState([]);
     const [loadingAnos, setLoadingAnos] = useState(false);
-    const [novoAno, setNovoAno] = useState({ anocurricular: '' });
 
     // Novos estados para o modal de disciplinas
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
@@ -210,7 +209,7 @@ function CursosEdit() {
                 try {
                     showInfoToast("Processando", "Excluindo ano curricular...");
                     
-                    const response = await apiClient.delete(`/delete/anocurricular/${idanocurricular}`);
+                    await apiClient.delete(`/delete/anocurricular/${idanocurricular}`);
                     showSuccessToast("Sucesso", "Ano curricular excluído");
                     
                     await fetchAnosCurriculares(dadosEdicao.idcurso);
@@ -252,7 +251,6 @@ function CursosEdit() {
         if (!salvando) {
             setDadosEdicao({ idcurso: '', curso: '', idcategoriacurso: '' });
             setAnosCurriculares([]);
-            setNovoAno({ anocurricular: '' });
         }
     }, [salvando]);
 
@@ -498,15 +496,6 @@ function CursosEdit() {
 
                                     {/* Seção de Anos Curriculares */}
                                     <div className="border-top pt-3 mt-3">
-                                        {/* <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 className="mb-0 fw-semibold">
-                                                <i className="bi bi-calendar-week me-2"></i>
-                                                Anos Curriculares
-                                            </h6>
-                                            <span className="badge bg-primary">
-                                                {anosCurriculares.length || 0} ano(s)
-                                            </span>
-                                        </div> */}
 
                                         {loadingAnos ? (
                                             <div className="text-center py-3">
@@ -520,10 +509,6 @@ function CursosEdit() {
                                             </div>
                                         ) : (
                                             <div>
-                                                {/* <div className="mb-2 text-muted small">
-                                                    <i className="bi bi-info-circle me-1"></i>
-                                                    Clique no "X" para excluir um ano curricular
-                                                </div> */}
                                                 <div className="d-flex flex-column gap-2">
                                                     {anosCurriculares.map((ano) => (
                                                         <div 
@@ -639,20 +624,6 @@ function CursosEdit() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            {/* <div className="col-md-6">
-                                                <div className="card bg-light border-0">
-                                                    <div className="card-body">
-                                                        <h6 className="card-title">
-                                                            <i className="bi bi-diagram-3 me-2 text-primary"></i>
-                                                            Gerenciamento de Disciplinas
-                                                        </h6>
-                                                        <p className="mb-0 small">
-                                                            <i className="bi bi-info-circle me-1"></i>
-                                                            Clique no botão <MdRemoveCircleOutline className="text-danger" /> para remover uma disciplina deste curso.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div> */}
                                         </div>
 
                                         {/* Lista de disciplinas por ano e semestre */}

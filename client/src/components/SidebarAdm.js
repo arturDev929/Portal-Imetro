@@ -55,7 +55,7 @@ function SidebarAdm(){
                             <Link to="#" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
                                 <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
                             </Link>
                             <Link to="/gestaoCursoAdm" className={`nav-link ${Style.Link}`}>
@@ -125,7 +125,7 @@ function SidebarAdm(){
                             <Link to="#" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
                                 <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
                             </Link>
                             <Link to="/gestaoCursoAdm" className={`nav-link ${Style.Link}`}>

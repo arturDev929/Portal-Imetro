@@ -427,6 +427,25 @@ router.delete('/desvincularProfessor/:idprofessor', (req, res) => {
     });
 });
 
+router.delete('/desvincularProfessorDisciplina/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "DELETE FROM disc_prof WHERE iddisciplina = ?";
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao desvincular professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json({
+                message: "Professor desvinculado com sucesso",
+                professoresAfetados: result.affectedRows
+            });
+        }
+    });
+});
+
 
 
 module.exports = router;

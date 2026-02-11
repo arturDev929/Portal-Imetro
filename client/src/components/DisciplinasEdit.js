@@ -5,7 +5,6 @@ import { MdEdit, MdDeleteForever } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
 import { showErrorToast, showSuccessToast, useConfirmToast} from "./CustomToast";
 import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
-import img from "../img/professores/professor_27296899_foto_1769625055915.jpeg"
 
 function DisciplinaEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
@@ -121,7 +120,6 @@ function DisciplinaEdit() {
         setprofessor(disciplina)
         setIsModalOpenProfessor(true)
         
-        // Buscar professores VINCULADOS
         Axios.get(`http://localhost:8080/get/professorVinculado/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresVinculados(response.data)
@@ -131,7 +129,6 @@ function DisciplinaEdit() {
                 showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
             })
         
-        // Buscar professores DISPONÍVEIS
         Axios.get(`http://localhost:8080/get/professorDisponivel/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresDisponiveis(response.data)
@@ -144,7 +141,7 @@ function DisciplinaEdit() {
 
     // Função para vincular professor
     const vincularProfessor = (professorId) => {
-        console.log("Vinculando professor com ID:", professorId, "à disciplina ID:", professor.iddisciplina);
+        // console.log("Vinculando professor com ID:", professorId, "à disciplina ID:", professor.iddisciplina);
         Axios.post('http://localhost:8080/post/vincularProfessor', {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
