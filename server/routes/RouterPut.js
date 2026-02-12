@@ -359,7 +359,11 @@ router.put('/disciplina/:id', (req, res) => {
         });
     });
 });
-
+router.put('/atulizarprofessor/:id', (req, res) => {
+    const { id } = req.params;
+    const {nomeprofessor, fotoprofessor, bipdfprofessor, codigoprofessor, foto, curriculo} = req.body;
+    console.log(id, nomeprofessor, fotoprofessor, bipdfprofessor, codigoprofessor, foto, curriculo);
+});
 
 
 module.exports = router;
