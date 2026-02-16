@@ -179,7 +179,7 @@ function HomeAdm() {
                             <div className="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
-                                        Dashboard Inteligente de Cursos
+                                        Dashboard de Cursos
                                     </h2>
                                     <p className="text-muted mb-0">
                                         Bem-vindo, {user ? user.nome : 'Administrador'} | Análise estrutural completa
@@ -190,7 +190,7 @@ function HomeAdm() {
                                         <FaClock className="me-1" />
                                         Última atualização: {ultimaAtualizacao.toLocaleString('pt-BR')}
                                     </div>
-                                    <div className="badge bg-primary p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
+                                    <div className="badge p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
                                         <FaUniversity size={24} />
                                     </div>
                                 </div>
@@ -202,9 +202,8 @@ function HomeAdm() {
                     <div className="row mb-4 g-2">
                         <div className="col-md-3">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "geral" ? 'btn-primary' : 'btn-outline-primary'}`}
+                                className={`btn w-100 ${secaoAtiva === "geral" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("geral")}
-                                style={{ padding: '12px', fontWeight: '500' }}
                             >
                                 <FaChartBar className="me-2" />
                                 Painel Geral de Cursos
@@ -212,9 +211,8 @@ function HomeAdm() {
                         </div>
                         <div className="col-md-3">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "departamentos" ? 'btn-primary' : 'btn-outline-primary'}`}
+                                className={`btn w-100 ${secaoAtiva === "departamentos" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("departamentos")}
-                                style={{ padding: '12px', fontWeight: '500' }}
                             >
                                 <FaLayerGroup className="me-2" />
                                 Departamentos
@@ -222,9 +220,8 @@ function HomeAdm() {
                         </div>
                         <div className="col-md-3">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "cursos" ? 'btn-primary' : 'btn-outline-primary'}`}
+                                className={`btn w-100 ${secaoAtiva === "cursos" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("cursos")}
-                                style={{ padding: '12px', fontWeight: '500' }}
                             >
                                 <FaGraduationCap className="me-2" />
                                 Licenciaturas/Cursos
@@ -232,7 +229,7 @@ function HomeAdm() {
                         </div>
                         <div className="col-md-3">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "disciplinas" ? 'btn-primary' : 'btn-outline-primary'}`}
+                                className={`btn w-100 ${secaoAtiva === "disciplinas" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("disciplinas")}
                                 style={{ padding: '12px', fontWeight: '500' }}
                             >

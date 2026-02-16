@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { MdEdit, MdDeleteForever, MdRefresh, MdSearch } from "react-icons/md";
+import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons/md";
 import { IoMdBusiness } from "react-icons/io";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
+import Style from "./DepartamentosEdit.module.css"
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 const API_TIMEOUT = 5000;
@@ -18,8 +19,18 @@ function Departamento() {
         categoriacurso: ''
     });
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+    const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
+    const [novoDepartamento, setNovoDepartamento] = useState('');
+    const [user, setUser] = useState()
     
     const { showConfirmToast, isConfirming } = useConfirmToast();
+
+    useEffect(() => {
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            setUser(JSON.parse(usuarioSalvo));
+        }
+    }, []);
 
     // Configuração do axios
     const apiClient = useMemo(() => {
@@ -115,6 +126,10 @@ function Departamento() {
         }
     }, [lista, termoPesquisa]);
 
+    const adicionarItemLocal = useCallback((novoItem) => {
+        setLista(prev => [...prev, novoItem]);
+    }, []);
+
     const atualizarItemLocal = useCallback((id, novoNome) => {
         setLista(prev => {
             const updatedList = prev.map(item => 
@@ -154,6 +169,18 @@ function Departamento() {
         }
     }, [abrirModalEditar, fecharModal]);
 
+    const abrirModalAdicionar = useCallback(() => {
+        setModalAdicionarAberto(true);
+        setNovoDepartamento('');
+    }, []);
+
+    const fecharModalAdicionar = useCallback(() => {
+        if (!salvando) {
+            setModalAdicionarAberto(false);
+            setNovoDepartamento('');
+        }
+    }, [salvando]);
+
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
         
@@ -187,9 +214,54 @@ function Departamento() {
         }
     }, [dadosEdicao, apiClient, atualizarItemLocal, fecharModal]);
 
+    const salvarNovoDepartamento = useCallback(async (e) => {
+        e?.preventDefault();
+        
+        // Validação
+        const nome = novoDepartamento?.trim();
+        if (!nome) {
+            showErrorToast("Validação", "Preencha o nome do departamento");
+            return;
+        }
+
+        setSalvando(true);
+        try {
+            const response = await apiClient.post('/post/registrercategoria', {
+                categoriacurso: nome,
+                idAdm: user.id
+            });
+
+            // Usa a mensagem do backend
+            showSuccessToast(
+                "Sucesso",
+                response.data.message || "Departamento adicionado com sucesso",
+                { "Nome": response.data.categoriacurso || nome }
+            );
+            
+            // Adiciona o novo departamento à lista local
+            if (response.data.departamento) {
+                adicionarItemLocal(response.data.departamento);
+            } else {
+                // Se o backend não retornar o objeto completo, busca novamente
+                fetchData(false);
+            }
+            
+            fecharModalAdicionar();
+        } catch (error) {
+            // A mensagem de erro já foi tratada no interceptor
+            console.error("Erro ao adicionar:", error);
+        } finally {
+            setSalvando(false);
+        }
+    }, [novoDepartamento, apiClient, adicionarItemLocal, fetchData, fecharModalAdicionar]);
+
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setDadosEdicao(prev => ({ ...prev, [name]: value }));
+    }, []);
+
+    const handleNovoDepartamentoChange = useCallback((e) => {
+        setNovoDepartamento(e.target.value);
     }, []);
 
     const deletarDepartamento = useCallback(async (id, nome) => {
@@ -227,7 +299,7 @@ function Departamento() {
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="h4 mb-0 text-primary">
+                    <h2 className="h4 mb-0" style={{color:'var(--azul-escuro)'}}>
                         <IoMdBusiness className="me-2 mb-2" />
                         Departamentos
                     </h2>
@@ -238,12 +310,22 @@ function Departamento() {
                             </small>
                         )}
                         <button 
-                            className="btn btn-outline-primary btn-sm"
+                            className={`btn btn-sm ${Style.AtulizarDepartamento}`}
                             onClick={() => fetchData(true)}
                             disabled={loading || isConfirming}
                             title="Atualizar lista"
+                            
                         >
                             <MdRefresh />
+                        </button>
+                        <button 
+                            className="btn btn-sm btn-success"
+                            onClick={abrirModalAdicionar}
+                            disabled={loading || salvando || isConfirming}
+                            title="Adicionar novo departamento"
+                        >
+                            <MdAdd className="me-1" />
+                            Novo
                         </button>
                     </div>
                 </div>
@@ -256,7 +338,7 @@ function Departamento() {
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="position-relative flex-grow-1">
                                         <div className="input-group">
-                                            <span className="input-group-text bg-white border-end-0">
+                                            <span className="input-group-text border-end-0" style={{backgroundColor:'var(--cinza-claro)'}}>
                                                 <MdSearch className="text-muted" size={20} />
                                             </span>
                                             <input
@@ -268,7 +350,9 @@ function Departamento() {
                                                 disabled={loading}
                                                 style={{ 
                                                     borderLeft: 'none',
-                                                    boxShadow: 'none'
+                                                    boxShadow: 'none',
+                                                    backgroundColor: 'var(--cinza-claro)',
+                                                    padding:'10px'
                                                 }}
                                             />
                                             {termoPesquisa && (
@@ -277,7 +361,11 @@ function Departamento() {
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{ borderLeft: 'none' }}
+                                                    style={{ 
+                                                        borderLeft: 'none',
+                                                        backgroundColor: 'var(--danger)',
+                                                        color:'var(--branco)'
+                                                    }}
                                                 >
                                                     ✕
                                                 </button>
@@ -301,7 +389,7 @@ function Departamento() {
 
                 <div className="table-responsive">
                     <table className="table table-hover table-striped border">
-                        <thead className="table-primary">
+                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
                             <tr>
                                 <th className="col-7">Nome</th>
                                 <th className="col-2 text-center">Editar</th>
@@ -336,9 +424,13 @@ function Departamento() {
                                     <td colSpan="4" className="text-center py-5">
                                         <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
                                         <p className="text-muted mb-3">Nenhum departamento encontrado</p>
-                                        <button className="btn btn-outline-primary" onClick={() => fetchData(true)}>
+                                        <button className="btn btn-outline-primary me-2" onClick={() => fetchData(true)}>
                                             <MdRefresh className="me-1" />
                                             Carregar departamentos
+                                        </button>
+                                        <button className="btn btn-success" onClick={abrirModalAdicionar}>
+                                            <MdAdd className="me-1" />
+                                            Adicionar
                                         </button>
                                     </td>
                                 </tr>
@@ -374,6 +466,7 @@ function Departamento() {
                 </div>
             </div>
 
+            {/* MODAL DE EDIÇÃO */}
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered">
@@ -432,6 +525,76 @@ function Departamento() {
                                             </>
                                         ) : (
                                             'Salvar Alterações'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE ADICIONAR */}
+            {modalAdicionarAberto && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
+                                <h5 className="modal-title mb-0">
+                                    <MdAdd className="me-2" />
+                                    Adicionar Novo Departamento
+                                </h5>
+                                <button 
+                                    type="button" 
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalAdicionar}
+                                    disabled={salvando || isConfirming}
+                                />
+                            </div>
+                            <form onSubmit={salvarNovoDepartamento}>
+                                <div className="modal-body">
+                                    <div className="mb-3">
+                                        <input 
+                                            type="text" 
+                                            className="form-control form-control-lg shadow-sm"
+                                            value={novoDepartamento}
+                                            onChange={handleNovoDepartamentoChange}
+                                            placeholder="Digite o nome do departamento"
+                                            autoFocus
+                                            disabled={salvando || isConfirming}
+                                            maxLength={100}
+                                            required
+                                            style={{
+                                                backgroundColor:'var(--cinza-claro)',
+                                                color: 'var(--dourado)',
+                                                border: 'none',
+                                                padding: '10px'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-outline-secondary"
+                                        onClick={fecharModalAdicionar}
+                                        disabled={salvando || isConfirming}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className={`btn px-4 ${Style.btnSubmit}`}
+                                        disabled={salvando || isConfirming || !novoDepartamento.trim()}
+                                        
+                                    >
+                                        {salvando ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Adicionando...
+                                            </>
+                                        ) : (
+                                            'Adicionar Departamento'
                                         )}
                                     </button>
                                 </div>

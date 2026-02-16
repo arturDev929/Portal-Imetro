@@ -3,7 +3,7 @@
   margin: 0;
   box-sizing: border-box;
   font-family: 'Times New Roman', Times, serif;
-  /* scrollbar-width: none; */
+  scrollbar-width: none;
 }
 :root {
   --azul-metropolitano: #003366;
@@ -12,8 +12,9 @@
   --dourado: #B8860B;
   --cinza-claro: #F5F5F5;
   --branco: #FFFFFF;
-  --vermelha: rgba(236, 0, 16, 0.885);
+  --danger: rgba(236, 0, 16, 0.885);
 }
+
 
 
 /* Adicione no seu arquivo CSS global */
