@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import imetro from "../img/images.png";
-import Style from "./navbar.module.css";
+import imetro from "../img/logoFundo.png";
+import Style from "./SiderbarAdm.module.css";
 import { Link } from "react-router-dom";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { FaUserTie } from "react-icons/fa";
@@ -19,25 +19,21 @@ function SidebarAdm(){
         }
     }, []);
     return(
-        <div className="container-fluid">
+        <div className="container-fluid p-0 m-0">
             <div className="row">
-                {/* Sidebar - Usando Offcanvas do Bootstrap */}
-                <div className="col-md-3 col-lg-2 d-none d-md-block bg-light vh-100 position-fixed">
-                    {/* Logo */}
+                <div className={`${Style.containerFluid} col-md-3 col-lg-2 d-none d-md-block vh-100 position-fixed`}>
                     <div className="text-center py-3">
                         <h5 className="mb-0">
                             <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro}/>
-                            <span className="ms-2 fw-bold">Portal Imetro</span>
+                            <span className="ms-2 fw-bold text-light">Portal Imetro</span>
                         </h5>
                     </div>
-
-                    {/* Menu Principal */}
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
                             <Link to="/homeAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Notícias
+                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Painel Geral
                             </Link>
-                            <h6 className="text-uppercase text-muted small fw-bold mb-2">Registros</h6>
+                            <h6 className="text-uppercase text-muted small fw-bold mb-2 mt-1">Registros</h6>
                             <Link to="/funcionariosAdmRegistrer" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
@@ -48,8 +44,6 @@ function SidebarAdm(){
                                 <FaDiscourse className="mb-2 me-2"/>Cursos
                             </Link>
                         </div>
-
-                        {/* Menu Secundário */}
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
                             <Link to="#" className={`nav-link active ${Style.Link}`}>
@@ -65,8 +59,6 @@ function SidebarAdm(){
                                 <PiStudentDuotone className="mb-2 me-2"/>Estudantes
                             </Link>
                         </div>
-
-                        {/* Menu Configurações */}
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Configurações</h6>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
@@ -77,14 +69,12 @@ function SidebarAdm(){
                             </Link>
                         </div>
                     </nav>
-
-                    {/* Usuário Info */}
                     <div className=" p-3 mt-auto position-absolute bottom-0 w-100">
                         <hr/>
                         <div className="d-flex align-items-center">
                             <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
                             <div>
-                                {user && <h6 className="mb-0">{user.nome}</h6>}
+                                {user && <h6 className="mb-0 text-light">{user.nome}</h6>}
                             </div>
                         </div>
                     </div>
@@ -92,11 +82,11 @@ function SidebarAdm(){
             </div>
 
             {/* Sidebar Mobile com Offcanvas do Bootstrap */}
-            <div className="offcanvas offcanvas-start d-md-none" tabIndex="-1" id="sidebarMobile">
+            <div className={`offcanvas offcanvas-start d-md-none ${Style.containerFluid}`} tabIndex="-1" id="sidebarMobile">
                 <div className="offcanvas-header border-bottom">
                     <h5 className="mb-0">
                         <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} to="/homeAdm"/>
-                        <span className="ms-2 fw-bold">Portal Imetro</span>
+                        <span className="ms-2 fw-bold text-light">Portal Imetro</span>
                     </h5>
                     <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
@@ -105,7 +95,7 @@ function SidebarAdm(){
                         {/* Menu Principal */}
                         <div className="p-3 border-bottom">
                             <Link to="/homeAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Notícias
+                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Painel Geral
                             </Link>
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Registros</h6>
                             <Link to="/funcionariosAdmRegistrer" className={`nav-link active ${Style.Link}`}>
@@ -150,9 +140,9 @@ function SidebarAdm(){
                 </div>
                 <div className="border-top p-3">
                     <div className="d-flex align-items-center">
-                        <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
+                        <IoPersonCircleOutline className="rounded-circle me-2 text-light" alt="Usuário"/>
                         <div>
-                            {user && <h6 className="mb-0">{user.nome}</h6>}
+                            {user && <h6 className="mb-0 text-light">{user.nome}</h6>}
                         </div>
                     </div>
                 </div>

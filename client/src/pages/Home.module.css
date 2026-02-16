@@ -1,42 +1,47 @@
-.logoImetro{
-    width: 50px;
-    height: 50px;
-}
-
-.loginContainer {
-    min-height: 100vh;
-    background-image: url('../img/imetro3.jpeg');
+.loginContainer{
+    background-image: url(../img/imetro3.jpeg);
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-
-.logoImetro {
+.logoImetro{
     width: 100px;
-    height: auto;
+    height: 100px;
 }
-
-.loginContainer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 0;
+.card{
+    background-color: var(--azul-metropolitano);
+    border-radius: 5%;
 }
-
-.loginContainer > .container {
-    position: relative;
-    z-index: 1;
+.LinkHome{
+    color: var(--dourado);
+    text-decoration: none;
 }
-
-.card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(5px);
+.inputHome{
+  background-color: var(--cinza-claro);
+  color: var(--dourado);
+  padding: 10px;
 }
-.linkbtn{
- text-decoration: none;
- border: 1px solid red;
+.inputHome::placeholder{
+  color: var(--dourado);
+}
+.inputHome:focus{
+  background-color: var(--cinza-claro);
+  color: var(--dourado);
+  border: 2px solid var(--dourado);
+  outline: none;
+}
+.ButtonHome{
+    background-color: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+}
+.ButtonHome:hover{
+    background-color: var(--branco);
+    color: var(--dourado);
+    border: none;
+    opacity: 0.9;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }

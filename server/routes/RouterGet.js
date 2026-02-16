@@ -2,7 +2,98 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../infra/conexao");
 
-// 1. Para ver as categorias registradas e editar e eliminar
+// Total categoria Curso
+router.get('/totalcategoriacurso', (req,res)=>{
+    const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
+    conexao.query(sql,(error,results)=>{
+        if(error){
+            console.log("Erro ao buscar categorias: ",error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        }else{
+            res.json(results)
+        }
+    })
+});
+
+// Total Licenciaturas
+router.get('/totallicenciaturas', (req,res)=>{
+    const sql = "SELECT COUNT(*) as total_licenciaturas FROM curso;";
+    conexao.query(sql,(error,results)=>{
+        if(error){
+            console.log("Erro ao buscar licenciaturas: ",error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        }else{
+            res.json(results)
+        }
+    })
+});
+
+// Total Disciplina
+router.get('/totaldisciplina', (req,res)=>{
+    const sql = "SELECT COUNT(*) as total_disciplinas FROM disciplina";
+    conexao.query(sql,(error,results)=>{
+        if(error){
+            console.log("Erro ao buscar disciplinas: ",error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        }else{
+            res.json(results)
+        }
+    })
+});
+
+// Categoria e Curso
+router.get('/dadosGraficosCategoria', (req, res) => {
+    const sql = "SELECT categoriacurso.categoriacurso, COUNT(curso.idcurso) as total_cursos FROM categoriacurso LEFT JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso GROUP BY categoriacurso.idcategoriacurso, categoriacurso.categoriacurso ORDER BY total_cursos DESC LIMIT 100";
+    
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar dados para gráfico: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+// NOVA ROTA: Total de disciplinas por curso
+router.get('/totalDisciplinasPorCurso', (req, res) => {
+    const sql = `
+        SELECT 
+            c.curso,
+            c.idcurso,
+            COUNT(s.idsemestre) as total_disciplinas
+        FROM curso c
+        INNER JOIN semestre s ON c.idcurso = s.idcurso
+        GROUP BY c.idcurso, c.curso
+        ORDER BY total_disciplinas DESC
+        LIMIT 100
+    `;
+    
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar total de disciplinas por curso: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
 router.get('/categoriaCurso', (req, res) => {
     const sql = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso ORDER BY categoriacurso ASC";
     conexao.query(sql, (error, result) => {

@@ -3,9 +3,21 @@
   margin: 0;
   box-sizing: border-box;
   font-family: 'Times New Roman', Times, serif;
+  /* scrollbar-width: none; */
 }
+:root {
+  --azul-metropolitano: #003366;
+  --azul-claro: #0047AB;
+  --azul-escuro: #002244;
+  --dourado: #B8860B;
+  --cinza-claro: #F5F5F5;
+  --branco: #FFFFFF;
+  --vermelha: rgba(236, 0, 16, 0.885);
+}
+
+
 /* Adicione no seu arquivo CSS global */
-.modal-content {
+/* .modal-content {
   border-radius: 15px;
   overflow: hidden;
   animation: modalSlideIn 0.3s ease-out;
@@ -36,7 +48,7 @@
 
 .bg-gradient-info {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
+} */
 
 /* .card {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -47,7 +59,7 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 } */
 
-.btn-group .btn {
+/* .btn-group .btn {
   border-radius: 6px;
   margin: 0 2px;
 }
@@ -55,4 +67,4 @@
 .table-hover tbody tr:hover {
   background-color: rgba(0, 123, 255, 0.05);
   transition: background-color 0.2s ease;
-}
+} */

@@ -1,0 +1,18 @@
+.navbar{
+    background-color: var(--azul-escuro);
+}
+.dropdownMenu{
+    background-color: var(--azul-escuro);
+}
+.Link{
+    color: var(--branco);
+    border-radius: 20px;
+}
+.Link:hover{
+    background-color: var(--dourado);
+    color: var(--branco);
+}
+.Link:active{
+    background-color: var(--dourado);
+    color: var(--branco);
+}

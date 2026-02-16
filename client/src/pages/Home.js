@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
-import imetro from "../img/images.png";
+import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
 import axios from "axios";
 import { showSuccessToast, showErrorToast } from "../components/CustomToast";
@@ -66,22 +66,22 @@ function Home() {
                 <div className="container">
                     <div className="d-flex justify-content-center align-items-center min-vh-100">
                         <div className="col-11 col-sm-8 col-md-6 col-lg-4">
-                            <div className="card shadow-lg">
+                            <div className={`${Style.card} shadow-sm`}>
                                 <div className="card-body p-4 text-center">
                                     <img 
                                         src={imetro} 
                                         alt="Logotipo Imetro" 
                                         className={`${Style.logoImetro} mb-4`}
                                     />
-                                    <h3 className="mb-4">Login</h3>
+                                    <h3 className="mb-4 text-white">Vamos começar? Faça o login</h3>
                                     
                                     <form onSubmit={handleLogin}>
                                         <div className="mb-3">
                                             <input 
                                                 type="text" 
-                                                className="form-control" 
+                                                className={`${Style.inputHome} form-control`} 
                                                 id="numEstudante"
-                                                placeholder="Número do Estudante"
+                                                placeholder="Ínsira o seu código"
                                                 value={numEstudante}
                                                 onChange={(e) => setNumEstudante(e.target.value)}
                                                 required
@@ -91,16 +91,16 @@ function Home() {
                                         <div className="mb-3">
                                             <input 
                                                 type="password" 
-                                                className="form-control" 
+                                                className={`${Style.inputHome} form-control`} 
                                                 id="password"
-                                                placeholder="Sua senha"
+                                                placeholder="Insira a sua senha"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 required
                                                 disabled={loading}
                                             />
                                         </div>
-                                        <button type="submit" className="btn btn-primary w-100 py-2" disabled={loading}>
+                                        <button type="submit" className={`${Style.ButtonHome} btn w-100 py-2`} disabled={loading || !numEstudante.trim() || !password.trim()}>
                                             {loading ? (
                                                 <>
                                                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -110,7 +110,7 @@ function Home() {
                                                 "Entrar no Sistema"
                                             )}
                                         </button>
-                                        <p className="mt-3">Ainda não tens uma conta? <Link to="/cadastro">Cadastrar-se</Link></p>
+                                        <p className="mt-3 text-white">Ainda não tens uma conta? <Link to="/cadastro" className={Style.LinkHome}>Cadastrar-se</Link></p>
                                     </form>
                                 </div>
                             </div>

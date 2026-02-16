@@ -189,7 +189,7 @@ function ProfessorEdit() {
     const closeModalEdit = () => {
         setModalOpenEdit(false);
         setTimeout(() => setProfessorSelecionadoEdit({
-            foto: '',
+            fotoUrl: '',
             codigoprofessor: '',
             nomeprofessor: '',
             generoprofessor: '',
@@ -215,17 +215,49 @@ function ProfessorEdit() {
         }), 300);
     };
 
-    const EditarProfessor = (value) => {
+    const EditarProfessor = (e) => {
+        const { name, value } = e.target;
         setProfessorSelecionadoEdit((prevValue)=>({
             ...prevValue,
-            [value.target.name]: value.target.value
-        }))
-    }
+            [name]: value
+        }));
+    };
+
+    // Função específica para lidar com a foto
+    const handleFotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfessorSelecionadoEdit(prev => ({
+                    ...prev,
+                    fotoUrl: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Função específica para lidar com data de nascimento
+    const handleDataNascimentoChange = (e) => {
+        setProfessorSelecionadoEdit(prev => ({
+            ...prev,
+            datanascimentoprofessor: e.target.value
+        }));
+    };
+
+    // Função específica para lidar com data de admissão
+    const handleDataAdmissaoChange = (e) => {
+        setProfessorSelecionadoEdit(prev => ({
+            ...prev,
+            dataadmissaoprofessor: e.target.value
+        }));
+    };
 
     const AtualizarProfessor = () => {
-        console.log('Dados a serem enviados para atualização:', professorSelecionadoEdit.fotoprofessor, professorSelecionadoEdit.bipdfprofessor);
+        console.log('Dados a serem enviados para atualização:', professorSelecionadoEdit);
         Axios.put(`http://localhost:8080/put/atulizarprofessor/${professorSelecionadoEdit.idprofessor}`,{
-                fotoprofessor: professorSelecionadoEdit.fotoprofessor,
+                // fotoprofessor: professorSelecionadoEdit.fotoprofessor,
                 bipdfprofessor: professorSelecionadoEdit.bipdfprofessor,
                 codigoprofessor: professorSelecionadoEdit.codigoprofessor ,
                 nomeprofessor: professorSelecionadoEdit.nomeprofessor,
@@ -248,14 +280,26 @@ function ProfessorEdit() {
                 tipocontratoprofessor: professorSelecionadoEdit.tipocontratoprofessor,
                 tiposanguineoprofessor: professorSelecionadoEdit.tiposanguineoprofessor,
                 contactoemergenciaprofessor: professorSelecionadoEdit.contactoemergenciaprofessor,
-                foto: professorSelecionadoEdit.foto,
+                foto: professorSelecionadoEdit.fotoUrl,
                 curriculo: professorSelecionadoEdit.curriculo
-
         }).then((response)=>{
             showSuccessToast("Sucesso", "Professor atualizado com sucesso!");
+            
+            // Atualiza a lista de professores
+            const updatedProfessores = professores.map(prof => 
+                prof.idprofessor === professorSelecionadoEdit.idprofessor 
+                    ? { ...prof, ...professorSelecionadoEdit }
+                    : prof
+            );
+            setProfessores(updatedProfessores);
+            setProfessoresFiltrados(updatedProfessores);
+            
             closeModalEdit();
-        })
-    }
+        }).catch((error) => {
+            console.error('Erro ao atualizar professor:', error);
+            showErrorToast('Erro ao atualizar professor');
+        });
+    };
 
     const handleDelete = (disciplina) => {
         showConfirmToast(
@@ -724,7 +768,7 @@ function ProfessorEdit() {
                                                 <div className="text-center">
                                                     <div className="position-relative">
                                                         <img
-                                                            src={professorSelecionadoEdit.fotoUrl}
+                                                            src={professorSelecionadoEdit.fotoUrl || '/default-avatar.png'}
                                                             className="rounded-circle bg-light d-flex align-items-center justify-content-center border"
                                                             style={{ width: '120px', height: '120px', objectFit: 'cover' }}
                                                             alt={professorSelecionadoEdit.nomeprofessor}
@@ -742,8 +786,7 @@ function ProfessorEdit() {
                                                             id="foto"
                                                             name="foto"
                                                             accept="image/*"
-                                                            // value={professorSelecionadoEdit?.fotoUrl}
-                                                            onChange={EditarProfessor}
+                                                            onChange={handleFotoChange}
                                                         />
                                                     </div>
                                                     <div className="mt-2">
@@ -770,7 +813,7 @@ function ProfessorEdit() {
                                                                 className="form-control"
                                                                 id="nomeprofessor"
                                                                 name="nomeprofessor"
-                                                                value={professorSelecionadoEdit?.nomeprofessor}
+                                                                value={professorSelecionadoEdit?.nomeprofessor || ''}
                                                                 onChange={EditarProfessor}
                                                                 placeholder="Nome completo"
                                                             />
@@ -783,7 +826,7 @@ function ProfessorEdit() {
                                                                 className="form-select"
                                                                 id="generoprofessor"
                                                                 name="generoprofessor"
-                                                                value={professorSelecionadoEdit?.generoprofessor}
+                                                                value={professorSelecionadoEdit?.generoprofessor || ''}
                                                                 onChange={EditarProfessor}
                                                             >
                                                                 <option value="">Selecione</option>
@@ -801,7 +844,7 @@ function ProfessorEdit() {
                                                                 className="form-control"
                                                                 id="nacionalidadeprofessor"
                                                                 name="nacionalidadeprofessor"
-                                                                value={professorSelecionadoEdit?.nacionalidadeprofessor}
+                                                                value={professorSelecionadoEdit?.nacionalidadeprofessor || ''}
                                                                 onChange={EditarProfessor}
                                                                 placeholder="Nacionalidade"
                                                             />
@@ -827,7 +870,7 @@ function ProfessorEdit() {
                                                         className="form-select"
                                                         id="estadocivilprofessor"
                                                         name="estadocivilprofessor"
-                                                        value={professorSelecionadoEdit?.estadocivilprofessor}
+                                                        value={professorSelecionadoEdit?.estadocivilprofessor || ''}
                                                         onChange={EditarProfessor}
                                                     >
                                                         <option value="">Selecione</option>
@@ -847,7 +890,7 @@ function ProfessorEdit() {
                                                         className="form-control"
                                                         id="nomepaiprofessor"
                                                         name="nomepaiprofessor"
-                                                        value={professorSelecionadoEdit?.nomepaiprofessor}
+                                                        value={professorSelecionadoEdit?.nomepaiprofessor || ''}
                                                         onChange={EditarProfessor}
                                                         placeholder="Nome do pai"
                                                     />
@@ -861,7 +904,7 @@ function ProfessorEdit() {
                                                         className="form-control"
                                                         id="nomemaeprofessor"
                                                         name="nomemaeprofessor"
-                                                        value={professorSelecionadoEdit?.nomemaeprofessor}
+                                                        value={professorSelecionadoEdit?.nomemaeprofessor || ''}
                                                         onChange={EditarProfessor}
                                                         placeholder="Nome da mãe"
                                                     />
@@ -875,7 +918,7 @@ function ProfessorEdit() {
                                                         className="form-control"
                                                         id="nbiprofessor"
                                                         name="nbiprofessor"
-                                                        value={professorSelecionadoEdit?.nbiprofessor}
+                                                        value={professorSelecionadoEdit?.nbiprofessor || ''}
                                                         onChange={EditarProfessor}
                                                         placeholder="Número do BI"
                                                     />
@@ -883,14 +926,14 @@ function ProfessorEdit() {
                                             </div>
                                             <div className="col-md-3">
                                                 <div className="mb-2">
-                                                    <label htmlFor="datanascimento" className="form-label fw-bold">Data de Nascimento:</label>
+                                                    <label htmlFor="datanascimentoprofessor" className="form-label fw-bold">Data de Nascimento:</label>
                                                     <input
                                                         type="date"
                                                         className="form-control"
-                                                        id="datanascimento"
-                                                        name="datanascimento"
-                                                        value={professorSelecionadoEdit?.datanascimentoprofessor}
-                                                        onChange={EditarProfessor}
+                                                        id="datanascimentoprofessor"
+                                                        name="datanascimentoprofessor"
+                                                        value={professorSelecionadoEdit?.datanascimentoprofessor || ''}
+                                                        onChange={handleDataNascimentoChange}
                                                     />
                                                 </div>
                                             </div>
@@ -919,7 +962,6 @@ function ProfessorEdit() {
                                                                     id="curriculo"
                                                                     name="curriculo"
                                                                     accept=".pdf,.doc,.docx"
-                                                                    // value={professorSelecionadoEdit?.curriculoUrl}
                                                                     onChange={EditarProfessor}
                                                                 />
                                                                 <small className="text-muted">Faça upload de um novo documento para substituir</small>
@@ -933,6 +975,7 @@ function ProfessorEdit() {
                                                                 id="curriculo"
                                                                 name="curriculo"
                                                                 accept=".pdf,.doc,.docx"
+                                                                onChange={EditarProfessor}
                                                             />
                                                             <small className="text-muted">Nenhum documento anexado. Faça upload do BI ou CV.</small>
                                                         </div>
@@ -1050,14 +1093,14 @@ function ProfessorEdit() {
                                             </div>
                                             <div className="col-md-3">
                                                 <div className="mb-2">
-                                                    <label htmlFor="dataadmissao" className="form-label fw-bold">Data de Admissão</label>
+                                                    <label htmlFor="dataadmissaoprofessor" className="form-label fw-bold">Data de Admissão</label>
                                                     <input
                                                         type="date"
                                                         className="form-control"
-                                                        id="dataadmissao"
-                                                        name="dataadmissao"
+                                                        id="dataadmissaoprofessor"
+                                                        name="dataadmissaoprofessor"
                                                         value={professorSelecionadoEdit?.dataadmissaoprofessor || ''}
-                                                        onChange={EditarProfessor}
+                                                        onChange={handleDataAdmissaoChange}
                                                     />
                                                 </div>
                                             </div>
