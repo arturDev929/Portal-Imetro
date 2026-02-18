@@ -14,3 +14,49 @@
     color: var(--dourado);
     border: 1px solid var(--dourado);
 }
+.btnCancelar{
+    background-color: var(--branco);
+    color: var(--azul-escuro);
+    border: 1px solid var(--danger);
+}
+.btnCancelar:hover{
+    background-color: var(--danger);
+    color: var(--azul-escuro);
+}
+.btnEditar{
+    background-color: var(--branco);
+    color: var(--azul-metropolitano);
+    border: 1px solid var(--azul-metropolitano);
+}
+.btnEditar:hover{
+    background-color: var(--azul-metropolitano);
+    color: var(--branco);
+    border: 1px solid var(--azul-metropolitano);
+}
+.btnDeletar{
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    background-color: var(--branco);
+}
+.btnDeletar:hover{
+    background-color: var(--danger);
+    color: var(--branco);
+}
+.btnOutros{
+    border: 1px solid var(--azul-claro);
+    color: var(--azul-claro);
+    background-color: var(--branco);
+}
+.btnOutros:hover{
+    background-color: var(--azul-claro);
+    color: var(--branco);
+}
+.btnAdd{
+    border: 1px solid var(--sucess);
+    color: var(--sucess);
+    background-color: var(--branco);
+}
+.btnAdd:hover{
+    background-color: var(--sucess);
+    color: var(--branco);
+}

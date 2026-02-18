@@ -6,12 +6,14 @@ import {
     MdExpandMore, 
     MdExpandLess,
     MdRemoveCircleOutline,
-    MdSearch 
+    MdSearch,
+    MdAdd 
 } from "react-icons/md";
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
+import Style from "./DepartamentosEdit.module.css"
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 const API_TIMEOUT = 5000;
@@ -30,6 +32,13 @@ function CursosEdit() {
     });
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     
+    // Novo estado para controle do modal de adicionar
+    const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
+    const [dadosNovoCurso, setDadosNovoCurso] = useState({
+        curso: '',
+        idcategoriacurso: ''
+    });
+    
     // Estados para anos curriculares
     const [anosCurriculares, setAnosCurriculares] = useState([]);
     const [loadingAnos, setLoadingAnos] = useState(false);
@@ -45,7 +54,6 @@ function CursosEdit() {
 
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
-    // Configuração do axios
     const apiClient = useMemo(() => {
         const client = axios.create({
             baseURL: API_BASE_URL,
@@ -73,7 +81,6 @@ function CursosEdit() {
         return client;
     }, []);
 
-    // Fetch cursos
     const fetchCursos = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -96,7 +103,6 @@ function CursosEdit() {
         }
     }, [apiClient]);
 
-    // Fetch departamentos
     const fetchDepartamentos = useCallback(async () => {
         try {
             const response = await apiClient.get('/get/categoriaCurso');
@@ -107,7 +113,6 @@ function CursosEdit() {
         }
     }, [apiClient]);
 
-    // Função de pesquisa
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -123,13 +128,11 @@ function CursosEdit() {
         }
     }, [lista]);
 
-    // Limpar pesquisa
     const limparPesquisa = useCallback(() => {
         setTermoPesquisa('');
         setListaFiltrada(lista);
     }, [lista]);
 
-    // Atualiza lista filtrada quando a lista original muda
     useEffect(() => {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
@@ -142,7 +145,6 @@ function CursosEdit() {
         }
     }, [lista, termoPesquisa]);
 
-    // ✅ Fetch anos curriculares
     const fetchAnosCurriculares = useCallback(async (idCurso) => {
         if (!idCurso) {
             console.log('ID do curso não fornecido');
@@ -172,7 +174,6 @@ function CursosEdit() {
         }
     }, [apiClient]);
 
-    // ✅ Fetch disciplinas por curso
     const fetchDisciplinasPorCurso = useCallback(async (idCurso, nomeCurso) => {
         if (!idCurso) {
             console.log('ID do curso não fornecido');
@@ -208,7 +209,6 @@ function CursosEdit() {
         }
     }, [apiClient]);
 
-    // ✅ Função para remover disciplina do curso
     const removerDisciplinaDoCurso = useCallback(async (idsemestre, disciplinaNome) => {
         showConfirmToast(
             `Tem certeza que deseja remover a disciplina "${disciplinaNome}" deste curso?`,
@@ -240,7 +240,6 @@ function CursosEdit() {
         );
     }, [apiClient, cursoSelecionadoId, cursoSelecionado, fetchDisciplinasPorCurso, showConfirmToast]);
 
-    // ✅ Deletar ano curricular
     const deletarAnoCurricular = useCallback(async (idanocurricular, anocurricular) => {
         showConfirmToast(
             `Tem certeza que deseja excluir o ano curricular "${anocurricular}"? Esta ação não pode ser desfeita.`,
@@ -262,6 +261,50 @@ function CursosEdit() {
         );
     }, [apiClient, dadosEdicao.idcurso, fetchAnosCurriculares, showConfirmToast]);
 
+    // ✅ Função para adicionar novo curso
+    const adicionarCurso = useCallback(async (e) => {
+        e?.preventDefault();
+        
+        const nome = dadosNovoCurso.curso?.trim();
+        const departamentoId = dadosNovoCurso.idcategoriacurso;
+        
+        if (!nome) {
+            showErrorToast("Validação", "Preencha o nome da licenciatura");
+            return;
+        }
+        
+        if (!departamentoId) {
+            showErrorToast("Validação", "Selecione um departamento");
+            return;
+        }
+
+        setSalvando(true);
+        try {
+            const response = await apiClient.post('/post/registrarcurso', {
+                curso: nome,
+                idcategoriacurso: departamentoId
+            });
+
+            const deptSelecionado = departamentos.find(d => d.idcategoriacurso === departamentoId);
+            
+            showSuccessToast(
+                "Sucesso",
+                response.data.message || "Licenciatura adicionada com sucesso",
+                { 
+                    "Nome": nome,
+                    "Departamento": deptSelecionado?.categoriacurso
+                }
+            );
+            
+            await fetchCursos(false);
+            fecharModalAdicionar();
+        } catch (error) {
+            console.error("Erro ao adicionar licenciatura:", error);
+        } finally {
+            setSalvando(false);
+        }
+    }, [dadosNovoCurso, apiClient, fetchCursos, departamentos]);
+
     // Função para alternar expansão de ano
     const toggleAnoExpandido = useCallback((ano) => {
         setAnoExpandido(prev => ({
@@ -269,6 +312,25 @@ function CursosEdit() {
             [ano]: !prev[ano]
         }));
     }, []);
+
+    // Funções para abrir/fechar modal de adicionar
+    const abrirModalAdicionar = useCallback(() => {
+        setDadosNovoCurso({
+            curso: '',
+            idcategoriacurso: ''
+        });
+        setModalAdicionarAberto(true);
+    }, []);
+
+    const fecharModalAdicionar = useCallback(() => {
+        if (!salvando) {
+            setModalAdicionarAberto(false);
+            setDadosNovoCurso({
+                curso: '',
+                idcategoriacurso: ''
+            });
+        }
+    }, [salvando]);
 
     // Carrega dados na montagem
     useEffect(() => {
@@ -350,6 +412,11 @@ function CursosEdit() {
         setDadosEdicao(prev => ({ ...prev, [name]: value }));
     }, []);
 
+    const handleNovoCursoInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setDadosNovoCurso(prev => ({ ...prev, [name]: value }));
+    }, []);
+
     // ✅ DELETAR CURSO
     const deletarCurso = useCallback(async (id, nome) => {
         showConfirmToast(
@@ -384,7 +451,7 @@ function CursosEdit() {
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="h4 mb-0 text-primary">
+                    <h2 className="h4 mb-0" style={{color:'var(--azul-escuro)'}}>
                         <IoMdSchool className="me-2 mb-2"/>
                         Licenciaturas
                     </h2>
@@ -395,17 +462,26 @@ function CursosEdit() {
                             </small>
                         )}
                         <button 
-                            className="btn btn-outline-primary btn-sm"
+                            className={`btn btn-sm ${Style.AtulizarDepartamento}`}
                             onClick={() => fetchCursos(true)}
                             disabled={loading || isConfirming}
                             title="Atualizar lista"
                         >
                             <MdRefresh />
                         </button>
+                        <button
+                            className={`btn btn-sm ${Style.btnSubmit}`}
+                            onClick={abrirModalAdicionar}
+                            disabled={loading || salvando || isConfirming}
+                            title="Adicionar nova licenciatura"
+                            >
+                            <MdAdd className="me-1" />
+                                Nova Licenciatura
+                        </button>
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
+                {/* BARRA DE PESQUISA E BOTÃO ADICIONAR */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -413,7 +489,7 @@ function CursosEdit() {
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="position-relative flex-grow-1">
                                         <div className="input-group">
-                                            <span className="input-group-text bg-white border-end-0">
+                                            <span className="input-group-text border-end-0" style={{backgroundColor:'var(--cinza-claro)'}}>
                                                 <MdSearch className="text-muted" size={20} />
                                             </span>
                                             <input
@@ -425,16 +501,22 @@ function CursosEdit() {
                                                 disabled={loading}
                                                 style={{ 
                                                     borderLeft: 'none',
-                                                    boxShadow: 'none'
+                                                    boxShadow: 'none',
+                                                    backgroundColor: 'var(--cinza-claro)',
+                                                    padding:'10px'
                                                 }}
                                             />
                                             {termoPesquisa && (
                                                 <button 
-                                                    className="btn btn-outline-secondary border-start-0" 
+                                                    className="btn border-start-0" 
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{ borderLeft: 'none' }}
+                                                    style={{ 
+                                                        borderLeft: 'none',
+                                                        backgroundColor: 'var(--danger)',
+                                                        color:'var(--branco)'
+                                                    }}
                                                 >
                                                     ✕
                                                 </button>
@@ -458,7 +540,7 @@ function CursosEdit() {
 
                 <div className="table-responsive">
                     <table className="table table-hover table-striped border">
-                        <thead className="table-primary">
+                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
                             <tr>
                                 <th className="col-5">Nome da Licenciatura</th>
                                 <th className="col-4">Departamento</th>
@@ -504,12 +586,12 @@ function CursosEdit() {
                             ) : (
                                 listaFiltrada.map((item) => (
                                     <tr key={item.idcurso}>
-                                        <td className="align-middle fw-semibold"><IoMdSchool className="me-2 mb-2 text-primary"/>{item.curso}</td>
-                                        <td className="align-middle">{item.categoriacurso}</td>
+                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}><IoMdSchool className="me-2 mb-2"/>{item.curso}</td>
+                                        <td className="align-middle" style={{color:'var(--azul-escuro)'}}>{item.categoriacurso}</td>
                                         
                                         <td className="text-center">
                                             <button 
-                                                className="btn btn-sm btn-outline-info"
+                                                className={`btn btn-sm ${Style.btnOutros}`}
                                                 onClick={() => fetchDisciplinasPorCurso(item.idcurso, item.curso)}
                                                 disabled={loading || loadingDisciplinas || isConfirming}
                                                 title={`Ver disciplinas de ${item.curso}`}
@@ -519,7 +601,7 @@ function CursosEdit() {
                                         </td> 
                                         <td className="text-center">
                                             <button 
-                                                className="btn btn-sm btn-outline-primary"
+                                                className={`btn btn-sm ${Style.btnEditar}`}
                                                 onClick={() => toggleModal(true, item)}
                                                 disabled={loading || salvando || isConfirming}
                                                 title={`Editar ${item.curso}`}
@@ -529,7 +611,7 @@ function CursosEdit() {
                                         </td>
                                         <td className="text-center">
                                             <button 
-                                                className="btn btn-sm btn-outline-danger"
+                                                className={`btn btn-sm ${Style.btnDeletar}`}
                                                 onClick={() => deletarCurso(item.idcurso, item.curso)}
                                                 disabled={loading || salvando || isConfirming}
                                                 title={`Excluir ${item.curso}`}
@@ -545,14 +627,99 @@ function CursosEdit() {
                 </div>
             </div>
 
+            {/* Modal de Adicionar Nova Licenciatura */}
+            {modalAdicionarAberto && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                    <div className="modal-dialog modal-dialog-centered modal-lg">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
+                                <h5 className="modal-title mb-0">
+                                    <MdAdd className="me-2 mb-1"/>
+                                    Adicionar Nova Licenciatura
+                                </h5>
+                                <button 
+                                    type="button" 
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalAdicionar}
+                                    disabled={salvando || isConfirming}
+                                />
+                            </div>
+                            <form onSubmit={adicionarCurso}>
+                                <div className="modal-body">
+                                    <div className="row">
+                                        <div className="col-md-6 mb-3">
+                                            <input 
+                                                type="text" 
+                                                className="form-control form-control-lg shadow-sm"
+                                                id="novoCurso"
+                                                name="curso"
+                                                value={dadosNovoCurso.curso}
+                                                onChange={handleNovoCursoInputChange}
+                                                placeholder="Digite o nome da licenciatura"
+                                                autoFocus
+                                                disabled={salvando || isConfirming}
+                                                maxLength={100}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <select 
+                                                className="form-select form-control-lg shadow-sm"
+                                                id="novoDepartamento"
+                                                name="idcategoriacurso"
+                                                value={dadosNovoCurso.idcategoriacurso}
+                                                onChange={handleNovoCursoInputChange}
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            >
+                                                <option value="">Selecione um departamento...</option>
+                                                {departamentos.map((dept) => (
+                                                    <option key={dept.idcategoriacurso} value={dept.idcategoriacurso}>
+                                                        {dept.categoriacurso}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button 
+                                        type="button" 
+                                        className={`btn ${Style.btnCancelar}`}
+                                        onClick={fecharModalAdicionar}
+                                        disabled={salvando || isConfirming}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className={`btn ${Style.btnSubmit}`}
+                                        disabled={salvando || isConfirming || !dadosNovoCurso.curso.trim() || !dadosNovoCurso.idcategoriacurso}
+                                    >
+                                        {salvando ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Adicionando...
+                                            </>
+                                        ) : (
+                                            'Adicionar Licenciatura'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal de Edição */}
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header bg-gradient bg-primary text-white">
+                            <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
                                 <h5 className="modal-title mb-0">
-                                    <i className="bi bi-pencil-square me-2"></i>
+                                    <MdEdit className="me-2 mb-1"/>
                                     Editar a Licenciatura em - {dadosEdicao.curso}
                                 </h5>
                                 <button 
@@ -569,6 +736,7 @@ function CursosEdit() {
                                             <input 
                                                 type="text" 
                                                 className="form-control form-control-lg shadow-sm"
+                                                id="editarCurso"
                                                 name="curso"
                                                 value={dadosEdicao.curso}
                                                 onChange={handleInputChange}
@@ -582,6 +750,7 @@ function CursosEdit() {
                                         <div className="col-md-6 mb-3">
                                             <select 
                                                 className="form-select form-control-lg shadow-sm"
+                                                id="editarDepartamento"
                                                 name="idcategoriacurso"
                                                 value={dadosEdicao.idcategoriacurso}
                                                 onChange={handleInputChange}
@@ -600,6 +769,10 @@ function CursosEdit() {
 
                                     {/* Seção de Anos Curriculares */}
                                     <div className="border-top pt-3 mt-3">
+                                        <h6 className={`mb-3`} style={{color:'var(--azul-escuro)'}}>
+                                            <FaCalendarAlt className="me-2 mb-1" />
+                                            Anos Curriculares
+                                        </h6>
 
                                         {loadingAnos ? (
                                             <div className="text-center py-3">
@@ -627,12 +800,12 @@ function CursosEdit() {
                                                             </div>
                                                             <button 
                                                                 type="button"
-                                                                className="btn btn-sm btn-outline-danger"
+                                                                className={`btn ${Style.btnDeletar}`}
                                                                 onClick={() => deletarAnoCurricular(ano.idanocurricular, ano.anocurricular)}
                                                                 disabled={salvando || isConfirming}
                                                                 title="Excluir ano curricular"
                                                             >
-                                                                X
+                                                                <MdDeleteForever/>
                                                             </button>
                                                         </div>
                                                     ))}
@@ -644,7 +817,7 @@ function CursosEdit() {
                                 <div className="modal-footer border-0">
                                     <button 
                                         type="button" 
-                                        className="btn btn-outline-secondary"
+                                        className={`btn ${Style.btnCancelar}`}
                                         onClick={() => toggleModal(false)}
                                         disabled={salvando || isConfirming}
                                     >
@@ -652,7 +825,7 @@ function CursosEdit() {
                                     </button>
                                     <button 
                                         type="submit" 
-                                        className="btn btn-primary px-4"
+                                        className={`btn ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !dadosEdicao.curso.trim() || !dadosEdicao.idcategoriacurso}
                                     >
                                         {salvando ? (
@@ -676,7 +849,7 @@ function CursosEdit() {
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header bg-gradient bg-info text-white">
+                            <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
                                 <h5 className="modal-title mb-0">
                                     <i className="bi bi-journal-bookmark me-2"></i>
                                     Disciplinas da Licenciatura - {cursoSelecionado || 'Curso'}
@@ -707,7 +880,7 @@ function CursosEdit() {
                                         <div className="row mb-4">
                                             <div className="col-md-12">
                                                 <div className="card bg-light border-0">
-                                                    <div className="card-body">
+                                                    <div className="card-body" style={{color:'var(--azul-escuro)'}}>
                                                         <h6 className="card-title">
                                                             Informações do Curso
                                                         </h6>
@@ -720,7 +893,7 @@ function CursosEdit() {
                                                             </li>
                                                             <li>
                                                                 <strong>Total de Disciplinas:</strong> 
-                                                                <span className="badge bg-primary ms-2">
+                                                                <span className="badge ms-2" style={{background:'var(--azul-escuro)',color:'var(--dourado)'}}>
                                                                     {disciplinasCurso.totalDisciplinas}
                                                                 </span>
                                                             </li>
@@ -732,32 +905,33 @@ function CursosEdit() {
 
                                         {/* Lista de disciplinas por ano e semestre */}
                                         {Object.keys(disciplinasCurso.disciplinas || {}).length === 0 ? (
-                                            <div className="alert alert-warning text-center py-4">
+                                            <div className="alert text-center py-4" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
                                                 <i className="bi bi-exclamation-triangle display-4 d-block mb-3 text-warning"></i>
                                                 <h5 className="alert-heading">Nenhuma disciplina encontrada</h5>
-                                                <p>Este Licenciatura ainda não possui disciplinas cadastradas.</p>
+                                                <p>Esta Licenciatura ainda não possui disciplinas cadastradas.</p>
                                             </div>
                                         ) : (
                                             <div className="disciplinas-container" style={{
                                                 maxHeight: '60vh',
                                                 overflowY: 'auto',
-                                                paddingRight: '10px'
+                                                paddingRight: '10px',
+                                                backgroundColor:'var(--cinza-claro)',
                                             }}>
                                                 {Object.entries(disciplinasCurso.disciplinas || {}).map(([ano, semestres]) => (
                                                     <div key={ano} className="mb-4">
                                                         {/* Cabeçalho do Ano */}
                                                         <div 
-                                                            className="card card-header bg-primary text-white mb-2"
+                                                            className="card card-header text-white mb-2"
                                                             onClick={() => toggleAnoExpandido(ano)}
-                                                            style={{ cursor: 'pointer' }}
+                                                            style={{ cursor: 'pointer', backgroundColor:'var(--azul-escuro)'}}
                                                         >
                                                             <div className="d-flex justify-content-between align-items-center">
-                                                                <div className="d-flex align-items-center">
+                                                                <div className="d-flex align-items-center" style={{color:'var(--dourado)'}}>
                                                                     <FaCalendarAlt className="me-2" />
                                                                     <h5 className="mb-0">{ano}</h5>
                                                                 </div>
                                                                 <div className="d-flex align-items-center">
-                                                                    <span className="badge bg-light text-primary me-3">
+                                                                    <span className="badge me-3" style={{color:'var(--dourado)',backgroundColor:'var(--cinza-claro)'}}>
                                                                         {Object.keys(semestres).length} semestre(s)
                                                                     </span>
                                                                     {anoExpandido[ano] ? <MdExpandLess size={24} /> : <MdExpandMore size={24} />}
@@ -770,14 +944,14 @@ function CursosEdit() {
                                                             <div className="row">
                                                                 {Object.entries(semestres).map(([semestre, disciplinas]) => (
                                                                     <div key={semestre} className="col-12 col-md-6 mb-3">
-                                                                        <div className="card h-100 border border-primary">
+                                                                        <div className="card h-100"  style={{border:'1px solid var(--azul-escuro)'}}>
                                                                             <div className="card-header bg-light border-bottom">
                                                                                 <div className="d-flex justify-content-between align-items-center">
-                                                                                    <h6 className="mb-0 text-primary">
-                                                                                        <FaLayerGroup className="me-2" />
+                                                                                    <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>
+                                                                                        <FaLayerGroup className="me-2 mb-1" />
                                                                                         {semestre}
                                                                                     </h6>
-                                                                                    <span className="badge bg-primary">
+                                                                                    <span className="badge" style={{color:'var(--dourado)',backgroundColor:'var(--azul-metropolitano)'}}>
                                                                                         {disciplinas.length} disciplina(s)
                                                                                     </span>
                                                                                 </div>
@@ -789,7 +963,7 @@ function CursosEdit() {
                                                                                             key={disciplina.id} 
                                                                                             className="list-group-item border-0 py-2 px-3 d-flex justify-content-between align-items-center"
                                                                                             style={{ 
-                                                                                                backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white' 
+                                                                                                backgroundColor: index % 2 === 0 ? 'var(--branco)' : 'var(--cinza-claro)' 
                                                                                             }}
                                                                                         >
                                                                                             <div className="d-flex align-items-center">
@@ -798,7 +972,7 @@ function CursosEdit() {
                                                                                             </div>
                                                                                             <button 
                                                                                                 type="button"
-                                                                                                className="btn btn-sm btn-outline-danger"
+                                                                                                className={`btn btn-sm ${Style.btnDeletar}`}
                                                                                                 onClick={() => removerDisciplinaDoCurso(disciplina.idsemestre, disciplina.nome)}
                                                                                                 disabled={removendoDisciplina === disciplina.idsemestre || isConfirming}
                                                                                                 title={`Remover ${disciplina.nome} do curso`}
@@ -824,7 +998,7 @@ function CursosEdit() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="alert alert-danger text-center py-4">
+                                    <div className="text-center py-4" style={{backgroundColor:'var(--danger)',color:'var(--azul-escuro)'}}>
                                         <i className="bi bi-exclamation-octagon display-4 d-block mb-3"></i>
                                         <h5 className="alert-heading">Erro ao carregar dados</h5>
                                         <p>Não foi possível carregar as disciplinas a Licenciatura.</p>
@@ -834,7 +1008,7 @@ function CursosEdit() {
                             <div className="modal-footer border-top">
                                 <button 
                                     type="button" 
-                                    className="btn btn-secondary"
+                                    className={`btn ${Style.btnCancelar}`}
                                     onClick={() => {
                                         setModalDisciplinasAberto(false);
                                         setDisciplinasCurso(null);

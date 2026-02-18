@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { useState, useCallback } from "react";
+import Style from "./CustomToast.module.css"
 
 export const showSuccessToast = (titulo, mensagem, dadosAdicionais = null) => {
     toast.success(
@@ -26,12 +27,14 @@ export const showSuccessToast = (titulo, mensagem, dadosAdicionais = null) => {
             closeOnClick: false,
             draggable: true,
             pauseOnHover: true,
-            className: 'bg-success border-0 text-white',
+            // className: 'bg-success border-0 text-white',
             bodyClassName: 'p-0',
             progressClassName: 'bg-white',
             style: {
                 borderRadius: '10px',
                 border: 'none',
+                color: 'var(--azul-escuro)',
+                backgroundColor: 'var(--sucess)'
             }
         }
     );
@@ -53,12 +56,14 @@ export const showErrorToast = (titulo, mensagem) => {
             closeOnClick: false,
             draggable: true,
             pauseOnHover: true,
-            className: 'bg-danger border-0 text-white',
+            // className: 'bg-danger border-0 text-white',
             bodyClassName: 'p-0',
             progressClassName: 'bg-white',
             style: {
                 borderRadius: '10px',
-                border: 'none'
+                border: 'none',
+                color: 'var(--azul-escuro)',
+                backgroundColor: 'var(--danger)'
             }
         }
     );
@@ -98,12 +103,12 @@ export const useConfirmToast = () => {
         const toastId = toast(
             <div className="text-dark">
                 <div className="mb-3">
-                    <h5 className="mb-2 fw-bold text-primary">{titulo}</h5>
+                    <h5 className="mb-2 fw-bold" style={{color:'var(--azul-escuro)'}}>{titulo}</h5>
                     <p className="mb-0">{message}</p>
                 </div>
                 <div className="d-flex gap-2 justify-content-end">
                     <button 
-                        className="btn btn-sm btn-outline-secondary"
+                        className={`btn btn-sm ${Style.btnCancelar}`}
                         onClick={() => {
                             if (onCancel) onCancel();
                             toast.dismiss(toastId);
@@ -112,7 +117,7 @@ export const useConfirmToast = () => {
                         Cancelar
                     </button>
                     <button 
-                        className="btn btn-sm btn-danger"
+                        className={`btn ${Style.btnSubmit}`}
                         onClick={async () => {
                             setIsConfirming(true);
                             try {
@@ -130,7 +135,7 @@ export const useConfirmToast = () => {
             </div>,
             {
                 position: "top-center",
-                autoClose: false,
+                autoClose: true,
                 closeOnClick: false,
                 draggable: false,
                 closeButton: false,

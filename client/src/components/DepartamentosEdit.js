@@ -217,7 +217,6 @@ function Departamento() {
     const salvarNovoDepartamento = useCallback(async (e) => {
         e?.preventDefault();
         
-        // Validação
         const nome = novoDepartamento?.trim();
         if (!nome) {
             showErrorToast("Validação", "Preencha o nome do departamento");
@@ -231,24 +230,22 @@ function Departamento() {
                 idAdm: user.id
             });
 
-            // Usa a mensagem do backend
             showSuccessToast(
                 "Sucesso",
                 response.data.message || "Departamento adicionado com sucesso",
                 { "Nome": response.data.categoriacurso || nome }
             );
-            
-            // Adiciona o novo departamento à lista local
+
             if (response.data.departamento) {
                 adicionarItemLocal(response.data.departamento);
             } else {
-                // Se o backend não retornar o objeto completo, busca novamente
+                
                 fetchData(false);
             }
             
             fecharModalAdicionar();
         } catch (error) {
-            // A mensagem de erro já foi tratada no interceptor
+            
             console.error("Erro ao adicionar:", error);
         } finally {
             setSalvando(false);
@@ -273,7 +270,7 @@ function Departamento() {
                     
                     const response = await apiClient.delete(`/delete/categoriaCurso/${id}`);
                     
-                    // Usa a mensagem do backend
+                    
                     showSuccessToast(
                         "Sucesso",
                         response.data.message || "Departamento excluído",
@@ -281,7 +278,7 @@ function Departamento() {
                     
                     removerItemLocal(id);
                 } catch (error) {
-                    // A mensagem de erro já foi tratada no interceptor
+                    
                     console.error("Erro ao deletar:", error);
                 }
             },
@@ -319,7 +316,7 @@ function Departamento() {
                             <MdRefresh />
                         </button>
                         <button 
-                            className="btn btn-sm btn-success"
+                            className={`btn btn-sm ${Style.btnSubmit}`}
                             onClick={abrirModalAdicionar}
                             disabled={loading || salvando || isConfirming}
                             title="Adicionar novo departamento"
@@ -437,10 +434,10 @@ function Departamento() {
                             ) : (
                                 listaFiltrada.map((item) => (
                                     <tr key={item.idcategoriacurso}>
-                                        <td className="align-middle fw-semibold"><IoMdBusiness className="me-2 mb-2 text-primary" />{item.categoriacurso}</td>
+                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}><IoMdBusiness className="me-2 mb-2" />{item.categoriacurso}</td>
                                         <td className="text-center">
                                             <button 
-                                                className="btn btn-sm btn-outline-primary"
+                                                className={`btn btn-sm ${Style.btnEditar}`}
                                                 onClick={() => toggleModal(true, item)}
                                                 disabled={loading || salvando || isConfirming}
                                                 title={`Editar ${item.categoriacurso}`}
@@ -450,7 +447,7 @@ function Departamento() {
                                         </td>
                                         <td className="text-center">
                                             <button 
-                                                className="btn btn-sm btn-outline-danger"
+                                                className={`btn btn-sm ${Style.btnDeletar}`}
                                                 onClick={() => deletarDepartamento(item.idcategoriacurso, item.categoriacurso)}
                                                 disabled={loading || salvando || isConfirming}
                                                 title={`Excluir ${item.categoriacurso}`}
@@ -471,9 +468,9 @@ function Departamento() {
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header bg-gradient bg-primary text-white">
+                            <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
                                 <h5 className="modal-title mb-0">
-                                    <i className="bi bi-pencil-square me-2"></i>
+                                    <MdEdit className="me-2 mb-1"/>
                                     Editar Departamento
                                 </h5>
                                 <button 
@@ -486,10 +483,6 @@ function Departamento() {
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body">
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold">
-                                            <i className="bi bi-building me-1 text-primary"></i>
-                                            Nome do Departamento
-                                        </label>
                                         <input 
                                             type="text" 
                                             className="form-control form-control-lg shadow-sm"
@@ -507,7 +500,7 @@ function Departamento() {
                                 <div className="modal-footer border-0">
                                     <button 
                                         type="button" 
-                                        className="btn btn-outline-secondary"
+                                        className={`btn ${Style.btnCancelar}`}
                                         onClick={() => toggleModal(false)}
                                         disabled={salvando || isConfirming}
                                     >
@@ -515,7 +508,7 @@ function Departamento() {
                                     </button>
                                     <button 
                                         type="submit" 
-                                        className="btn btn-primary px-4"
+                                        className={`btn px-4 ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !dadosEdicao.categoriacurso.trim()}
                                     >
                                         {salvando ? (
@@ -564,19 +557,13 @@ function Departamento() {
                                             disabled={salvando || isConfirming}
                                             maxLength={100}
                                             required
-                                            style={{
-                                                backgroundColor:'var(--cinza-claro)',
-                                                color: 'var(--dourado)',
-                                                border: 'none',
-                                                padding: '10px'
-                                            }}
                                         />
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
                                     <button 
                                         type="button" 
-                                        className="btn btn-outline-secondary"
+                                        className={`btn ${Style.btnCancelar}`}
                                         onClick={fecharModalAdicionar}
                                         disabled={salvando || isConfirming}
                                     >
