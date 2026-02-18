@@ -31,19 +31,13 @@ function CursosEdit() {
         idcategoriacurso: ''
     });
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
-    
-    // Novo estado para controle do modal de adicionar
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [dadosNovoCurso, setDadosNovoCurso] = useState({
         curso: '',
         idcategoriacurso: ''
     });
-    
-    // Estados para anos curriculares
     const [anosCurriculares, setAnosCurriculares] = useState([]);
     const [loadingAnos, setLoadingAnos] = useState(false);
-
-    // Novos estados para o modal de disciplinas
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
     const [disciplinasCurso, setDisciplinasCurso] = useState(null);
     const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
@@ -217,11 +211,11 @@ function CursosEdit() {
                     setRemovendoDisciplina(idsemestre);
                     showInfoToast("Processando", `Removendo disciplina "${disciplinaNome}"...`);
 
-                    const response = await apiClient.delete(`/delete/disciplinaSemestre/${idsemestre}`);
+                    await apiClient.delete(`/delete/disciplinaSemestre/${idsemestre}`);
                     
                     showSuccessToast(
                         "Sucesso",
-                        response.data.message || "Disciplina removida do curso com sucesso",
+                        "Disciplina removida do curso com sucesso",
                         { "Disciplina": disciplinaNome }
                     );
 
@@ -261,7 +255,24 @@ function CursosEdit() {
         );
     }, [apiClient, dadosEdicao.idcurso, fetchAnosCurriculares, showConfirmToast]);
 
-    // ✅ Função para adicionar novo curso
+    const fecharModalAdicionar = useCallback(() => {
+        if (!salvando) {
+            setModalAdicionarAberto(false);
+            setDadosNovoCurso({
+                curso: '',
+                idcategoriacurso: ''
+            });
+        }
+    }, [salvando]);
+
+    const abrirModalAdicionar = useCallback(() => {
+        setDadosNovoCurso({
+            curso: '',
+            idcategoriacurso: ''
+        });
+        setModalAdicionarAberto(true);
+    }, []);
+
     const adicionarCurso = useCallback(async (e) => {
         e?.preventDefault();
         
@@ -280,7 +291,7 @@ function CursosEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.post('/post/registrarcurso', {
+            await apiClient.post('/post/registrarcurso', {
                 curso: nome,
                 idcategoriacurso: departamentoId
             });
@@ -289,7 +300,7 @@ function CursosEdit() {
             
             showSuccessToast(
                 "Sucesso",
-                response.data.message || "Licenciatura adicionada com sucesso",
+                "Licenciatura adicionada com sucesso",
                 { 
                     "Nome": nome,
                     "Departamento": deptSelecionado?.categoriacurso
@@ -303,9 +314,8 @@ function CursosEdit() {
         } finally {
             setSalvando(false);
         }
-    }, [dadosNovoCurso, apiClient, fetchCursos, departamentos]);
+    }, [dadosNovoCurso, apiClient, fetchCursos, departamentos, fecharModalAdicionar]);
 
-    // Função para alternar expansão de ano
     const toggleAnoExpandido = useCallback((ano) => {
         setAnoExpandido(prev => ({
             ...prev,
@@ -313,26 +323,6 @@ function CursosEdit() {
         }));
     }, []);
 
-    // Funções para abrir/fechar modal de adicionar
-    const abrirModalAdicionar = useCallback(() => {
-        setDadosNovoCurso({
-            curso: '',
-            idcategoriacurso: ''
-        });
-        setModalAdicionarAberto(true);
-    }, []);
-
-    const fecharModalAdicionar = useCallback(() => {
-        if (!salvando) {
-            setModalAdicionarAberto(false);
-            setDadosNovoCurso({
-                curso: '',
-                idcategoriacurso: ''
-            });
-        }
-    }, [salvando]);
-
-    // Carrega dados na montagem
     useEffect(() => {
         fetchCursos(false);
         fetchDepartamentos();
@@ -363,7 +353,6 @@ function CursosEdit() {
         }
     }, [abrirModalEditar, fecharModal]);
 
-    // ✅ SALVAR COM RECARREGAMENTO AUTOMÁTICO
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
         
@@ -417,7 +406,6 @@ function CursosEdit() {
         setDadosNovoCurso(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // ✅ DELETAR CURSO
     const deletarCurso = useCallback(async (id, nome) => {
         showConfirmToast(
             `Tem certeza que deseja excluir o curso "${nome}"? Esta ação também excluirá todos os anos curriculares associados e não pode ser desfeita.`,
@@ -442,7 +430,6 @@ function CursosEdit() {
         );
     }, [apiClient, fetchCursos, showConfirmToast]);
 
-    // States derivados
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcurso !== '';
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';

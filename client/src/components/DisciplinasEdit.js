@@ -8,7 +8,6 @@ import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
 import Style from "./DepartamentosEdit.module.css"
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-const API_TIMEOUT = 5000;
 
 function DisciplinaEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
@@ -27,21 +26,24 @@ function DisciplinaEdit() {
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
-    
-    // Estado para o modal de adicionar
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [dadosNovaDisciplina, setDadosNovaDisciplina] = useState({
         disciplina: ''
     });
-    const [user, setUser] = useState()
+    const [user, setUser] = useState(null);
+    const { showConfirmToast, isConfirming } = useConfirmToast();
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
+            try {
+                setUser(JSON.parse(usuarioSalvo));
+            } catch (error) {
+                console.error("Erro ao parsear usuário:", error);
+                setUser(null);
+            }
         }
     }, []);
-    const { showConfirmToast, isConfirming } = useConfirmToast();
-
+    
     const fetchDisciplinas = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -69,7 +71,6 @@ function DisciplinaEdit() {
         fetchDisciplinas(false);
     }, [fetchDisciplinas]);
 
-    // Função de pesquisa
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -84,13 +85,11 @@ function DisciplinaEdit() {
         }
     }, [listaDisciplina]);
 
-    // Limpar pesquisa
     const limparPesquisa = useCallback(() => {
         setTermoPesquisa('');
         setListaFiltrada(listaDisciplina);
     }, [listaDisciplina]);
 
-    // Atualiza lista filtrada quando a lista original muda
     useEffect(() => {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(listaDisciplina);
@@ -132,7 +131,7 @@ function DisciplinaEdit() {
         Axios.put(`${API_BASE_URL}/put/disciplina/${Editar.iddisciplina}`, {
             disciplina: Editar.disciplina,
             iddisciplina: Editar.iddisciplina
-        }).then((response) => {
+        }).then(() => {
             showSuccessToast(
                 "Sucesso",
                 `${Editar.disciplina} foi atualizado com sucesso!`
@@ -142,7 +141,7 @@ function DisciplinaEdit() {
             );
             setListaDisciplina(updateList);
             closeModal();
-        }).catch((error) => {
+        }).catch(() => {
             showErrorToast("Erro", "Erro ao atualizar a disciplina");
         }).finally(() => {
             setSalvando(false);
@@ -209,13 +208,12 @@ function DisciplinaEdit() {
             })
     }
 
-    // Função para vincular professor
     const vincularProfessor = (professorId) => {
         Axios.post(`${API_BASE_URL}/post/vincularProfessor`, {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
         })
-        .then((response) => {
+        .then(() => {
             showSuccessToast("Sucesso", "Professor vinculado com sucesso!");
             
             const professorParaVincular = professoresDisponiveis.find(p => p.idprofessor === professorId);
@@ -228,7 +226,7 @@ function DisciplinaEdit() {
                 disciplina: professor.disciplina
             }]);
         })
-        .catch((error) => {
+        .catch(() => {
             showErrorToast("Erro", "Não foi possível vincular o professor");
         });
     };
@@ -243,10 +241,9 @@ function DisciplinaEdit() {
         return '/default-avatar.png';
     }
 
-    // Função para desvincular professor
     const desvincularProfessor = (idprofessor) => {
         Axios.delete(`${API_BASE_URL}/delete/desvincularProfessor/${idprofessor}`)
-        .then((response) => {
+        .then(() => {
             showSuccessToast("Sucesso", "Professor desvinculado com sucesso!");
             const professorParaDesvincular = professoresVinculados.find(p => p.idprofessor === idprofessor);
 
@@ -255,7 +252,7 @@ function DisciplinaEdit() {
             const { iddisciplina, disciplina, iddisc_prof, ...professorLimpo } = professorParaDesvincular;
             setProfessoresDisponiveis(prev => [...prev, professorLimpo]);
         })
-        .catch((error) => {
+        .catch(() => {
             showErrorToast("Erro", "Não foi possível desvincular o professor");
         });
     };
@@ -265,7 +262,6 @@ function DisciplinaEdit() {
         setProfessor(null);
     }
 
-    // Funções para abrir/fechar modal de adicionar
     const abrirModalAdicionar = useCallback(() => {
         setDadosNovaDisciplina({
             disciplina: ''
@@ -287,61 +283,55 @@ function DisciplinaEdit() {
         setDadosNovaDisciplina(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // States derivados
     const semResultados = listaFiltrada.length === 0 && termoPesquisa !== '';
     const isEmpty = listaDisciplina.length === 0 && !loading;
 
     const adicionarDisciplina = async (e) => {
-    e.preventDefault();
-    
-    const nome = dadosNovaDisciplina.disciplina?.trim();
-    
-    if (!nome) {
-        showErrorToast("Validação", "Preencha o nome da disciplina");
-        return;
-    }
+        e.preventDefault();
 
-    setSalvando(true);
-    
-    try {
-        const response = await Axios.post('http://localhost:8080/post/registrardisciplina', {
-            disciplina: nome,
-            idAdm: user.id
-        });
-        
-        showSuccessToast(
-            "Sucesso",
-            `Disciplina "${nome}" foi adicionada com sucesso!`
-        );
-        
-        // Adicionar à lista local
-        const novaDisciplina = {
-            iddisciplina: response.data.iddisciplina || Date.now(),
-            disciplina: nome
-        };
-        
-        setListaDisciplina(prev => [...prev, novaDisciplina]);
-        setListaFiltrada(prev => [...prev, novaDisciplina]);
-        
-        fecharModalAdicionar();
-        
-        // Recarregar do servidor para garantir
-        await fetchDisciplinas(false);
-        
-    } catch (error) {
-        console.error("Erro ao adicionar disciplina:", error);
-        
-        if (error.response?.data?.error) {
-            showErrorToast("Erro", error.response.data.error);
-        } else if (error.response?.data?.message) {
-            showErrorToast("Erro", error.response.data.message);
-        } else {
-            showErrorToast("Erro", "Não foi possível adicionar a disciplina");
+        if (!user || !user.id) {
+            showErrorToast("Erro", "Usuário não autenticado");
+            return;
         }
-    } finally {
-        setSalvando(false);
-    }
-};
+        
+        const nome = dadosNovaDisciplina.disciplina?.trim();
+        
+        if (!nome) {
+            showErrorToast("Validação", "Preencha o nome da disciplina");
+            return;
+        }
+
+        setSalvando(true);
+        
+        try {
+            await Axios.post('http://localhost:8080/post/registrardisciplina', {
+                disciplina: nome,
+                idAdm: user.id
+            });
+            
+            showSuccessToast(
+                "Sucesso",
+                `Disciplina "${nome}" foi adicionada com sucesso!`
+            );
+            
+            fecharModalAdicionar();
+            
+            await fetchDisciplinas(false);
+            
+        } catch (error) {
+            console.error("Erro ao adicionar disciplina:", error);
+            
+            if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            } else if (error.response?.data?.message) {
+                showErrorToast("Erro", error.response.data.message);
+            } else {
+                showErrorToast("Erro", "Não foi possível adicionar a disciplina");
+            }
+        } finally {
+            setSalvando(false);
+        }
+    };
 
     return (
         <div className="row mb-4">
@@ -693,6 +683,10 @@ function DisciplinaEdit() {
                                                                     alt={prof.nomeprofessor} 
                                                                     className="rounded-circle me-3"
                                                                     style={{width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)'}}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/default-avatar.png';
+                                                                    }}
                                                                 />
                                                                 <div>
                                                                     <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>
@@ -730,6 +724,10 @@ function DisciplinaEdit() {
                                                                     alt={prof.nomeprofessor} 
                                                                     className="rounded-circle me-3"
                                                                     style={{width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)'}}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/default-avatar.png';
+                                                                    }}
                                                                 />
                                                                 <div>
                                                                     <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>

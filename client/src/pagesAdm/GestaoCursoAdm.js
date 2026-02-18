@@ -15,6 +15,8 @@ import {
 import CursoEdit from "../components/CursosEdit"
 import DepartamentoEdit from "../components/DepartamentosEdit"
 import DisciplinasEdit from "../components/DisciplinasEdit"
+import { MdAdd } from "react-icons/md";
+import CursosAdmRegistrer from "../components/CursosAdmRegistrer";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
@@ -182,7 +184,7 @@ function HomeAdm() {
                                         Dashboard de Cursos
                                     </h2>
                                     <p className="text-muted mb-0">
-                                        Bem-vindo, {user ? user.nome : 'Administrador'} | Análise estrutural completa
+                                        Bem-vindo, {user ? user.nome : 'Administrador'} | Análise completa
                                     </p>
                                 </div>
                                 <div className="d-flex align-items-center gap-3">
@@ -209,7 +211,7 @@ function HomeAdm() {
                                 Painel Geral de Cursos
                             </button>
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "departamentos" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("departamentos")}
@@ -227,7 +229,7 @@ function HomeAdm() {
                                 Licenciaturas/Cursos
                             </button>
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "disciplinas" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("disciplinas")}
@@ -235,6 +237,16 @@ function HomeAdm() {
                             >
                                 <FaBook className="me-2" />
                                 Disciplinas
+                            </button>
+                        </div>
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "outros" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
+                                onClick={() => setSecaoAtiva("outros")}
+                                style={{ padding: '12px', fontWeight: '500' }}
+                            >
+                                <MdAdd className="me-2" />
+                                Outros Registros
                             </button>
                         </div>
                     </div>
@@ -660,6 +672,9 @@ function HomeAdm() {
                     {/* Seção Disciplinas */}
                     {secaoAtiva === "disciplinas" && (
                         <DisciplinasEdit />
+                    )}
+                    {secaoAtiva === "outros" && (
+                        <CursosAdmRegistrer />
                     )}
                 </main>
             </div>

@@ -21,18 +21,21 @@ function Departamento() {
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [novoDepartamento, setNovoDepartamento] = useState('');
-    const [user, setUser] = useState()
-    
+    const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
+            try {
+                setUser(JSON.parse(usuarioSalvo));
+            } catch (error) {
+                console.error("Erro ao parsear usuário:", error);
+                setUser(null);
+            }
         }
     }, []);
 
-    // Configuração do axios
     const apiClient = useMemo(() => {
         const client = axios.create({
             baseURL: API_BASE_URL,
@@ -61,7 +64,6 @@ function Departamento() {
         return client;
     }, []);
 
-    // Fetch data SEM polling automático
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -201,7 +203,7 @@ function Departamento() {
             showSuccessToast(
                 "Sucesso",
                 response.data.message || "Departamento atualizado",
-                { "Novo nome": response.data.categoriacurso }
+                { "Novo nome": response.data.categoriacurso || nome }
             );
             
             atualizarItemLocal(dadosEdicao.idcategoriacurso, nome);
@@ -216,6 +218,12 @@ function Departamento() {
 
     const salvarNovoDepartamento = useCallback(async (e) => {
         e?.preventDefault();
+        
+        // Validar se user existe
+        if (!user || !user.id) {
+            showErrorToast("Erro", "Usuário não autenticado");
+            return;
+        }
         
         const nome = novoDepartamento?.trim();
         if (!nome) {
@@ -239,18 +247,16 @@ function Departamento() {
             if (response.data.departamento) {
                 adicionarItemLocal(response.data.departamento);
             } else {
-                
-                fetchData(false);
+                await fetchData(false);
             }
             
             fecharModalAdicionar();
         } catch (error) {
-            
             console.error("Erro ao adicionar:", error);
         } finally {
             setSalvando(false);
         }
-    }, [novoDepartamento, apiClient, adicionarItemLocal, fetchData, fecharModalAdicionar]);
+    }, [novoDepartamento, apiClient, user, adicionarItemLocal, fetchData, fecharModalAdicionar]);
 
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
@@ -270,15 +276,13 @@ function Departamento() {
                     
                     const response = await apiClient.delete(`/delete/categoriaCurso/${id}`);
                     
-                    
                     showSuccessToast(
                         "Sucesso",
-                        response.data.message || "Departamento excluído",
+                        response.data.message || "Departamento excluído"
                     );
                     
                     removerItemLocal(id);
                 } catch (error) {
-                    
                     console.error("Erro ao deletar:", error);
                 }
             },
@@ -311,7 +315,6 @@ function Departamento() {
                             onClick={() => fetchData(true)}
                             disabled={loading || isConfirming}
                             title="Atualizar lista"
-                            
                         >
                             <MdRefresh />
                         </button>
@@ -354,7 +357,7 @@ function Departamento() {
                                             />
                                             {termoPesquisa && (
                                                 <button 
-                                                    className="btn btn-outline-secondary border-start-0" 
+                                                    className="btn border-start-0" 
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
@@ -396,7 +399,7 @@ function Departamento() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-5">
+                                    <td colSpan="3" className="text-center py-5">
                                         <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
                                             <span className="visually-hidden">Carregando...</span>
                                         </div>
@@ -405,7 +408,7 @@ function Departamento() {
                                 </tr>
                             ) : semResultados ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-5">
+                                    <td colSpan="3" className="text-center py-5">
                                         <MdSearch size={48} className="text-muted mb-3" />
                                         <p className="text-muted mb-2">Nenhum departamento encontrado para "{termoPesquisa}"</p>
                                         <button 
@@ -418,7 +421,7 @@ function Departamento() {
                                 </tr>
                             ) : isEmpty ? (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-5">
+                                    <td colSpan="3" className="text-center py-5">
                                         <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
                                         <p className="text-muted mb-3">Nenhum departamento encontrado</p>
                                         <button className="btn btn-outline-primary me-2" onClick={() => fetchData(true)}>
@@ -434,7 +437,10 @@ function Departamento() {
                             ) : (
                                 listaFiltrada.map((item) => (
                                     <tr key={item.idcategoriacurso}>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}><IoMdBusiness className="me-2 mb-2" />{item.categoriacurso}</td>
+                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
+                                            <IoMdBusiness className="me-2 mb-2" />
+                                            {item.categoriacurso}
+                                        </td>
                                         <td className="text-center">
                                             <button 
                                                 className={`btn btn-sm ${Style.btnEditar}`}
@@ -573,7 +579,6 @@ function Departamento() {
                                         type="submit" 
                                         className={`btn px-4 ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !novoDepartamento.trim()}
-                                        
                                     >
                                         {salvando ? (
                                             <>
