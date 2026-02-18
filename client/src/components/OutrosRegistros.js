@@ -8,7 +8,7 @@ import { IoMdAddCircleOutline } from "react-icons/io";
 import { showSuccessToast, showErrorToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
-function CursosAdmRegistrer() {
+function OutrosRegistros() {
     const [anoCurricular, setAnoCurricular] = useState("");
     const [idCurso, setIdCurso] = useState("");
     const [turma, setTurma] = useState("");
@@ -382,4 +382,4 @@ function CursosAdmRegistrer() {
     );
 }
 
-export default CursosAdmRegistrer;
+export default OutrosRegistros;

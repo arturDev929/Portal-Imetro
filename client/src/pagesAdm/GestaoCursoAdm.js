@@ -16,7 +16,7 @@ import CursoEdit from "../components/CursosEdit"
 import DepartamentoEdit from "../components/DepartamentosEdit"
 import DisciplinasEdit from "../components/DisciplinasEdit"
 import { MdAdd } from "react-icons/md";
-import CursosAdmRegistrer from "../components/CursosAdmRegistrer";
+import OutrosRegistros from "../components/OutrosRegistros";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
@@ -674,7 +674,7 @@ function HomeAdm() {
                         <DisciplinasEdit />
                     )}
                     {secaoAtiva === "outros" && (
-                        <CursosAdmRegistrer />
+                        <OutrosRegistros />
                     )}
                 </main>
             </div>
