@@ -5,10 +5,8 @@ const conexao = require("../infra/conexao");
 router.delete('/categoriaCurso/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         console.log("Tentando deletar categoria ID:", id);
 
-        // Validação do ID
         if (!id || id.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -23,7 +21,6 @@ router.delete('/categoriaCurso/:id', async (req, res) => {
             });
         }
 
-        // Verificar se a categoria existe
         const checkSql = 'SELECT * FROM categoriacurso WHERE idcategoriacurso = ?';
         
         conexao.query(checkSql, [id], (checkError, checkResults) => {
@@ -61,11 +58,9 @@ router.delete('/categoriaCurso/:id', async (req, res) => {
                     return res.status(400).json({
                         success: false,
                         error: `Não é possível excluir a categoria: A categoria "${categoriaNome}" possui ${cursosVinculados} curso(s) vinculado(s). Remova os cursos primeiro.`,
-                        // message: `A categoria "${categoriaNome}" possui ${cursosVinculados} curso(s) vinculado(s). Remova os cursos primeiro.`
                     });
                 }
 
-                // Deletar categoria
                 const deleteSql = 'DELETE FROM categoriacurso WHERE idcategoriacurso = ?';
                 
                 conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
@@ -87,7 +82,6 @@ router.delete('/categoriaCurso/:id', async (req, res) => {
                     res.status(200).json({
                         success: true,
                         message: `Categoria "${categoriaNome}" excluída com sucesso`,
-                        // id: id,
                         nomeExcluido: categoriaNome,
                         affectedRows: deleteResults.affectedRows
                     });
@@ -108,10 +102,8 @@ router.delete('/categoriaCurso/:id', async (req, res) => {
 router.delete('/curso/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         console.log("Tentando deletar curso ID:", id);
 
-        // Validação do ID
         if (!id || id.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -126,7 +118,6 @@ router.delete('/curso/:id', async (req, res) => {
             });
         }
 
-        // Verificar se o curso existe
         const checkSql = 'SELECT * FROM curso WHERE idcurso = ?';
         
         conexao.query(checkSql, [id], (checkError, checkResults) => {
@@ -150,7 +141,6 @@ router.delete('/curso/:id', async (req, res) => {
             const checkSemestresSql = 'SELECT COUNT(*) as total FROM semestre WHERE idcurso = ?';
             const checkAnosSql = 'SELECT COUNT(*) as total FROM anocurricular WHERE idcurso = ?';
             
-            // Primeiro verificar semestres vinculados
             conexao.query(checkSemestresSql, [id], (semestresError, semestresResults) => {
                 if (semestresError) {
                     console.error('Erro ao verificar semestres vinculados:', semestresError);
@@ -169,7 +159,6 @@ router.delete('/curso/:id', async (req, res) => {
                     });
                 }
 
-                // Se não houver semestres, verificar anos curriculares
                 conexao.query(checkAnosSql, [id], (anosError, anosResults) => {
                     if (anosError) {
                         console.error('Erro ao verificar anos curriculares vinculados:', anosError);
@@ -188,7 +177,6 @@ router.delete('/curso/:id', async (req, res) => {
                         });
                     }
 
-                    // Se não houver vínculos, deletar o curso
                     const deleteSql = 'DELETE FROM curso WHERE idcurso = ?';
                     
                     conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
@@ -231,10 +219,8 @@ router.delete('/curso/:id', async (req, res) => {
 router.delete('/anocurricular/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         console.log("Tentando deletar ano curricular ID:", id);
 
-        // Validação do ID
         if (!id || id.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -249,7 +235,6 @@ router.delete('/anocurricular/:id', async (req, res) => {
             });
         }
 
-        // Verificar se o ano curricular existe
         const checkSql = 'SELECT a.*, c.curso FROM anocurricular a JOIN curso c ON a.idcurso = c.idcurso WHERE a.idanocurricular = ?';
         
         conexao.query(checkSql, [id], (checkError, checkResults) => {
@@ -271,7 +256,6 @@ router.delete('/anocurricular/:id', async (req, res) => {
             const anoCurricular = checkResults[0].anocurricular;
             const cursoNome = checkResults[0].curso;
 
-            // Verificar se há semestres vinculados a este ano curricular
             const checkSemestresSql = 'SELECT COUNT(*) as total FROM semestre WHERE idanocurricular = ?';
             
             conexao.query(checkSemestresSql, [id], (semestresError, semestresResults) => {
@@ -292,7 +276,6 @@ router.delete('/anocurricular/:id', async (req, res) => {
                     });
                 }
 
-                // Se não houver vínculos, deletar o ano curricular
                 const deleteSql = 'DELETE FROM anocurricular WHERE idanocurricular = ?';
                 
                 conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
@@ -361,7 +344,6 @@ router.delete('/disciplina/:id', async (req,res)=>{
     const {id} = req.params;
     
     try {
-        // Primeiro deleta os registros relacionados na tabela semestre
         const sqlSemestre = "DELETE FROM semestre WHERE iddisciplina = ?";
         
         conexao.query(sqlSemestre, [id], (error, result) => {
@@ -375,7 +357,6 @@ router.delete('/disciplina/:id', async (req,res)=>{
             
             console.log(`Semestres deletados: ${result.affectedRows}`);
             
-            // Depois deleta a disciplina
             const sqlDisciplina = "DELETE FROM disciplina WHERE iddisciplina = ?";
             conexao.query(sqlDisciplina, [id], (error, result) => {
                 if(error){
@@ -427,9 +408,9 @@ router.delete('/desvincularProfessor/:idprofessor', (req, res) => {
     });
 });
 
-router.delete('/desvincularProfessorDisciplina/:id', (req, res) => {
+router.delete('/turma/:id', (req, res) => {
     const { id } = req.params;
-    const sql = "DELETE FROM disc_prof WHERE iddisciplina = ?";
+    const sql = "DELETE FROM periodo WHERE idperiodo = ?";
     conexao.query(sql, [id], (error, result) => {
         if (error) {
             console.error("Erro ao desvincular professor:", error);
@@ -445,7 +426,5 @@ router.delete('/desvincularProfessorDisciplina/:id', (req, res) => {
         }
     });
 });
-
-
 
 module.exports = router;

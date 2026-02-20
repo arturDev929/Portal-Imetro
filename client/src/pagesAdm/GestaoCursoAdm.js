@@ -15,8 +15,9 @@ import {
 import CursoEdit from "../components/CursosEdit"
 import DepartamentoEdit from "../components/DepartamentosEdit"
 import DisciplinasEdit from "../components/DisciplinasEdit"
-import { MdAdd } from "react-icons/md";
+import { MdAdd, MdFlightClass } from "react-icons/md";
 import OutrosRegistros from "../components/OutrosRegistros";
+import TurmasAdm from "../components/TurmasAdm";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
@@ -202,12 +203,12 @@ function HomeAdm() {
 
                     {/* Botões de Navegação */}
                     <div className="row mb-4 g-2">
-                        <div className="col-md-3">
+                        <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "geral" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("geral")}
                             >
-                                <FaChartBar className="me-2" />
+                                <FaChartBar className="me-2 mb-1" />
                                 Painel Geral de Cursos
                             </button>
                         </div>
@@ -216,16 +217,16 @@ function HomeAdm() {
                                 className={`btn w-100 ${secaoAtiva === "departamentos" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("departamentos")}
                             >
-                                <FaLayerGroup className="me-2" />
+                                <FaLayerGroup className="me-2 mb-1" />
                                 Departamentos
                             </button>
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "cursos" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("cursos")}
                             >
-                                <FaGraduationCap className="me-2" />
+                                <FaGraduationCap className="me-2 mb-1" />
                                 Licenciaturas/Cursos
                             </button>
                         </div>
@@ -235,8 +236,18 @@ function HomeAdm() {
                                 onClick={() => setSecaoAtiva("disciplinas")}
                                 style={{ padding: '12px', fontWeight: '500' }}
                             >
-                                <FaBook className="me-2" />
+                                <FaBook className="me-2 mb-1" />
                                 Disciplinas
+                            </button>
+                        </div>
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "turmas" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
+                                onClick={() => setSecaoAtiva("turmas")}
+                                style={{ padding: '12px', fontWeight: '500' }}
+                            >
+                                <MdFlightClass className="me-2 mb-1" />
+                                Turmas
                             </button>
                         </div>
                         <div className="col-md-2">
@@ -245,7 +256,7 @@ function HomeAdm() {
                                 onClick={() => setSecaoAtiva("outros")}
                                 style={{ padding: '12px', fontWeight: '500' }}
                             >
-                                <MdAdd className="me-2" />
+                                <MdAdd className="me-2 mb-1" />
                                 Outros Registros
                             </button>
                         </div>
@@ -672,6 +683,9 @@ function HomeAdm() {
                     {/* Seção Disciplinas */}
                     {secaoAtiva === "disciplinas" && (
                         <DisciplinasEdit />
+                    )}
+                    {secaoAtiva === "turmas" && (
+                        <TurmasAdm />
                     )}
                     {secaoAtiva === "outros" && (
                         <OutrosRegistros />

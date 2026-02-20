@@ -2,7 +2,6 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../infra/conexao");
 
-// Total categoria Curso
 router.get('/totalcategoriacurso', (req,res)=>{
     const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
     conexao.query(sql,(error,results)=>{
@@ -18,7 +17,6 @@ router.get('/totalcategoriacurso', (req,res)=>{
     })
 });
 
-// Total Licenciaturas
 router.get('/totallicenciaturas', (req,res)=>{
     const sql = "SELECT COUNT(*) as total_licenciaturas FROM curso;";
     conexao.query(sql,(error,results)=>{
@@ -34,7 +32,6 @@ router.get('/totallicenciaturas', (req,res)=>{
     })
 });
 
-// Total Disciplina
 router.get('/totaldisciplina', (req,res)=>{
     const sql = "SELECT COUNT(*) as total_disciplinas FROM disciplina";
     conexao.query(sql,(error,results)=>{
@@ -50,7 +47,6 @@ router.get('/totaldisciplina', (req,res)=>{
     })
 });
 
-// Categoria e Curso
 router.get('/dadosGraficosCategoria', (req, res) => {
     const sql = "SELECT categoriacurso.categoriacurso, COUNT(curso.idcurso) as total_cursos FROM categoriacurso LEFT JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso GROUP BY categoriacurso.idcategoriacurso, categoriacurso.categoriacurso ORDER BY total_cursos DESC LIMIT 100";
     
@@ -67,7 +63,6 @@ router.get('/dadosGraficosCategoria', (req, res) => {
     });
 });
 
-// NOVA ROTA: Total de disciplinas por curso
 router.get('/totalDisciplinasPorCurso', (req, res) => {
     const sql = `
         SELECT 
@@ -109,7 +104,6 @@ router.get('/categoriaCurso', (req, res) => {
     });
 });
 
-// 2. Para ver todos os cursos registrados e editar e eliminar
 router.get('/Cursos', (req, res) => {
     const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
     conexao.query(sql, (error, result) => {
@@ -125,7 +119,6 @@ router.get('/Cursos', (req, res) => {
     });
 });
 
-// 3. Para ver quantos anos o curso tem e eliminares alguns anos
 router.get('/anosCurriculares', (req, res) => {
     const sql = "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular ORDER BY anocurricular ASC";
     conexao.query(sql, (error, result) => {
@@ -141,7 +134,6 @@ router.get('/anosCurriculares', (req, res) => {
     });
 });
 
-// 4. Para ver todas as disciplinas registradas e editar e eliminar
 router.get('/Disciplinas', (req, res) => {
     const sql = "SELECT iddisciplina, disciplina FROM disciplina ORDER BY disciplina ASC";
     conexao.query(sql, (error, result) => {
@@ -157,7 +149,6 @@ router.get('/Disciplinas', (req, res) => {
     });
 });
 
-// 5. Para ver as disciplinas que um curso possui e poder remover elas
 router.get('/semestres', (req, res) => {
     const sql = "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre ORDER BY semestre ASC";
     conexao.query(sql, (error, result) => {
@@ -173,7 +164,6 @@ router.get('/semestres', (req, res) => {
     });
 });
 
-// 6. Para mostrar as turmas cadastradas e editar ou eliminar
 router.get('/periodos', (req, res) => {
     const sql = "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma FROM periodo ORDER BY turma ASC";
     conexao.query(sql, (error, result) => {
@@ -189,7 +179,6 @@ router.get('/periodos', (req, res) => {
     });
 });
 
-// Rota para buscar uma categoria específica
 router.get('/categoriaCurso/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
@@ -211,7 +200,6 @@ router.get('/categoriaCurso/:id', (req, res) => {
     });
 });
 
-// Rota para buscar um curso específico
 router.get('/curso/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
@@ -233,7 +221,6 @@ router.get('/curso/:id', (req, res) => {
     });
 });
 
-// Rota para buscar uma disciplina específica
 router.get('/disciplina/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
@@ -255,7 +242,6 @@ router.get('/disciplina/:id', (req, res) => {
     });
 });
 
-// Rota para buscar um ano curricular específico
 router.get('/anoCurricular/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular WHERE idcurso = ? ORDER BY anocurricular DESC LIMIT 100";
@@ -277,7 +263,6 @@ router.get('/anoCurricular/:id', (req, res) => {
     });
 });
 
-// Rota para buscar um semestre específico
 router.get('/semestre/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre WHERE idsemestre = ?";
@@ -299,7 +284,6 @@ router.get('/semestre/:id', (req, res) => {
     });
 });
 
-// Rota para buscar um período específico
 router.get('/periodo/:id', (req, res) => {
     const { id } = req.params;
     const sql = "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma FROM periodo WHERE idperiodo = ?";
@@ -321,7 +305,6 @@ router.get('/periodo/:id', (req, res) => {
     });
 });
 
-// Rota para buscar professores (mantida para compatibilidade)
 router.get('/Professores', (req, res) => {
     const sql = "SELECT * FROM professor ORDER BY nomeprofessor ASC";
     conexao.query(sql, (error, result) => {
@@ -341,7 +324,6 @@ router.get('/Professores', (req, res) => {
     });
 });
 
-// Rota para visualização combinada
 router.get('/CategoriaCursosAno', (req, res) => {
     const sql = "SELECT categoriacurso.categoriacurso, categoriacurso.idcategoriacurso, curso.curso, curso.idcurso, anocurricular.anocurricular, anocurricular.idanocurricular FROM categoriacurso INNER JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso INNER JOIN anocurricular ON curso.idcurso = anocurricular.idcurso ORDER BY anocurricular.anocurricular AND curso.curso ASC LIMIT 500";
     
@@ -358,7 +340,6 @@ router.get('/CategoriaCursosAno', (req, res) => {
     });
 });
 
-// Atualize a rota /disciplinasPorCurso/:idcurso para retornar idsemestre
 router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
     const { idcurso } = req.params;
     
@@ -388,7 +369,6 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
                 details: error.message 
             });
         }else{
-            // Se não houver resultados
             if (result.length === 0) {
                 const sqlCurso = "SELECT c.curso, cc.categoriacurso FROM curso c INNER JOIN categoriacurso cc ON c.idcategoriacurso = cc.idcategoriacurso WHERE c.idcurso = ?";
                 conexao.query(sqlCurso, [idcurso], (errorCurso, resultCurso) => {
@@ -411,7 +391,6 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
                 return;
             }
             
-            // Agrupar os resultados por ano curricular e semestre
             const disciplinasAgrupadas = result.reduce((acc, disciplina) => {
                 const anoKey = `Ano ${disciplina.anocurricular}`;
                 
@@ -444,7 +423,6 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
     });
 });
 
-// Rota para professores VINCULADOS a uma disciplina
 router.get('/professorVinculado/:id', async (req,res)=>{
     const {id} = req.params;
     const sql = `
@@ -480,7 +458,6 @@ router.get('/professorVinculado/:id', async (req,res)=>{
     });
 });
 
-// Rota para professores NÃO VINCULADOS (disponíveis)
 router.get('/professorDisponivel/:id', async (req,res)=>{
     const {id} = req.params;
     const sql = `
@@ -537,7 +514,6 @@ router.get('/estatisticasProfessores', (req, res) => {
     });
 });
 
-// Rota para distribuição de professores por titulação
 router.get('/distribuicaoTitulacao', (req, res) => {
     const sql = `
         SELECT 
@@ -561,7 +537,6 @@ router.get('/distribuicaoTitulacao', (req, res) => {
     });
 });
 
-// Rota para professores por disciplina
 router.get('/professoresPorDisciplina', (req, res) => {
     const sql = `
         SELECT 
@@ -589,7 +564,6 @@ router.get('/professoresPorDisciplina', (req, res) => {
     });
 });
 
-// Rota para disciplinas mais ministradas (com mais professores)
 router.get('/disciplinasMaisMinistradas', (req, res) => {
     const sql = `
         SELECT 
@@ -618,7 +592,6 @@ router.get('/disciplinasMaisMinistradas', (req, res) => {
     });
 });
 
-// Rota para professores com mais disciplinas
 router.get('/professoresMaisAtivos', (req, res) => {
     const sql = `
         SELECT 
@@ -654,7 +627,6 @@ router.get('/professoresMaisAtivos', (req, res) => {
     });
 });
 
-// Rota para professores sem disciplinas
 router.get('/professoresSemDisciplinas', (req, res) => {
     const sql = `
         SELECT 
@@ -707,11 +679,9 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
     });
 });
 
-// Rota para InformacoesProfessor
 router.get('/InformacoesProfessor/:id', async (req, res) => {
     const { id } = req.params;
     
-    // Query para dados do professor
     const sqlProfessor = `
         SELECT 
             p.idprofessor,
@@ -741,7 +711,6 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
         WHERE p.idprofessor = ?
     `;
     
-    // Query para disciplinas
     const sqlDisciplinas = `
         SELECT 
             disciplina.iddisciplina,
@@ -767,7 +736,6 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
         
         const professor = professorResult[0];
         
-        // Buscar disciplinas
         conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
             if (error) {
                 console.error("Erro ao buscar disciplinas:", error);
@@ -777,13 +745,11 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
                 });
             }
             
-            // CORREÇÃO AQUI - URL DINÂMICA DO PDF
             let curriculoUrl = null;
             if (professor.bipdfprofessor) {
                 curriculoUrl = `http://localhost:8080/api/img/professores/${professor.bipdfprofessor}`;
             }
             
-            // Montar objeto completo
             const professorCompleto = {
                 ...professor,
                 fotoUrl: professor.fotoprofessor ? 
@@ -803,5 +769,20 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
         });
     });
 });
+
+router.get('/turmas', async (req,res)=>{
+    const sql = `SELECT p.idperiodo, p.periodo,p.turma,p.anoletivo,ct.categoriacurso,c.curso,a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso=ct.idcategoriacurso INNER JOIN curso c ON p.idcurso=c.idcurso INNER JOIN anocurricular a ON p.idanocurricular=a.idanocurricular LIMIT 100`;
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores sem disciplinas:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+})
 
 module.exports = router;

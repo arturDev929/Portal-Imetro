@@ -12,7 +12,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
         console.log("ID recebido:", id);
         console.log("Dados recebidos:", { categoriacurso });
 
-        // Validação do ID
         if (!id || id.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -27,7 +26,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
             });
         }
 
-        // Validação do nome
         if (!categoriacurso || categoriacurso.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -49,7 +47,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
             });
         }
 
-        // Verificar se a categoria existe
         const checkSql = 'SELECT * FROM categoriacurso WHERE idcategoriacurso = ?';
         
         conexao.query(checkSql, [id], (checkError, checkResults) => {
@@ -68,7 +65,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
                 });
             }
 
-            // Verificar se já existe outra categoria com o mesmo nome (exceto a atual)
             const duplicateSql = 'SELECT * FROM categoriacurso WHERE categoriacurso = ? AND idcategoriacurso != ?';
             
             conexao.query(duplicateSql, [categoriacurso.trim(), id], (duplicateError, duplicateResults) => {
@@ -87,7 +83,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
                     });
                 }
 
-                // Atualizar categoria
                 const updateSql = 'UPDATE categoriacurso SET categoriacurso = ? WHERE idcategoriacurso = ?';
                 const values = [categoriacurso.trim(), id];
                 
@@ -100,7 +95,6 @@ router.put('/categoriaCurso/:id', async (req, res) => {
                         });
                     }
                     
-                    // Verificar se algo foi atualizado
                     if (results.affectedRows === 0) {
                         return res.status(404).json({
                             success: false,
@@ -127,6 +121,7 @@ router.put('/categoriaCurso/:id', async (req, res) => {
         });
     }
 });
+
 router.put('/Curso/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -135,7 +130,6 @@ router.put('/Curso/:id', async (req, res) => {
         console.log("ID do curso recebido:", id);
         console.log("Dados recebidos:", { curso, idcategoriacurso });
 
-        // Validação do ID do curso
         if (!id || id.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -150,7 +144,6 @@ router.put('/Curso/:id', async (req, res) => {
             });
         }
 
-        // Validação do nome do curso
         if (!curso || curso.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -172,7 +165,6 @@ router.put('/Curso/:id', async (req, res) => {
             });
         }
 
-        // Validação do ID da categoria
         if (!idcategoriacurso || idcategoriacurso.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -187,7 +179,6 @@ router.put('/Curso/:id', async (req, res) => {
             });
         }
 
-        // Verificar se o CURSO existe
         const checkCursoSql = 'SELECT * FROM curso WHERE idcurso = ?';
         conexao.query(checkCursoSql, [id], (checkError, checkResults) => {
             if (checkError) {
@@ -205,7 +196,6 @@ router.put('/Curso/:id', async (req, res) => {
                 });
             }
 
-            // Verificar se o DEPARTAMENTO existe
             const checkCategoriaSql = 'SELECT categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?';
             conexao.query(checkCategoriaSql, [idcategoriacurso], (catError, catResults) => {
                 if (catError) {
@@ -223,7 +213,6 @@ router.put('/Curso/:id', async (req, res) => {
                     });
                 }
 
-                // Verificar se já existe outro curso com o mesmo nome (exceto o atual)
                 const duplicateSql = 'SELECT * FROM curso WHERE curso = ? AND idcurso != ?';
                 conexao.query(duplicateSql, [curso.trim(), id], (duplicateError, duplicateResults) => {
                     if (duplicateError) {
@@ -241,7 +230,6 @@ router.put('/Curso/:id', async (req, res) => {
                         });
                     }
 
-                    // Atualizar CURSO (nome + departamento)
                     const updateSql = 'UPDATE curso SET curso = ?, idcategoriacurso = ? WHERE idcurso = ?';
                     const values = [curso.trim(), idcategoriacurso, id];
                     
@@ -253,8 +241,7 @@ router.put('/Curso/:id', async (req, res) => {
                                 error: 'Erro ao atualizar curso no banco de dados'
                             });
                         }
-                        
-                        // Verificar se algo foi atualizado
+
                         if (results.affectedRows === 0) {
                             return res.status(404).json({
                                 success: false,
@@ -283,12 +270,11 @@ router.put('/Curso/:id', async (req, res) => {
         });
     }
 });
-// PUT atualizar disciplina
+
 router.put('/disciplina/:id', (req, res) => {
     const { id } = req.params;
     const { disciplina } = req.body;
-    
-    // Validações
+
     if (!id || isNaN(id) || id <= 0) {
         return res.status(400).json({ error: "ID da disciplina inválido" });
     }
@@ -296,8 +282,7 @@ router.put('/disciplina/:id', (req, res) => {
     if (!disciplina || !disciplina.trim()) {
         return res.status(400).json({ error: "Nome da disciplina é obrigatório" });
     }
-    
-    // Verificar se disciplina existe
+
     const checkSql = "SELECT * FROM disciplina WHERE iddisciplina = ?";
     conexao.query(checkSql, [id], (checkError, checkResults) => {
         if(checkError){
@@ -313,8 +298,7 @@ router.put('/disciplina/:id', (req, res) => {
         }
         
         const disciplinaAtual = checkResults[0];
-        
-        // Verificar se novo nome já existe (exceto para a própria disciplina)
+
         const checkNomeSql = "SELECT * FROM disciplina WHERE LOWER(disciplina) = LOWER(?) AND iddisciplina != ?";
         conexao.query(checkNomeSql, [disciplina.trim(), id], (nomeError, nomeResults) => {
             if(nomeError){
@@ -330,8 +314,7 @@ router.put('/disciplina/:id', (req, res) => {
                     error: `A disciplina "${disciplina}" já existe no sistema` 
                 });
             }
-            
-            // Atualizar disciplina
+
             const updateSql = "UPDATE disciplina SET disciplina = ? WHERE iddisciplina = ?";
             const values = [disciplina.trim(), id];
             
@@ -361,6 +344,7 @@ router.put('/disciplina/:id', (req, res) => {
         });
     });
 });
+
 router.put('/atulizarprofessor/:id', (req, res) => {
     const { id } = req.params;
     const {
@@ -390,29 +374,15 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         foto
     } = req.body;
     
-    // LOGS PARA DEBUG
-    console.log('=== DADOS RECEBIDOS ===');
-    console.log('ID:', id);
-    console.log('Nome:', nomeprofessor);
-    console.log('Foto:', foto ? (foto.substring(0, 50) + '...') : 'Nenhuma');
-    console.log('Curriculo:', curriculo ? (curriculo.substring(0, 50) + '...') : 'Nenhum');
-    console.log('BI Existente:', bipdfprofessorExistente);
-    console.log('Tipo do curriculo:', typeof curriculo);
-    console.log('========================');
-    
-    // Extrair o número de 8 dígitos do ID do professor
     const numeroProfessor = id.toString().padStart(8, '0').slice(-8);
     
-    // Caminho da pasta de destino
     const pastaDestino = path.join(__dirname, '../../client/src/img/professores');
-    
-    // Garantir que a pasta existe
+
     if (!fs.existsSync(pastaDestino)) {
         fs.mkdirSync(pastaDestino, { recursive: true });
         console.log('Pasta criada:', pastaDestino);
     }
     
-    // Validações de campos obrigatórios
     if (!nomeprofessor || !nomeprofessor.trim()) {
         console.log('Erro de validação: nomeprofessor é obrigatório');
         return res.status(400).json({ error: "Nome do professor é obrigatório" });
@@ -430,7 +400,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         return res.status(400).json({ error: "Gênero é obrigatório" });
     }
 
-    // Validação de campos opcionais (não podem estar vazios se enviados)
     const camposOpcionais = [
         { valor: estadocivilprofessor, nome: 'Estado civil' },
         { valor: nomepaiprofessor, nome: 'Nome do pai' },
@@ -455,8 +424,7 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             return res.status(400).json({ error: `${campo.nome} não pode estar vazio` });
         }
     }
-    
-    // Validação de email
+
     if (emailprofessor && typeof emailprofessor === 'string' && emailprofessor.trim()) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailprofessor.trim())) {
@@ -464,8 +432,7 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             return res.status(400).json({ error: "Email inválido" });
         }
     }
-    
-    // Validação de telefone
+
     if (telefoneprofessor && typeof telefoneprofessor === 'string' && telefoneprofessor.trim()) {
         const telefone = telefoneprofessor.replace(/\s+/g, '');
         const telefoneRegex = /^[0-9]{9}$/;
@@ -475,7 +442,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         }
     }
 
-    // Validação de WhatsApp
     if (whatsappprofessor && typeof whatsappprofessor === 'string' && whatsappprofessor.trim()) {
         const whatsapp = whatsappprofessor.replace(/\s+/g, '');
         const whatsappRegex = /^[0-9]{9}$/;
@@ -486,12 +452,10 @@ router.put('/atulizarprofessor/:id', (req, res) => {
     }
     
     console.log('Validação passada. Verificando duplicidade de dados...');
-    
-    // Array para armazenar erros de duplicidade
+
     const errosDuplicidade = [];
     let verificacoesPendentes = 0;
-    
-    // Função para verificar campo duplicado
+
     function verificarCampoUnico(campo, valor, label) {
         if (!valor || !valor.toString().trim()) return;
         
@@ -517,50 +481,39 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         );
     }
     
-    // Função para processar foto e currículo
     function processarArquivos() {
         if (errosDuplicidade.length > 0) {
             console.log('Erros de duplicidade encontrados:', errosDuplicidade);
             return res.status(400).json({ error: errosDuplicidade.join('. ') });
         }
         
-        console.log('Todas as verificações passaram. Processando arquivos...');
+        let fotoFinal = bipdfprofessorExistente;
+        let documentoFinal = bipdfprofessorExistente;
         
-        let fotoFinal = bipdfprofessorExistente; // Inicia com o valor existente
-        let documentoFinal = bipdfprofessorExistente; // Inicia com o valor existente
-        
-        // PROCESSAR FOTO
         if (foto && typeof foto === 'string' && foto.trim()) {
-            // Verificar se é uma nova foto (base64)
             if (foto.startsWith('data:image')) {
                 try {
                     console.log('Processando nova foto...');
-                    
-                    // Extrair extensão
+
                     const matches = foto.match(/^data:image\/([a-zA-Z]+);base64,/);
                     const extensao = matches ? matches[1] : 'jpg';
-                    
-                    // Gerar timestamp de 13 dígitos
+
                     const timestamp = Date.now().toString().slice(-13);
-                    
-                    // Nome do arquivo: professor_8digtos_foto_13digtos.extensao
+
                     const nomeArquivo = `professor_${numeroProfessor}_foto_${timestamp}.${extensao}`;
                     const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
                     
                     console.log('Salvando foto em:', caminhoCompleto);
-                    
-                    // Extrair dados base64
+
                     const base64Data = foto.split(',')[1];
                     
                     if (base64Data) {
                         const buffer = Buffer.from(base64Data, 'base64');
                         fs.writeFileSync(caminhoCompleto, buffer);
-                        
-                        // Salvar APENAS o nome do arquivo (sem caminho)
+
                         fotoFinal = nomeArquivo;
                         console.log('Foto salva como:', nomeArquivo);
-                        
-                        // Verificar se o arquivo foi realmente criado
+
                         if (fs.existsSync(caminhoCompleto)) {
                             console.log('✅ Arquivo de foto verificado no disco');
                         } else {
@@ -575,7 +528,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
                     return res.status(500).json({ error: 'Erro ao processar foto' });
                 }
             } else {
-                // É uma foto já existente - extrair apenas o nome do arquivo se vier com caminho
                 if (foto.includes('/')) {
                     const partes = foto.split('/');
                     fotoFinal = partes[partes.length - 1];
@@ -587,97 +539,55 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         } else {
             console.log('Nenhuma foto nova fornecida');
         }
-        
-        // PROCESSAR CURRÍCULO/BI
-        console.log('=== PROCESSANDO CURRÍCULO ===');
-        console.log('Curriculo recebido:', curriculo ? 'SIM' : 'NÃO');
-        console.log('Tipo do curriculo:', typeof curriculo);
-        console.log('BI existente:', bipdfprofessorExistente ? bipdfprofessorExistente : 'Nenhum');
-        
-        // Verifica se tem novo currículo
+
         if (curriculo && typeof curriculo === 'string' && curriculo.trim()) {
             console.log('Curriculo tem conteúdo, verificando se é base64...');
             console.log('Começa com data:', curriculo.startsWith('data:'));
             console.log('Contém base64:', curriculo.includes('base64'));
-            
-            // Verifica se é uma string base64 válida
+
             if (curriculo.includes('base64')) {
                 try {
                     console.log('Processando novo currículo/BI...');
-                    
-                    // Determinar extensão
+
                     let extensao = 'pdf';
                     if (curriculo.startsWith('data:application/pdf')) {
                         extensao = 'pdf';
-                        console.log('Extensão detectada: PDF');
                     } else if (curriculo.startsWith('data:application/msword')) {
                         extensao = 'doc';
-                        console.log('Extensão detectada: DOC');
                     } else if (curriculo.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
                         extensao = 'docx';
-                        console.log('Extensão detectada: DOCX');
-                    } else {
-                        console.log('Tipo MIME não reconhecido, usando extensão padrão:', extensao);
                     }
-                    
-                    // Gerar timestamp de 13 dígitos
+
                     const timestamp = Date.now().toString().slice(-13);
-                    
-                    // Nome do arquivo: professor_8digtos_bi_13digtos.extensao
+
                     const nomeArquivo = `professor_${numeroProfessor}_bi_${timestamp}.${extensao}`;
                     const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
-                    
-                    console.log('Salvando currículo em:', caminhoCompleto);
-                    
-                    // Extrair dados base64
+
                     const partes = curriculo.split(',');
-                    console.log('Número de partes após split:', partes.length);
                     
                     if (partes.length > 1) {
                         const base64Data = partes[1];
-                        console.log('Tamanho dos dados base64:', base64Data.length);
                         
                         const buffer = Buffer.from(base64Data, 'base64');
-                        console.log('Tamanho do buffer criado:', buffer.length);
                         
                         fs.writeFileSync(caminhoCompleto, buffer);
-                        console.log('Arquivo escrito no disco');
-                        
-                        // Verificar se o arquivo foi realmente criado
+
                         if (fs.existsSync(caminhoCompleto)) {
-                            console.log('✅ Arquivo de currículo verificado no disco');
-                            
-                            // Salvar APENAS o nome do arquivo (sem caminho)
                             documentoFinal = nomeArquivo;
-                            console.log('Currículo/BI salvo como:', nomeArquivo);
-                        } else {
-                            console.log('❌ Arquivo de currículo NÃO encontrado no disco após escrita');
                         }
-                    } else {
-                        console.log('Erro: formato base64 inválido - não foi possível fazer split');
-                        console.log('Primeiros 100 caracteres:', curriculo.substring(0, 100));
                     }
                 } catch (error) {
-                    console.log('Erro ao processar currículo:', error);
-                    console.log('Stack trace:', error.stack);
-                    // Em caso de erro, mantém o existente
                     documentoFinal = bipdfprofessorExistente;
-                    console.log('Mantendo documento existente devido a erro');
                 }
             } else {
-                console.log('Currículo não está em formato base64, tratando como caminho existente');
-                // Se não for base64, pode ser um caminho existente
                 if (curriculo.includes('/')) {
                     const partes = curriculo.split('/');
                     documentoFinal = partes[partes.length - 1];
                 } else {
                     documentoFinal = curriculo;
                 }
-                console.log('Mantendo currículo existente (como caminho):', documentoFinal);
             }
         } else {
-            console.log('Nenhum novo currículo fornecido. Mantendo documento existente.');
-            // Se o existente tiver caminho, extrair apenas o nome
             if (bipdfprofessorExistente && typeof bipdfprofessorExistente === 'string') {
                 if (bipdfprofessorExistente.includes('/')) {
                     const partes = bipdfprofessorExistente.split('/');
@@ -685,29 +595,15 @@ router.put('/atulizarprofessor/:id', (req, res) => {
                 } else {
                     documentoFinal = bipdfprofessorExistente;
                 }
-                console.log('Mantendo BI existente:', documentoFinal);
             } else {
                 documentoFinal = null;
-                console.log('Nenhum BI existente');
             }
         }
         
-        console.log('Final do processamento:');
-        console.log('- Foto final (nome apenas):', fotoFinal);
-        console.log('- Documento final (nome apenas):', documentoFinal);
-        console.log('=============================');
-        
-        // Prosseguir com atualização no banco
         atualizarProfessor(fotoFinal, documentoFinal);
     }
-    
-    // Função para atualizar o professor no banco
+
     function atualizarProfessor(fotoFinal, documentoFinal) {
-        console.log('Atualizando professor no banco de dados...');
-        console.log('Valores a serem salvos:');
-        console.log('- fotoprofessor:', fotoFinal);
-        console.log('- bipdfprofessor:', documentoFinal);
-        
         const query = `
             UPDATE professor SET
                 codigoprofessor = ?,
@@ -747,7 +643,7 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             nomemaeprofessor,
             nbiprofessor,
             datanascimentoprofessor,
-            documentoFinal, // bipdfprofessor
+            documentoFinal,
             residenciaprofessor,
             telefoneprofessor,
             whatsappprofessor,
@@ -760,12 +656,10 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             tiposanguineoprofessor,
             condicoesprofessor,
             contactoemergenciaprofessor,
-            fotoFinal, // fotoprofessor
-            documentoFinal, // bipdfprofessor (segunda ocorrência)
+            fotoFinal,
+            documentoFinal,
             id
         ];
-        
-        console.log('Executando query de update...');
         
         conexao.query(query, params, (err, result) => {
             if (err) {
@@ -773,28 +667,187 @@ router.put('/atulizarprofessor/:id', (req, res) => {
                 return res.status(500).json({ error: 'Erro ao atualizar professor' });
             }
             
-            console.log('Professor atualizado com sucesso!');
-            console.log('Resultado:', result);
             res.json({ 
                 success: true, 
                 message: 'Professor atualizado com sucesso' 
             });
         });
     }
-    
-    // Iniciar verificações para cada campo
+
     verificarCampoUnico('nomeprofessor', nomeprofessor, 'Nome do professor');
     verificarCampoUnico('codigoprofessor', codigoprofessor, 'Código do professor');
     verificarCampoUnico('emailprofessor', emailprofessor, 'Email');
     verificarCampoUnico('nbiprofessor', nbiprofessor, 'Nº do BI');
     verificarCampoUnico('telefoneprofessor', telefoneprofessor, 'Telefone');
     verificarCampoUnico('whatsappprofessor', whatsappprofessor, 'WhatsApp');
-    
-    // Se não houver verificações pendentes, processa arquivos
+
     if (verificacoesPendentes === 0) {
         processarArquivos();
     }
 });
 
+router.put('/turma/:id', async (req, res) => {
+    const { id } = req.params;
+    console.log("ID recebido:", id);
+    
+    const { idanocurricular, idcurso, idcategoriacurso, turma, periodo, anoletivo } = req.body;
+    
+    if (!idanocurricular || !idcurso || !idcategoriacurso || !turma || !periodo || !anoletivo) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Dados incompletos",
+            mensagem: "Por favor, preencha todos os campos obrigatórios"
+        });
+    }
+
+    try {
+
+        const verificarExistenciaSQL = "SELECT idperiodo FROM periodo WHERE idperiodo = ?";
+        const [existe] = await conexao.promise().query(verificarExistenciaSQL, [id]);
+        
+        if (existe.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Turma não encontrada",
+                mensagem: "A turma que você está tentando editar não existe"
+            });
+        }
+
+        const verificarAnoSQL = "SELECT idanocurricular, anocurricular FROM anocurricular WHERE idanocurricular = ?";
+        const [resultadosAno] = await conexao.promise().query(verificarAnoSQL, [idanocurricular]);
+        
+        if (resultadosAno.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Ano Curricular inválido",
+                mensagem: "O ano curricular selecionado não existe"
+            });
+        }
+
+        const verificarCursoSQL = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
+        const [resultadosCurso] = await conexao.promise().query(verificarCursoSQL, [idcurso]);
+        
+        if (resultadosCurso.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Curso inválido",
+                mensagem: "O curso selecionado não existe"
+            });
+        }
+
+        const verificarCategoriaSQL = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+        const [resultadosCategoria] = await conexao.promise().query(verificarCategoriaSQL, [idcategoriacurso]);
+        
+        if (resultadosCategoria.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Categoria inválida",
+                mensagem: "A categoria selecionada não existe"
+            });
+        }
+
+        if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Inconsistência de dados",
+                mensagem: "O curso selecionado não pertence à categoria informada"
+            });
+        }
+
+        const verificarDuplicadoSQL = `
+            SELECT idperiodo 
+            FROM periodo 
+            WHERE idanocurricular = ? 
+                AND idcurso = ? 
+                AND turma = ? 
+                AND periodo = ? 
+                AND anoletivo = ?
+                AND idperiodo != ?
+        `;
+        const [resultadosDuplicado] = await conexao.promise().query(
+            verificarDuplicadoSQL, 
+            [idanocurricular, idcurso, turma, periodo, anoletivo, id]
+        );
+        
+        if (resultadosDuplicado.length > 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Turma/Período Duplicado",
+                mensagem: `Já existe outra turma "${turma}" no período "${periodo}" para este curso/ano`
+            });
+        }
+
+        const updateSQL = `
+            UPDATE periodo 
+            SET idanocurricular = ?, 
+                idcategoriacurso = ?, 
+                idcurso = ?, 
+                turma = ?, 
+                periodo = ?, 
+                anoletivo = ?
+            WHERE idperiodo = ?
+        `;
+        const [resultados] = await conexao.promise().query(updateSQL, 
+            [idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo, id]
+        );
+
+        const [dadosCompletos] = await conexao.promise().query(`
+            SELECT 
+                p.*,
+                ac.anocurricular,
+                c.curso,
+                cc.categoriacurso
+            FROM periodo p
+            INNER JOIN anocurricular ac ON ac.idanocurricular = p.idanocurricular
+            INNER JOIN curso c ON c.idcurso = p.idcurso
+            INNER JOIN categoriacurso cc ON cc.idcategoriacurso = p.idcategoriacurso
+            WHERE p.idperiodo = ?
+        `, [id]);
+
+        return res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Turma/Período Atualizado",
+            mensagem: `Turma "${turma}" no período "${periodo}" atualizada com sucesso!`,
+            dados: dadosCompletos[0]
+        });
+
+    } catch (erro) {
+        console.error("Erro ao atualizar Turma/Período:", erro);
+        console.error("Detalhes do erro:", erro.sqlMessage || erro.message);
+        
+        if (erro.code === 'ER_NO_REFERENCED_ROW_2') {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Chave estrangeira inválida",
+                mensagem: "Uma das referências (ano curricular, curso ou categoria) não existe no sistema"
+            });
+        }
+        
+        if (erro.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Entrada duplicada",
+                mensagem: "Esta turma/período já existe para este curso/ano"
+            });
+        }
+
+        return res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro no servidor",
+            mensagem: "Erro interno ao atualizar turma/período: " + (erro.message || "Erro desconhecido")
+        });
+    }
+});
 
 module.exports = router;

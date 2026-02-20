@@ -5,7 +5,6 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const { createCanvas } = require("canvas");
-const { error } = require("console");
 
 const gerarImagemIniciais = (nome) => {
     try {
@@ -46,10 +45,8 @@ const gerarImagemIniciais = (nome) => {
 
         ctx.fillText(iniciais, tamanho / 2, tamanho / 2);
         
-
         const nomeArquivo = `estudante_${iniciais}_${Date.now()}.png`;
         
-
         const pastaImagens = path.join(__dirname, '../../client/src/img/estudantes');
         const caminhoCompleto = path.join(pastaImagens, nomeArquivo);
         
@@ -218,7 +215,6 @@ router.get('/obterImagem/:nomeArquivo', (req, res) => {
     }
 });
 
-// Registrar categoria
 router.post('/registrercategoria', async (req, res) => {
     const { categoriacurso, idAdm } = req.body;
     
@@ -281,7 +277,6 @@ router.post('/registrercategoria', async (req, res) => {
     });
 });
 
-// Registrar curso
 router.post('/registrarcurso', async (req, res) => {
     const { curso, idcategoriacurso } = req.body;
     
@@ -377,7 +372,6 @@ router.post('/registrarcurso', async (req, res) => {
     });
 });
 
-// Registrar Ano Curricular
 router.post('/registrarAnoCurricular', async (req, res) => {
     const { anocurricular, idcurso } = req.body;
     
@@ -457,7 +451,6 @@ router.post('/registrarAnoCurricular', async (req, res) => {
     }
 });
 
-// Registrar disciplina
 router.post('/registrardisciplina', async (req, res) => {
     const { disciplina, idAdm } = req.body;
     
@@ -966,7 +959,6 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
     }
 
     try {
-        // Verificar se o professor existe
         const verificarProfessorSQL = "SELECT idprofessor, nomeprofessor FROM professor WHERE idprofessor = ?";
         const [resultadosProfessor] = await conexao.promise().query(verificarProfessorSQL, [idprofessor]);
         
@@ -979,7 +971,6 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
             });
         }
 
-        // Verificar se a disciplina existe
         const verificarDisciplinaSQL = "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
         const [resultadosDisciplina] = await conexao.promise().query(verificarDisciplinaSQL, [iddisciplina]);
         
@@ -992,7 +983,6 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
             });
         }
 
-        // Verificar se a disciplina já está atribuída a este professor
         const verificarDuplicadoSQL = `
             SELECT iddisciplina 
             FROM disc_prof 
@@ -1012,7 +1002,6 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
             });
         }
 
-        // Inserir na tabela de relação professor-disciplina
         const inserirSQL = `
             INSERT INTO disc_prof (idprofessor, iddisciplina) 
             VALUES (?, ?)
@@ -1065,7 +1054,7 @@ router.post('/registrerDisciplinaProfessor', async (req, res) => {
 });
 
 router.post('/registrarPeriodo', async (req, res) => {
-    const { idanocurricular, idcurso, idcategoriacurso, turma, periodo,anoletivo } = req.body;
+    const { idanocurricular, idcurso, idcategoriacurso, turma, periodo, anoletivo } = req.body;
     
     if (!idanocurricular || !idcurso || !idcategoriacurso || !turma || !periodo || !anoletivo) {
         return res.status(400).json({
@@ -1077,7 +1066,6 @@ router.post('/registrarPeriodo', async (req, res) => {
     }
 
     try {
-        // Verificar se o ano curricular existe
         const verificarAnoSQL = "SELECT idanocurricular, anocurricular FROM anocurricular WHERE idanocurricular = ?";
         const [resultadosAno] = await conexao.promise().query(verificarAnoSQL, [idanocurricular]);
         
@@ -1090,7 +1078,6 @@ router.post('/registrarPeriodo', async (req, res) => {
             });
         }
 
-        // Verificar se o curso existe
         const verificarCursoSQL = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
         const [resultadosCurso] = await conexao.promise().query(verificarCursoSQL, [idcurso]);
         
@@ -1103,7 +1090,6 @@ router.post('/registrarPeriodo', async (req, res) => {
             });
         }
 
-        // Verificar se a categoria existe
         const verificarCategoriaSQL = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
         const [resultadosCategoria] = await conexao.promise().query(verificarCategoriaSQL, [idcategoriacurso]);
         
@@ -1116,7 +1102,6 @@ router.post('/registrarPeriodo', async (req, res) => {
             });
         }
 
-        // Verificar consistência: curso pertence à categoria
         if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
             return res.status(400).json({
                 sucesso: false,
@@ -1126,7 +1111,6 @@ router.post('/registrarPeriodo', async (req, res) => {
             });
         }
 
-        // Verificar se a turma/periodo já existe para este ano/curso
         const verificarDuplicadoSQL = `
             SELECT idperiodo 
             FROM periodo 
@@ -1134,7 +1118,7 @@ router.post('/registrarPeriodo', async (req, res) => {
         `;
         const [resultadosDuplicado] = await conexao.promise().query(
             verificarDuplicadoSQL, 
-            [idanocurricular, idcurso, turma, periodo,anoletivo]
+            [idanocurricular, idcurso, turma, periodo, anoletivo]
         );
         
         if (resultadosDuplicado.length > 0) {
@@ -1146,16 +1130,14 @@ router.post('/registrarPeriodo', async (req, res) => {
             });
         }
 
-        // Inserir na tabela periodo
         const inserirSQL = `
-            INSERT INTO periodo (idanocurricular, idcategoriacurso, idcurso, turma, periodo,anoletivo) 
+            INSERT INTO periodo (idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo) 
             VALUES (?, ?, ?, ?, ?, ?)
         `;
         const [resultados] = await conexao.promise().query(inserirSQL, 
             [idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo]
         );
 
-        // Obter dados completos para a resposta
         const [dadosCompletos] = await conexao.promise().query(`
             SELECT 
                 ac.anocurricular as ano_nome,
@@ -1176,7 +1158,7 @@ router.post('/registrarPeriodo', async (req, res) => {
                 id: resultados.insertId,
                 idanocurricular: idanocurricular,
                 idcurso: idcurso,
-                anoletivo:anoletivo,
+                anoletivo: anoletivo,
                 idcategoriacurso: idcategoriacurso,
                 turma: turma,
                 periodo: periodo,
@@ -1218,7 +1200,7 @@ router.post('/registrarPeriodo', async (req, res) => {
 });
 
 router.post('/registrarfuncionarioMatricular', async (req, res) => {
-    const { nome, contacto, nbi, idAdm,cargo } = req.body;
+    const { nome, contacto, nbi, idAdm, cargo } = req.body;
     
     if (!nome || !contacto || !nbi || !idAdm || !cargo) {
         return res.status(400).json({
@@ -1278,7 +1260,7 @@ router.post('/registrarfuncionarioMatricular', async (req, res) => {
         `;
         
         const [resultados] = await conexao.promise().query(inserirSQL, 
-            [nome, contacto, nbi, senhaCriptografada, idAdm,cargo]
+            [nome, contacto, nbi, senhaCriptografada, idAdm, cargo]
         );
 
         return res.status(201).json({
@@ -1291,7 +1273,7 @@ router.post('/registrarfuncionarioMatricular', async (req, res) => {
                 nome: nome,
                 contacto: contacto,
                 nbi: nbi,
-                cargo:cargo,
+                cargo: cargo,
                 senha_padrao: senhaPadrao
             }
         });
@@ -1321,7 +1303,6 @@ router.post('/registrarfuncionarioMatricular', async (req, res) => {
 router.post('/vincularProfessor', async (req, res) => {
     const { idprofessor, iddisciplina } = req.body;
     
-    // Validação dos dados
     if (!idprofessor || !iddisciplina) {
         return res.status(400).json({
             sucesso: false,
@@ -1332,7 +1313,6 @@ router.post('/vincularProfessor', async (req, res) => {
     }
 
     try {
-        // 1. Primeiro, verificar se o vínculo já existe (evitar duplicidade)
         const verificaSql = "SELECT * FROM disc_prof WHERE idprofessor = ? AND iddisciplina = ?";
         
         conexao.query(verificaSql, [idprofessor, iddisciplina], (verificaError, verificaResult) => {
@@ -1346,7 +1326,6 @@ router.post('/vincularProfessor', async (req, res) => {
                 });
             }
             
-            // Se já existe um vínculo
             if (verificaResult.length > 0) {
                 return res.status(409).json({
                     sucesso: false,
@@ -1356,14 +1335,12 @@ router.post('/vincularProfessor', async (req, res) => {
                 });
             }
             
-            // 2. Se não existe, criar o vínculo
             const insertSql = "INSERT INTO disc_prof (idprofessor, iddisciplina) VALUES (?, ?)";
             
             conexao.query(insertSql, [idprofessor, iddisciplina], (insertError, result) => {
                 if (insertError) {
                     console.error("Erro ao vincular professor:", insertError);
                     
-                    // Verificar se é erro de chave estrangeira
                     if (insertError.code === 'ER_NO_REFERENCED_ROW_2') {
                         return res.status(400).json({
                             sucesso: false,
@@ -1381,7 +1358,6 @@ router.post('/vincularProfessor', async (req, res) => {
                     });
                 }
                 
-                // Sucesso
                 return res.status(201).json({
                     sucesso: true,
                     tipo: "sucesso",
@@ -1406,7 +1382,5 @@ router.post('/vincularProfessor', async (req, res) => {
         });
     }
 });
-
-
 
 module.exports = router;
