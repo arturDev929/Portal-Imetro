@@ -357,7 +357,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         nomemaeprofessor,
         nbiprofessor,
         datanascimentoprofessor,
-        bipdfprofessor: bipdfprofessorExistente,
         residenciaprofessor,
         telefoneprofessor,
         whatsappprofessor,
@@ -375,28 +374,22 @@ router.put('/atulizarprofessor/:id', (req, res) => {
     } = req.body;
     
     const numeroProfessor = id.toString().padStart(8, '0').slice(-8);
-    
     const pastaDestino = path.join(__dirname, '../../client/src/img/professores');
 
     if (!fs.existsSync(pastaDestino)) {
         fs.mkdirSync(pastaDestino, { recursive: true });
-        console.log('Pasta criada:', pastaDestino);
     }
     
     if (!nomeprofessor || !nomeprofessor.trim()) {
-        console.log('Erro de validação: nomeprofessor é obrigatório');
         return res.status(400).json({ error: "Nome do professor é obrigatório" });
     }
     if (!nacionalidadeprofessor || !nacionalidadeprofessor.trim()) {
-        console.log('Erro de validação: nacionalidadeprofessor é obrigatória');
         return res.status(400).json({ error: "Nacionalidade do professor é obrigatória" });
     }
     if (!codigoprofessor || !codigoprofessor.trim()) {
-        console.log('Erro de validação: codigoprofessor é obrigatório');
         return res.status(400).json({ error: "Código do professor é obrigatório" });
     }
     if (!generoprofessor || !generoprofessor.trim()) {
-        console.log('Erro de validação: generoprofessor é obrigatório');
         return res.status(400).json({ error: "Gênero é obrigatório" });
     }
 
@@ -420,15 +413,13 @@ router.put('/atulizarprofessor/:id', (req, res) => {
     
     for (const campo of camposOpcionais) {
         if (campo.valor !== undefined && typeof campo.valor === 'string' && !campo.valor.trim()) {
-            console.log(`Erro de validação: ${campo.nome} não pode estar vazio se for enviado`);
-            return res.status(400).json({ error: `${campo.nome} não pode estar vazio` });
+            return res.status(400).json({ error: `${campo.nome} não pode estar vazio se for enviado` });
         }
     }
 
     if (emailprofessor && typeof emailprofessor === 'string' && emailprofessor.trim()) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailprofessor.trim())) {
-            console.log('Erro de validação: emailprofessor é inválido');
             return res.status(400).json({ error: "Email inválido" });
         }
     }
@@ -437,7 +428,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         const telefone = telefoneprofessor.replace(/\s+/g, '');
         const telefoneRegex = /^[0-9]{9}$/;
         if (!telefoneRegex.test(telefone)) {
-            console.log('Erro de validação: telefoneprofessor é inválido');
             return res.status(400).json({ error: "Telefone inválido. Use 9 dígitos" });
         }
     }
@@ -446,13 +436,10 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         const whatsapp = whatsappprofessor.replace(/\s+/g, '');
         const whatsappRegex = /^[0-9]{9}$/;
         if (!whatsappRegex.test(whatsapp)) {
-            console.log('Erro de validação: whatsappprofessor é inválido');
             return res.status(400).json({ error: "WhatsApp inválido. Use 9 dígitos" });
         }
     }
     
-    console.log('Validação passada. Verificando duplicidade de dados...');
-
     const errosDuplicidade = [];
     let verificacoesPendentes = 0;
 
@@ -466,11 +453,9 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             [valor, id],
             (err, results) => {
                 if (err) {
-                    console.log(`Erro ao verificar ${campo}:`, err);
                     errosDuplicidade.push(`Erro ao verificar ${label}`);
                 } else if (results.length > 0) {
                     errosDuplicidade.push(`${label} já está em uso por outro professor`);
-                    console.log(`CONFLITO: ${label} '${valor}' já pertence ao professor ID: ${results[0].idprofessor}`);
                 }
                 
                 verificacoesPendentes--;
@@ -483,124 +468,115 @@ router.put('/atulizarprofessor/:id', (req, res) => {
     
     function processarArquivos() {
         if (errosDuplicidade.length > 0) {
-            console.log('Erros de duplicidade encontrados:', errosDuplicidade);
             return res.status(400).json({ error: errosDuplicidade.join('. ') });
         }
         
-        let fotoFinal = bipdfprofessorExistente;
-        let documentoFinal = bipdfprofessorExistente;
+        let fotoFinal = null;
+        let documentoFinal = null;
         
-        if (foto && typeof foto === 'string' && foto.trim()) {
-            if (foto.startsWith('data:image')) {
-                try {
-                    console.log('Processando nova foto...');
-
-                    const matches = foto.match(/^data:image\/([a-zA-Z]+);base64,/);
-                    const extensao = matches ? matches[1] : 'jpg';
-
-                    const timestamp = Date.now().toString().slice(-13);
-
-                    const nomeArquivo = `professor_${numeroProfessor}_foto_${timestamp}.${extensao}`;
-                    const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
-                    
-                    console.log('Salvando foto em:', caminhoCompleto);
-
-                    const base64Data = foto.split(',')[1];
-                    
-                    if (base64Data) {
-                        const buffer = Buffer.from(base64Data, 'base64');
-                        fs.writeFileSync(caminhoCompleto, buffer);
-
-                        fotoFinal = nomeArquivo;
-                        console.log('Foto salva como:', nomeArquivo);
-
-                        if (fs.existsSync(caminhoCompleto)) {
-                            console.log('✅ Arquivo de foto verificado no disco');
-                        } else {
-                            console.log('❌ Arquivo de foto NÃO encontrado no disco');
+        conexao.query(
+            'SELECT fotoprofessor, bipdfprofessor FROM professor WHERE idprofessor = ?',
+            [id],
+            (err, results) => {
+                if (err) {
+                    return res.status(500).json({ error: 'Erro ao buscar dados do professor' });
+                }
+                
+                const dadosAtuais = results[0] || {};
+                fotoFinal = dadosAtuais.fotoprofessor;
+                documentoFinal = dadosAtuais.bipdfprofessor;
+                
+                if (foto && typeof foto === 'string' && foto.trim()) {
+                    if (foto.startsWith('data:image')) {
+                        try {
+                            const matches = foto.match(/^data:image\/([a-zA-Z]+);base64,/);
+                            const extensao = matches ? matches[1] : 'jpg';
+                            const timestamp = Date.now().toString().slice(-13);
+                            const nomeArquivo = `professor_${numeroProfessor}_foto_${timestamp}.${extensao}`;
+                            const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
+                            
+                            const base64Data = foto.split(',')[1];
+                            
+                            if (base64Data) {
+                                const buffer = Buffer.from(base64Data, 'base64');
+                                fs.writeFileSync(caminhoCompleto, buffer);
+                                fotoFinal = nomeArquivo;
+                            }
+                        } catch (error) {
+                            console.log('Erro ao processar foto:', error);
                         }
                     } else {
-                        console.log('Erro: dados base64 da foto estão vazios');
-                        fotoFinal = bipdfprofessorExistente;
-                    }
-                } catch (error) {
-                    console.log('Erro ao processar foto:', error);
-                    return res.status(500).json({ error: 'Erro ao processar foto' });
-                }
-            } else {
-                if (foto.includes('/')) {
-                    const partes = foto.split('/');
-                    fotoFinal = partes[partes.length - 1];
-                } else {
-                    fotoFinal = foto;
-                }
-                console.log('Mantendo foto existente:', fotoFinal);
-            }
-        } else {
-            console.log('Nenhuma foto nova fornecida');
-        }
-
-        if (curriculo && typeof curriculo === 'string' && curriculo.trim()) {
-            console.log('Curriculo tem conteúdo, verificando se é base64...');
-            console.log('Começa com data:', curriculo.startsWith('data:'));
-            console.log('Contém base64:', curriculo.includes('base64'));
-
-            if (curriculo.includes('base64')) {
-                try {
-                    console.log('Processando novo currículo/BI...');
-
-                    let extensao = 'pdf';
-                    if (curriculo.startsWith('data:application/pdf')) {
-                        extensao = 'pdf';
-                    } else if (curriculo.startsWith('data:application/msword')) {
-                        extensao = 'doc';
-                    } else if (curriculo.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
-                        extensao = 'docx';
-                    }
-
-                    const timestamp = Date.now().toString().slice(-13);
-
-                    const nomeArquivo = `professor_${numeroProfessor}_bi_${timestamp}.${extensao}`;
-                    const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
-
-                    const partes = curriculo.split(',');
-                    
-                    if (partes.length > 1) {
-                        const base64Data = partes[1];
-                        
-                        const buffer = Buffer.from(base64Data, 'base64');
-                        
-                        fs.writeFileSync(caminhoCompleto, buffer);
-
-                        if (fs.existsSync(caminhoCompleto)) {
-                            documentoFinal = nomeArquivo;
+                        if (foto.includes('/')) {
+                            const partes = foto.split('/');
+                            fotoFinal = partes[partes.length - 1];
+                        } else {
+                            fotoFinal = foto;
                         }
                     }
-                } catch (error) {
-                    documentoFinal = bipdfprofessorExistente;
                 }
-            } else {
-                if (curriculo.includes('/')) {
-                    const partes = curriculo.split('/');
-                    documentoFinal = partes[partes.length - 1];
-                } else {
-                    documentoFinal = curriculo;
+                
+                if (curriculo && typeof curriculo === 'string' && curriculo.trim()) {
+                    const timestamp = Date.now().toString().slice(-13);
+                    let extensao = 'pdf';
+                    let buffer = null;
+                    let nomeArquivoOriginal = null;
+                    
+                    if (curriculo.includes('base64')) {
+                        if (curriculo.startsWith('data:application/pdf')) {
+                            extensao = 'pdf';
+                        } else if (curriculo.startsWith('data:application/msword')) {
+                            extensao = 'doc';
+                        } else if (curriculo.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+                            extensao = 'docx';
+                        }
+                        
+                        const partes = curriculo.split(',');
+                        if (partes.length > 1) {
+                            buffer = Buffer.from(partes[1], 'base64');
+                        }
+                        
+                    } else {
+                        nomeArquivoOriginal = curriculo;
+                        if (curriculo.includes('/')) {
+                            const partes = curriculo.split('/');
+                            nomeArquivoOriginal = partes[partes.length - 1];
+                        }
+                        
+                        const partesExtensao = nomeArquivoOriginal.split('.');
+                        if (partesExtensao.length > 1) {
+                            extensao = partesExtensao[partesExtensao.length - 1];
+                        }
+                        
+                        const caminhoArquivoExistente = path.join(pastaDestino, nomeArquivoOriginal);
+                        
+                        if (fs.existsSync(caminhoArquivoExistente)) {
+                            buffer = fs.readFileSync(caminhoArquivoExistente);
+                        }
+                    }
+                    
+                    if (buffer) {
+                        const novoNomeArquivo = `professor_${numeroProfessor}_bi_${timestamp}.${extensao}`;
+                        const novoCaminho = path.join(pastaDestino, novoNomeArquivo);
+                        
+                        try {
+                            fs.writeFileSync(novoCaminho, buffer);
+                            documentoFinal = novoNomeArquivo;
+                            
+                            if (nomeArquivoOriginal && 
+                                nomeArquivoOriginal !== novoNomeArquivo && 
+                                fs.existsSync(path.join(pastaDestino, nomeArquivoOriginal))) {
+                                fs.unlinkSync(path.join(pastaDestino, nomeArquivoOriginal));
+                            }
+                            
+                        } catch (error) {
+                            console.log('Erro ao salvar arquivo:', error);
+                        }
+                    }
                 }
+                
+                atualizarProfessor(fotoFinal, documentoFinal);
             }
-        } else {
-            if (bipdfprofessorExistente && typeof bipdfprofessorExistente === 'string') {
-                if (bipdfprofessorExistente.includes('/')) {
-                    const partes = bipdfprofessorExistente.split('/');
-                    documentoFinal = partes[partes.length - 1];
-                } else {
-                    documentoFinal = bipdfprofessorExistente;
-                }
-            } else {
-                documentoFinal = null;
-            }
-        }
-        
-        atualizarProfessor(fotoFinal, documentoFinal);
+        );
     }
 
     function atualizarProfessor(fotoFinal, documentoFinal) {
@@ -615,7 +591,6 @@ router.put('/atulizarprofessor/:id', (req, res) => {
                 nomemaeprofessor = ?,
                 nbiprofessor = ?,
                 datanascimentoprofessor = ?,
-                bipdfprofessor = ?,
                 residenciaprofessor = ?,
                 telefoneprofessor = ?,
                 whatsappprofessor = ?,
@@ -637,25 +612,24 @@ router.put('/atulizarprofessor/:id', (req, res) => {
             codigoprofessor,
             nomeprofessor,
             generoprofessor,
-            nacionalidadeprofessor,
-            estadocivilprofessor,
-            nomepaiprofessor,
-            nomemaeprofessor,
-            nbiprofessor,
-            datanascimentoprofessor,
-            documentoFinal,
-            residenciaprofessor,
-            telefoneprofessor,
-            whatsappprofessor,
-            emailprofessor,
-            anoexperienciaprofessor,
-            titulacaoprofessor,
-            dataadmissaoprofessor,
-            tipocontratoprofessor,
-            ibanprofessor,
-            tiposanguineoprofessor,
-            condicoesprofessor,
-            contactoemergenciaprofessor,
+            nacionalidadeprofessor || null,
+            estadocivilprofessor || null,
+            nomepaiprofessor || null,
+            nomemaeprofessor || null,
+            nbiprofessor || null,
+            datanascimentoprofessor || null,
+            residenciaprofessor || null,
+            telefoneprofessor || null,
+            whatsappprofessor || null,
+            emailprofessor || null,
+            anoexperienciaprofessor || null,
+            titulacaoprofessor || null,
+            dataadmissaoprofessor || null,
+            tipocontratoprofessor || null,
+            ibanprofessor || null,
+            tiposanguineoprofessor || null,
+            condicoesprofessor || null,
+            contactoemergenciaprofessor || null,
             fotoFinal,
             documentoFinal,
             id
@@ -663,13 +637,16 @@ router.put('/atulizarprofessor/:id', (req, res) => {
         
         conexao.query(query, params, (err, result) => {
             if (err) {
-                console.log('Erro ao atualizar professor:', err);
                 return res.status(500).json({ error: 'Erro ao atualizar professor' });
             }
             
             res.json({ 
                 success: true, 
-                message: 'Professor atualizado com sucesso' 
+                message: 'Professor atualizado com sucesso',
+                dados: {
+                    foto: fotoFinal,
+                    documento: documentoFinal
+                }
             });
         });
     }
@@ -848,6 +825,32 @@ router.put('/turma/:id', async (req, res) => {
             mensagem: "Erro interno ao atualizar turma/período: " + (erro.message || "Erro desconhecido")
         });
     }
+});
+
+router.put('/professor/desativar/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "UPDATE professor SET estado = 'Desativado' WHERE idprofessor = ?";
+    
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao desativar o professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.affectedRows === 0) {
+                res.status(404).json({
+                    error: "Professor não encontrado"
+                });
+            } else {
+                res.status(200).json({
+                    message: "Professor desativado com sucesso",
+                    professoresAfetados: result.affectedRows
+                });
+            }
+        }
+    });
 });
 
 module.exports = router;

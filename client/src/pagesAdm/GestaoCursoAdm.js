@@ -209,7 +209,7 @@ function HomeAdm() {
                                 onClick={() => setSecaoAtiva("geral")}
                             >
                                 <FaChartBar className="me-2 mb-1" />
-                                Painel Geral de Cursos
+                                Painel Geral
                             </button>
                         </div>
                         <div className="col-md-2">

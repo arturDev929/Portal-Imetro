@@ -1,427 +1,1038 @@
-import NavbarAdm from "../components/NavbarAdm";
+// GestaoProfessoresAdm.js
+import { useState, useEffect } from "react";
+import Axios from "axios";
 import SidebarAdm from "../components/SidebarAdm";
-import { IoMdStats } from "react-icons/io";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import NavbarAdm from "../components/NavbarAdm";
+import Style from "./GestaoCursoAdm.module.css";
+import { 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+  ScatterChart, Scatter
+} from 'recharts';
+import { 
+  FaChalkboardTeacher, FaBook, FaUserGraduate,
+  FaChartBar, FaChartPie, FaChartLine,
+  FaClock, FaUserSlash, FaExclamationTriangle
+} from 'react-icons/fa';
+import { IoMdPerson, IoMdPeople } from "react-icons/io"
+import { FaGraduationCap } from "react-icons/fa"
 import ProfessorEdit from "../components/ProfessorEdit";
+import ProfessorRemovidosEdit from "../components/ProfessorRemovidosEdit";
 
 function GestaoProfessoresAdm() {
-    const [estatisticas, setEstatisticas] = useState({});
-    const [professoresPorDisciplina, setProfessoresPorDisciplina] = useState([]);
-    const [professoresMaisAtivos, setProfessoresMaisAtivos] = useState([]);
+    const [user, setUser] = useState(null);
+    const [totalProfessores, setTotalProfessores] = useState(0);
+    const [professoresComTitulacao, setProfessoresComTitulacao] = useState(0);
+    const [professoresComFoto, setProfessoresComFoto] = useState(0);
+    const [professoresVinculados, setProfessoresVinculados] = useState(0);
+    const [dadosGrafico, setDadosGrafico] = useState([]);
+    const [dadosComparativos, setDadosComparativos] = useState([]);
+    const [dadosProfessoresPorTitulacao, setDadosProfessoresPorTitulacao] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState('geral');
+    const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date());
+    const [professoresRecentes, setProfessoresRecentes] = useState([]);
+    const [disciplinasMaisMinistradas, setDisciplinasMaisMinistradas] = useState([]);
+    const [professoresSemDisciplina, setProfessoresSemDisciplina] = useState([]);
+    
+    // NOVOS ESTADOS PARA PROFESSORES DESATIVADOS
+    const [totalProfessoresDesativados, setTotalProfessoresDesativados] = useState(0);
+    const [professoresDesativados, setProfessoresDesativados] = useState([]);
+    const [dadosGraficoDesativados, setDadosGraficoDesativados] = useState([]);
+    const [desativadosComTitulacao, setDesativadosComTitulacao] = useState(0);
+    const [erroDesativados, setErroDesativados] = useState(false);
+    
+    // Estado para controlar qual seção está visível
+    const [secaoAtiva, setSecaoAtiva] = useState("geral"); // geral, professores
+
+    const COLORS = ['#003366', '#B8860B', '#4A90E2', '#50C878', '#DC143C', '#FF8C00', '#9370DB', '#20B2AA', '#FF69B4', '#CD5C5C'];
 
     useEffect(() => {
-        fetchEstatisticas();
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            setUser(JSON.parse(usuarioSalvo));
+        }
     }, []);
 
-    const fetchEstatisticas = async () => {
-        try {
+    useEffect(() => {
+        const fetchDadosProfessores = () => {
             setLoading(true);
+            setErroDesativados(false);
             
-            // Buscar todas as estatísticas simultaneamente
-            const [
-                estatisticasRes,
-                professoresDisciplinaRes,
-                professoresAtivosRes
-            ] = await Promise.all([
-                axios.get('http://localhost:8080/get/estatisticasProfessores'),
-                axios.get('http://localhost:8080/get/professoresPorDisciplina'),
-                axios.get('http://localhost:8080/get/professoresMaisAtivos')
-            ]);
+            // Buscar estatísticas gerais
+            Axios.get('http://localhost:8080/get/estatisticasProfessores')
+                .then(response => {
+                    console.log("Estatísticas gerais:", response.data);
+                    setTotalProfessores(response.data.totalProfessores || 0);
+                    setProfessoresComTitulacao(response.data.professoresComTitulacao || 0);
+                    setProfessoresComFoto(response.data.professoresComFoto || 0);
+                    setUltimaAtualizacao(new Date());
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar estatísticas:', error);
+                });
 
-            // Verificar se os dados são válidos antes de atualizar o estado
-            setEstatisticas(estatisticasRes.data || {});
-            setProfessoresPorDisciplina(Array.isArray(professoresDisciplinaRes.data) ? professoresDisciplinaRes.data : []);
-            setProfessoresMaisAtivos(Array.isArray(professoresAtivosRes.data) ? professoresAtivosRes.data : []);
-            
+            // Buscar estatísticas de professores desativados
+            Axios.get('http://localhost:8080/get/estatisticasProfessoresDesativados')
+                .then(response => {
+                    console.log("Estatísticas de desativados:", response.data);
+                    setTotalProfessoresDesativados(response.data.totalProfessoresDesativados || 0);
+                    setDesativadosComTitulacao(response.data.desativadosComTitulacao || 0);
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar estatísticas de desativados:', error);
+                    setErroDesativados(true);
+                });
+
+            // Buscar distribuição por titulação
+            Axios.get('http://localhost:8080/get/distribuicaoTitulacao')
+                .then(response => {
+                    console.log("Distribuição titulação:", response.data);
+                    const dadosFormatados = response.data.map((item, index) => ({
+                        titulacao: item.titulacao || 'Não informado',
+                        quantidade: item.quantidade || 0,
+                        valor: item.quantidade || 0
+                    }));
+                    
+                    setDadosProfessoresPorTitulacao(dadosFormatados);
+                    
+                    // Dados para gráfico comparativo
+                    const total = dadosFormatados.reduce((acc, curr) => acc + curr.quantidade, 0);
+                    const comparativo = dadosFormatados.map((item) => ({
+                        titulacao: item.titulacao,
+                        proporcao: total > 0 ? ((item.quantidade / total) * 100).toFixed(1) : 0,
+                        peso: item.quantidade
+                    }));
+                    setDadosComparativos(comparativo);
+                    
+                    setDadosGrafico(dadosFormatados);
+                })
+                .catch(error => {
+                    console.log("Erro na distribuição titulação:", error);
+                    setDadosGrafico([]);
+                });
+
+            // Buscar distribuição por titulação de professores desativados
+            Axios.get('http://localhost:8080/get/distribuicaoTitulacaoDesativados')
+                .then(response => {
+                    console.log("Distribuição desativados:", response.data);
+                    if (response.data && response.data.length > 0) {
+                        const dadosFormatados = response.data.map((item, index) => ({
+                            titulacao: item.titulacao || 'Não informado',
+                            quantidade: item.quantidade || 0,
+                            valor: item.quantidade || 0
+                        }));
+                        setDadosGraficoDesativados(dadosFormatados);
+                    } else {
+                        // Se não houver dados, criar um conjunto vazio
+                        setDadosGraficoDesativados([]);
+                    }
+                })
+                .catch(error => {
+                    console.log("Erro na distribuição desativados:", error);
+                    setDadosGraficoDesativados([]);
+                });
+
+            // Buscar professores recentes
+            Axios.get('http://localhost:8080/get/Professores')
+                .then(response => {
+                    console.log("Professores recentes:", response.data);
+                    const recentes = response.data
+                        .sort((a, b) => new Date(b.dataadmissaoprofessor) - new Date(a.dataadmissaoprofessor))
+                        .slice(0, 5);
+                    setProfessoresRecentes(recentes);
+                })
+                .catch(error => console.log("Erro professores recentes:", error));
+
+            // Buscar disciplinas mais ministradas
+            Axios.get('http://localhost:8080/get/disciplinasMaisMinistradas')
+                .then(response => {
+                    console.log("Disciplinas mais ministradas:", response.data);
+                    setDisciplinasMaisMinistradas(response.data || []);
+                })
+                .catch(error => console.log("Erro disciplinas:", error));
+
+            // Buscar professores sem disciplina
+            Axios.get('http://localhost:8080/get/professoresSemDisciplinas')
+                .then(response => {
+                    console.log("Professores sem disciplina:", response.data);
+                    setProfessoresSemDisciplina(response.data || []);
+                    setProfessoresVinculados(totalProfessores - (response.data?.length || 0));
+                })
+                .catch(error => console.log("Erro sem disciplina:", error));
+
+            // Buscar professores desativados
+            Axios.get('http://localhost:8080/get/professoresDesativados')
+                .then(response => {
+                    console.log("Professores desativados lista:", response.data);
+                    setProfessoresDesativados(response.data || []);
+                })
+                .catch(error => console.log("Erro lista desativados:", error));
+
             setLoading(false);
-        } catch (error) {
-            console.error('Erro ao buscar estatísticas:', error);
-            // Definir valores padrão em caso de erro
-            setEstatisticas({});
-            setProfessoresPorDisciplina([]);
-            setProfessoresMaisAtivos([]);
-            setLoading(false);
-        }
-    };
+        };
 
-    // Preparar dados para gráfico de professores por disciplina (top 20)
-    const prepararDadosProfessoresDisciplina = () => {
-        if (!Array.isArray(professoresPorDisciplina) || professoresPorDisciplina.length === 0) {
-            return [];
-        }
+        fetchDadosProfessores();
+        const interval = setInterval(fetchDadosProfessores, 30000);
         
-        return professoresPorDisciplina
-            .filter(item => item && item.totalProfessores > 0)
-            .sort((a, b) => (b.totalProfessores || 0) - (a.totalProfessores || 0))
-            .slice(0, 20)
-            .map(item => ({
-                disciplina: item.disciplina && item.disciplina.length > 5 
-                    ? item.disciplina.substring(0, 5) + '...' 
-                    : (item.disciplina || 'N/A'),
-                professores: item.totalProfessores || 0
-            }));
-    };
+        return () => {
+            clearInterval(interval);
+        };
+    }, [totalProfessores]);
 
-    // Preparar dados para gráfico de professores mais ativos
-    const prepararDadosProfessoresAtivos = () => {
-        if (!Array.isArray(professoresMaisAtivos) || professoresMaisAtivos.length === 0) {
-            return [];
-        }
-        
-        return professoresMaisAtivos
-            .filter(item => item && item.idprofessor) // Filtrar apenas itens válidos
-            .map(item => ({
-                professor: item.nomeprofessor && item.nomeprofessor.length > 15 
-                    ? item.nomeprofessor.substring(0, 15) + '...' 
-                    : (item.nomeprofessor || 'Desconhecido'),
-                disciplinas: item.totalDisciplinas || 0,
-                titulacao: item.titulacaoprofessor || 'Não informada',
-                id: item.idprofessor // Adicionar ID para key
-            }));
-    };
-
-    // Renderizar gráfico de professores por disciplina
-    const renderGraficoProfessoresDisciplina = () => {
-        const dados = prepararDadosProfessoresDisciplina();
-        
-        if (loading) {
-            return <div className="text-center py-4">Carregando dados...</div>;
-        }
-        
-        if (dados.length === 0) {
-            return <div className="text-center py-4">Nenhum dado disponível</div>;
-        }
-
+    if (loading) {
         return (
-            <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                    data={dados}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                        dataKey="disciplina" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={60} 
-                    />
-                    <YAxis />
-                    <Tooltip 
-                        formatter={(value, name) => {
-                            if (name === 'professores') return [value, 'Quantidade de Professores'];
-                            return [value, name];
-                        }}
-                        labelFormatter={(value) => `Disciplina: ${value}`}
-                    />
-                    <Legend />
-                    <Bar 
-                        dataKey="professores" 
-                        name="Quantidade de Professores" 
-                        fill="#82ca9d" 
-                        radius={[4, 4, 0, 0]}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
-        );
-    };
-    
-    const getProfessorImagem = (professor) => {
-        if(professor.fotoUrl){
-            return professor.fotoUrl;
-        }
-        if (professor.fotoprofessor) {
-            return `http://localhost:8080/api/img/professores/${professor.fotoprofessor}`;
-        }
-        // Retornar uma imagem padrão se não houver foto
-        return "https://via.placeholder.com/50?text=Sem+Foto";
-    }
-    
-    // Renderizar tabela de professores mais ativos
-    const renderTabelaProfessoresAtivos = () => {
-        if (loading) {
-            return <div className="text-center py-4">Carregando dados...</div>;
-        }
-        
-        if (!Array.isArray(professoresMaisAtivos) || professoresMaisAtivos.length === 0) {
-            return <div className="text-center py-4">Nenhum dado disponível</div>;
-        }
-
-        const professoresFiltrados = professoresMaisAtivos
-            .filter(item => item && item.idprofessor)
-            .slice(0, 10); // Garantir apenas top 10
-
-        return (
-            <div className="table-responsive">
-                <table className="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Foto</th>
-                            <th>Professor</th>
-                            <th className="d-none d-md-table-cell">Titulação</th>
-                            <th>Disciplinas Ministradas</th>
-                            <th className="d-none d-md-table-cell">Lista de Disciplinas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {professoresFiltrados.map((prof) => (
-                            <tr key={prof.idprofessor}>
-                                <td>
-                                    <img 
-                                        src={getProfessorImagem(prof)}
-                                        alt={prof.nomeprofessor} 
-                                        className="rounded-circle me-3"
-                                        style={{width: '50px', height: '50px', objectFit: 'cover'}}
-                                        onError={(e) => {
-                                            e.target.src = "https://via.placeholder.com/50?text=Sem+Foto";
-                                        }}
-                                    />
-                                </td>
-                                <td>{prof.nomeprofessor || 'Desconhecido'}</td>
-                                <td className="d-none d-md-table-cell">
-                                    <span className="badge bg-primary">
-                                        {prof.titulacaoprofessor || 'Não informada'}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span className="badge bg-success" style={{ fontSize: '1.1em' }}>
-                                        {prof.totalDisciplinas || 0}
-                                    </span>
-                                </td>
-                                <td className="d-none d-md-table-cell">
-                                    <small className="text-muted" title={prof.disciplinas}>
-                                        {prof.disciplinas 
-                                            ? (prof.disciplinas.length > 50 
-                                                ? prof.disciplinas.substring(0, 100) + '...' 
-                                                : prof.disciplinas)
-                                            : 'Nenhuma disciplina'}
-                                    </small>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
+                <SidebarAdm />
+                <div className="col-md-9 ms-md-auto col-lg-10 px-0">
+                    <NavbarAdm />
+                    <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+                        <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+                            <span className="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
-    };
-
-    // Renderizar gráfico de desempenho dos professores
-    const renderGraficoDesempenhoProfessores = () => {
-        const dados = prepararDadosProfessoresAtivos();
-        
-        if (loading) {
-            return <div className="text-center py-4">Carregando dados...</div>;
-        }
-        
-        if (dados.length === 0) {
-            return <div className="text-center py-4">Nenhum dado disponível</div>;
-        }
-
-        return (
-            <ResponsiveContainer width="100%" height={350}>
-                <BarChart
-                    data={dados}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                        dataKey="professor" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={80}
-                    />
-                    <YAxis />
-                    <Tooltip 
-                        formatter={(value, name) => {
-                            if (name === 'disciplinas') return [value, 'Nº de Disciplinas'];
-                            return [value, name];
-                        }}
-                        labelFormatter={(value, payload) => {
-                            if (payload && payload[0]) {
-                                const titulacao = payload[0].payload.titulacao;
-                                return `Professor: ${value} (${titulacao})`;
-                            }
-                            return value;
-                        }}
-                    />
-                    <Legend />
-                    <Bar 
-                        dataKey="disciplinas" 
-                        name="Número de Disciplinas" 
-                        fill="#ffc107"
-                        radius={[4, 4, 0, 0]}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
-        );
-    };
-
-    // Renderizar conteúdo baseado na view selecionada
-    const renderContent = () => {
-        switch(view) {
-            case 'professores':
-                return <ProfessorEdit />;
-            
-            case 'geral':
-            default:
-                return (
-                    <>
-                        <div className="row">
-                            <div className="col-12 mb-4">
-                                <h3 className="text-primary">
-                                    <IoMdStats className="me-2 mb-2"/>
-                                    Gestão de Professores - Dashboard
-                                </h3>
-                                <p className="text-muted">
-                                    Visualize estatísticas e métricas sobre os professores
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Cards de estatísticas gerais */}
-                        <div className="row mb-4">
-                            <div className="col-md-4 mb-3">
-                                <div className="card border-primary">
-                                    <div className="card-body">
-                                        <h5 className="card-title text-primary">Total de Professores</h5>
-                                        <h2 className="card-text">
-                                            {loading ? '...' : estatisticas.totalProfessores || 0}
-                                        </h2>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card border-success">
-                                    <div className="card-body">
-                                        <h5 className="card-title text-success">Com Titulação</h5>
-                                        <h2 className="card-text">
-                                            {loading ? '...' : estatisticas.professoresComTitulacao || 0}
-                                        </h2>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card border-warning">
-                                    <div className="card-body">
-                                        <h5 className="card-title text-warning">Vinculados à Disciplinas</h5>
-                                        <h2 className="card-text">
-                                            {loading ? '...' : estatisticas.professoresComTitulacao || 0}
-                                        </h2>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* CORREÇÃO AQUI: Gráficos lado a lado */}
-                        <div className="row mb-4">
-                            {/* Gráfico de professores por disciplina */}
-                            <div className="col-md-6 mb-4">
-                                <div className="card h-100">
-                                    <div className="card-header bg-success text-white">
-                                        <h5 className="mb-0">Professores por Disciplina (Top 20)</h5>
-                                    </div>
-                                    <div className="card-body">
-                                        {renderGraficoProfessoresDisciplina()}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Gráfico de professores ativos */}
-                            <div className="col-md-6 mb-4">
-                                <div className="card h-100">
-                                    <div className="card-header bg-warning">
-                                        <h5 className="mb-0">Desempenho dos Professores Mais Ativos</h5>
-                                    </div>
-                                    <div className="card-body">
-                                        {renderGraficoDesempenhoProfessores()}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Tabela de professores mais ativos */}
-                        <div className="row mt-4">
-                            <div className="col-12">
-                                <div className="card">
-                                    <div className="card-header bg-info text-white">
-                                        <h5 className="mb-0">Professores Mais Ativos</h5>
-                                    </div>
-                                    <div className="card-body">
-                                        {renderTabelaProfessoresAtivos()}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Botão para atualizar dados
-                        <div className="row mt-4">
-                            <div className="col-12 text-end">
-                                <button 
-                                    className="btn btn-primary"
-                                    onClick={fetchEstatisticas}
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            Atualizando...
-                                        </>
-                                    ) : 'Atualizar Dados'}
-                                </button>
-                            </div>
-                        </div> */}
-                    </>
-                );
-        }
-    };
+    }
 
     return (
-        <div>
-            <div className="container-fluid">
-                <SidebarAdm/>
-                <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                    <NavbarAdm/>
-                    <main className="p-4">
-                        {/* Botões de navegação */}
-                        <div className="mb-4">
-                            <div className="d-flex gap-2">
-                                <button 
-                                    className={`btn ${view === 'geral' ? 'btn-primary' : 'btn-outline-primary'}`}
-                                    onClick={() => setView('geral')}
-                                    style={{
-                                        padding: '10px 20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    <IoMdStats />
-                                    Geral
-                                </button>
-                                 
-                                <button 
-                                    className={`btn ${view === 'professores' ? 'btn-primary' : 'btn-outline-primary'}`}
-                                    onClick={() => setView('professores')}
-                                    style={{
-                                        padding: '10px 20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    <IoMdStats />
-                                    Professores
-                                </button>
+        <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
+            <SidebarAdm />
+            <div className="col-md-9 ms-md-auto col-lg-10 px-0">
+                <NavbarAdm />
+                <main className="p-4" style={{ backgroundColor: '#f8f9fa' }}>
+                    {/* Header Section */}
+                    <div className="row mb-4">
+                        <div className="col-12">
+                            <div className="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                        Dashboard de Professores
+                                    </h2>
+                                    <p className="text-muted mb-0">
+                                        Bem-vindo, {user ? user.nome : 'Administrador'} | Análise completa do corpo docente
+                                    </p>
+                                </div>
+                                <div className="d-flex align-items-center gap-3">
+                                    <div className="text-muted small">
+                                        <FaClock className="me-1" />
+                                        Última atualização: {ultimaAtualizacao.toLocaleString('pt-BR')}
+                                    </div>
+                                    <div className="badge p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
+                                        <FaChalkboardTeacher size={24} color="white" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Conteúdo dinâmico baseado na view selecionada */}
-                        {renderContent()}
-                    </main>
-                </div>
+                    {/* Botões de Navegação */}
+                    <div className="row mb-4 g-2">
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "geral" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
+                                onClick={() => setSecaoAtiva("geral")}
+                            >
+                                <FaChartBar className="me-2 mb-1" />
+                                Painel Geral
+                            </button>
+                        </div>
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "professores" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
+                                onClick={() => setSecaoAtiva("professores")}
+                            >
+                                <FaUserGraduate className="me-2 mb-1" />
+                                Gestão de Professores
+                            </button>
+                        </div>
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "ProfessorRemovidosEdit" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
+                                onClick={() => setSecaoAtiva("ProfessorRemovidosEdit")}
+                            >
+                                <FaUserGraduate className="me-2 mb-1" />
+                                Professores Removidos
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Seção Painel Geral */}
+                    {secaoAtiva === "geral" && (
+                        <>
+                            {/* Cards Estatísticos */}
+                            <div className="row mb-4 g-3">
+                                {/* Card Total Professores */}
+                                <div className="col-md-3">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #003366 0%, #1a4d80 100%)' }}>
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Total de Professores</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
+                                                        {totalProfessores}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <IoMdPeople size={28} color="white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-0">Corpo docente ativo</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card Com Titulação */}
+                                <div className="col-md-3">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #B8860B 0%, #DAA520 100%)' }}>
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Com Titulação</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
+                                                        {professoresComTitulacao}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <FaGraduationCap size={28} color="white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-0">Pós-graduados e especialistas</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card Vinculados */}
+                                <div className="col-md-3">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #4A90E2 0%, #6AA6E8 100%)' }}>
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Vinculados a Disciplinas</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
+                                                        {professoresVinculados}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <FaBook size={28} color="white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-0">Ministrando disciplinas</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card Com Foto */}
+                                <div className="col-md-3">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #50C878 0%, #6AD88C 100%)' }}>
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Com Foto</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
+                                                        {professoresComFoto}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <IoMdPerson size={28} color="white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-0">Perfil completo</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* GRÁFICO 1 - Pizza (Distribuição por Titulação) */}
+                            <div className="row g-4 mb-4">
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <FaChartPie size={20} color="#B8860B" />
+                                                <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                    Gráfico 1: Distribuição por Titulação (Ativos)
+                                                </h5>
+                                            </div>
+                                            <p className="text-muted small mb-0">Percentual de professores ativos por nível de formação</p>
+                                        </div>
+                                        <div className="card-body">
+                                            {dadosProfessoresPorTitulacao.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={dadosProfessoresPorTitulacao}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            labelLine={true}
+                                                            label={({ titulacao, percent }) => `${titulacao}: ${(percent * 100).toFixed(0)}%`}
+                                                            outerRadius={120}
+                                                            fill="#8884d8"
+                                                            dataKey="quantidade"
+                                                            labelStyle={{ fontSize: '10px', fill: '#333' }}
+                                                        >
+                                                            {dadosProfessoresPorTitulacao.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                            content={({ active, payload }) => {
+                                                                if (active && payload && payload.length) {
+                                                                    const data = payload[0].payload;
+                                                                    const total = dadosProfessoresPorTitulacao.reduce((acc, curr) => acc + curr.quantidade, 0);
+                                                                    const percentual = total > 0 ? ((data.quantidade / total) * 100).toFixed(1) : 0;
+                                                                    
+                                                                    return (
+                                                                        <div style={{
+                                                                            backgroundColor: '#fff',
+                                                                            border: 'none',
+                                                                            borderRadius: '8px',
+                                                                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                                                                            fontSize: '12px',
+                                                                            padding: '10px 14px'
+                                                                        }}>
+                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#003366' }}>
+                                                                                {data.titulacao}
+                                                                            </p>
+                                                                            <p style={{ margin: '5px 0 0 0', color: '#666' }}>
+                                                                                Professores Ativos: <strong>{data.quantidade}</strong>
+                                                                            </p>
+                                                                            <p style={{ margin: '2px 0 0 0', color: '#B8860B' }}>
+                                                                                Participação: <strong>{percentual}%</strong>
+                                                                            </p>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            }}
+                                                        />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="d-flex justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <p className="text-muted">Nenhum dado disponível</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* GRÁFICO 2 - Barras (Professores por Titulação) */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <FaChartBar size={20} color="#003366" />
+                                                <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                    Gráfico 2: Volume por Titulação (Ativos)
+                                                </h5>
+                                            </div>
+                                            <p className="text-muted small mb-0">Quantidade absoluta por nível de formação</p>
+                                        </div>
+                                        <div className="card-body">
+                                            {dadosProfessoresPorTitulacao.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <BarChart data={dadosProfessoresPorTitulacao} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                                        <XAxis dataKey="titulacao" tick={{ fill: '#666', fontSize: 12 }} />
+                                                        <YAxis tick={{ fill: '#666', fontSize: 12 }} />
+                                                        <Tooltip 
+                                                            contentStyle={{ 
+                                                                backgroundColor: '#fff',
+                                                                border: 'none',
+                                                                borderRadius: '8px',
+                                                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                                                            }}
+                                                        />
+                                                        <Legend />
+                                                        <Bar dataKey="quantidade" fill="#003366" name="Total de Professores Ativos" radius={[5,5,0,0]}>
+                                                            {dadosProfessoresPorTitulacao.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="d-flex justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <p className="text-muted">Nenhum dado disponível</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* GRÁFICO 3 - Scatter (Relação Peso vs Proporção) */}
+                            <div className="row g-4 mb-4">
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <FaChartLine size={20} color="#50C878" />
+                                                <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                    Gráfico 3: Análise de Peso e Proporção
+                                                </h5>
+                                            </div>
+                                            <p className="text-muted small mb-0">Relação entre quantidade e participação percentual</p>
+                                        </div>
+                                        <div className="card-body">
+                                            {dadosComparativos.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                                        <XAxis 
+                                                            type="number" 
+                                                            dataKey="peso" 
+                                                            name="Professores" 
+                                                            unit=" prof" 
+                                                            tick={{ fill: '#666', fontSize: 12 }}
+                                                            label={{ value: 'Quantidade de Professores', position: 'bottom', fill: '#666', fontSize: 11 }}
+                                                        />
+                                                        <YAxis 
+                                                            type="number" 
+                                                            dataKey="proporcao" 
+                                                            name="Participação" 
+                                                            unit="%" 
+                                                            tick={{ fill: '#666', fontSize: 12 }}
+                                                            label={{ value: 'Participação (%)', angle: -90, position: 'left', fill: '#666', fontSize: 11 }}
+                                                        />
+                                                        <Tooltip 
+                                                            cursor={{ strokeDasharray: '3 3' }}
+                                                            content={({ active, payload }) => {
+                                                                if (active && payload && payload.length) {
+                                                                    const data = payload[0].payload;
+                                                                    return (
+                                                                        <div style={{
+                                                                            backgroundColor: '#fff',
+                                                                            border: 'none',
+                                                                            borderRadius: '8px',
+                                                                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                                                                            fontSize: '12px',
+                                                                            padding: '10px 14px'
+                                                                        }}>
+                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#003366' }}>
+                                                                                {data.titulacao}
+                                                                            </p>
+                                                                            <p style={{ margin: '5px 0 0 0', color: '#666' }}>
+                                                                                Professores: <strong>{data.peso}</strong>
+                                                                            </p>
+                                                                            <p style={{ margin: '2px 0 0 0', color: '#B8860B' }}>
+                                                                                Participação: <strong>{data.proporcao}%</strong>
+                                                                            </p>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            }}
+                                                        />
+                                                        <Legend />
+                                                        <Scatter 
+                                                            name="Titulações" 
+                                                            data={dadosComparativos} 
+                                                            fill="#003366" 
+                                                            shape="circle"
+                                                        >
+                                                            {dadosComparativos.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Scatter>
+                                                    </ScatterChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="d-flex justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <p className="text-muted">Nenhum dado disponível</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* GRÁFICO 4 - Disciplinas Mais Ministradas */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <FaBook size={20} color="#4A90E2" />
+                                                <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                    Gráfico 4: Disciplinas Mais Ministradas
+                                                </h5>
+                                            </div>
+                                            <p className="text-muted small mb-0">Top 10 disciplinas com mais professores</p>
+                                        </div>
+                                        <div className="card-body">
+                                            {disciplinasMaisMinistradas.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <BarChart 
+                                                        data={disciplinasMaisMinistradas.slice(0, 10)} 
+                                                        margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                                                        layout="vertical"
+                                                    >
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                                        <XAxis type="number" tick={{ fill: '#666', fontSize: 12 }} />
+                                                        <YAxis 
+                                                            type="category" 
+                                                            dataKey="disciplina" 
+                                                            width={150}
+                                                            tick={{ fill: '#666', fontSize: 11 }}
+                                                            interval={0}
+                                                        />
+                                                        <Tooltip 
+                                                            contentStyle={{ 
+                                                                backgroundColor: '#fff',
+                                                                border: 'none',
+                                                                borderRadius: '8px',
+                                                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                                                            }}
+                                                            formatter={(value) => [`${value} professores`, 'Total']}
+                                                        />
+                                                        <Legend />
+                                                        <Bar 
+                                                            dataKey="totalProfessores" 
+                                                            fill="#4A90E2" 
+                                                            name="Total de Professores"
+                                                            radius={[0, 5, 5, 0]}
+                                                        >
+                                                            {disciplinasMaisMinistradas.slice(0, 10).map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="d-flex justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <p className="text-muted">Nenhum dado disponível</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* NOVO GRÁFICO 5 - Professores Desativados */}
+                            <div className="row g-4 mb-4">
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <FaUserSlash size={20} color="#DC143C" />
+                                                <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                    Gráfico 5: Professores Desativados por Titulação
+                                                </h5>
+                                            </div>
+                                            <p className="text-muted small mb-0">Distribuição de professores com estado 'Desativado'</p>
+                                        </div>
+                                        <div className="card-body">
+                                            {erroDesativados ? (
+                                                <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <FaExclamationTriangle size={40} color="#DC143C" />
+                                                    <p className="text-muted mt-3">Erro ao carregar dados de professores desativados</p>
+                                                </div>
+                                            ) : dadosGraficoDesativados.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={dadosGraficoDesativados}
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            labelLine={true}
+                                                            label={({ titulacao, percent }) => `${titulacao}: ${(percent * 100).toFixed(0)}%`}
+                                                            outerRadius={120}
+                                                            fill="#8884d8"
+                                                            dataKey="quantidade"
+                                                            labelStyle={{ fontSize: '10px', fill: '#333' }}
+                                                        >
+                                                            {dadosGraficoDesativados.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                            content={({ active, payload }) => {
+                                                                if (active && payload && payload.length) {
+                                                                    const data = payload[0].payload;
+                                                                    const total = dadosGraficoDesativados.reduce((acc, curr) => acc + curr.quantidade, 0);
+                                                                    const percentual = total > 0 ? ((data.quantidade / total) * 100).toFixed(1) : 0;
+                                                                    
+                                                                    return (
+                                                                        <div style={{
+                                                                            backgroundColor: '#fff',
+                                                                            border: 'none',
+                                                                            borderRadius: '8px',
+                                                                            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                                                                            fontSize: '12px',
+                                                                            padding: '10px 14px'
+                                                                        }}>
+                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#DC143C' }}>
+                                                                                {data.titulacao}
+                                                                            </p>
+                                                                            <p style={{ margin: '5px 0 0 0', color: '#666' }}>
+                                                                                Professores Desativados: <strong>{data.quantidade}</strong>
+                                                                            </p>
+                                                                            <p style={{ margin: '2px 0 0 0', color: '#B8860B' }}>
+                                                                                Participação: <strong>{percentual}%</strong>
+                                                                            </p>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            }}
+                                                        />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="d-flex flex-column justify-content-center align-items-center" style={{ height: '350px' }}>
+                                                    <FaUserSlash size={40} color="#ccc" />
+                                                    <p className="text-muted mt-3">Nenhum professor desativado encontrado</p>
+                                                    <small className="text-muted">Os professores desativados aparecerão aqui</small>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card de Resumo de Desativados */}
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #DC143C 0%, #FF4500 100%)' }}>
+                                        <div className="card-body d-flex flex-column justify-content-center">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Total de Professores Desativados</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '3.5rem', fontWeight: '700' }}>
+                                                        {totalProfessoresDesativados}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <IoMdPeople size={32} color="white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-2">Com titulação: {desativadosComTitulacao}</p>
+                                            <p className="text-white-50 small mb-0">Professores que não fazem mais parte do corpo docente</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Tabela de Professores Desativados */}
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                Professores Desativados
+                                            </h5>
+                                            <p className="text-muted small mb-0">Lista de professores com estado 'Desativado'</p>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Foto</th>
+                                                            <th>Nome</th>
+                                                            <th>Titulação</th>
+                                                            <th>Data Admissão</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {professoresDesativados.length > 0 ? (
+                                                            professoresDesativados.map((prof, index) => (
+                                                                <tr key={prof.idprofessor || index}>
+                                                                    <td>
+                                                                        <img 
+                                                                            src={prof.fotoUrl || "https://via.placeholder.com/40?text=Sem+Foto"}
+                                                                            alt={prof.nomeprofessor}
+                                                                            className="rounded-circle"
+                                                                            style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                                                                            onError={(e) => {
+                                                                                e.target.src = "https://via.placeholder.com/40?text=Sem+Foto";
+                                                                            }}
+                                                                        />
+                                                                    </td>
+                                                                    <td style={{ fontWeight: '500' }}>
+                                                                        {prof.nomeprofessor || 'N/A'}
+                                                                    </td>
+                                                                    <td>
+                                                                        <span className="badge bg-secondary">
+                                                                            {prof.titulacaoprofessor || 'Não informado'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        {prof.dataadmissaoprofessor 
+                                                                            ? new Date(prof.dataadmissaoprofessor).toLocaleDateString('pt-BR')
+                                                                            : 'N/A'}
+                                                                    </td>
+                                                                    <td>
+                                                                        <span className="badge bg-danger">Desativado</span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="5" className="text-center py-3">
+                                                                    Nenhum professor desativado encontrado
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Ranking e Tabelas */}
+                            <div className="row mt-4">
+                                {/* Professores Recentes */}
+                                <div className="col-md-6 mb-4">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                Professores Recentemente Admitidos
+                                            </h5>
+                                            <p className="text-muted small mb-0">Últimos 5 professores cadastrados</p>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Foto</th>
+                                                            <th>Nome</th>
+                                                            <th>Titulação</th>
+                                                            <th>Data Admissão</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {professoresRecentes.length > 0 ? (
+                                                            professoresRecentes.map((prof, index) => (
+                                                                <tr key={prof.idprofessor || index}>
+                                                                    <td>
+                                                                        <img 
+                                                                            src={prof.fotoUrl || "https://via.placeholder.com/40"}
+                                                                            alt={prof.nomeprofessor}
+                                                                            className="rounded-circle"
+                                                                            style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                                                                            onError={(e) => {
+                                                                                e.target.src = "https://via.placeholder.com/40?text=Sem+Foto";
+                                                                            }}
+                                                                        />
+                                                                    </td>
+                                                                    <td style={{ fontWeight: '500' }}>
+                                                                        {prof.nomeprofessor || 'N/A'}
+                                                                    </td>
+                                                                    <td>
+                                                                        <span className="badge bg-primary">
+                                                                            {prof.titulacaoprofessor || 'Não informado'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        {prof.dataadmissaoprofessor 
+                                                                            ? new Date(prof.dataadmissaoprofessor).toLocaleDateString('pt-BR')
+                                                                            : 'N/A'}
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="4" className="text-center py-3">
+                                                                    Nenhum professor cadastrado
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Professores Sem Disciplina */}
+                                <div className="col-md-6 mb-4">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                Professores sem Disciplina Vinculada
+                                            </h5>
+                                            <p className="text-muted small mb-0">Docentes aguardando atribuição</p>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Nome</th>
+                                                            <th>Titulação</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {professoresSemDisciplina.length > 0 ? (
+                                                            professoresSemDisciplina.slice(0, 8).map((prof, index) => (
+                                                                <tr key={prof.idprofessor || index}>
+                                                                    <td>
+                                                                        <span className={`badge bg-${index < 3 ? 'warning' : 'secondary'} text-dark`}>
+                                                                            {index + 1}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td style={{ color: COLORS[index % COLORS.length], fontWeight: '500' }}>
+                                                                        {prof.nomeprofessor || 'N/A'}
+                                                                    </td>
+                                                                    <td>
+                                                                        {prof.titulacaoprofessor || 'Não informado'}
+                                                                    </td>
+                                                                    <td>
+                                                                        <span className="badge bg-danger">Sem disciplina</span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="4" className="text-center py-3">
+                                                                    Todos os professores possuem disciplinas vinculadas
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Ranking de Disciplinas */}
+                            <div className="row mt-2">
+                                <div className="col-12">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
+                                        <div className="card-header bg-white border-0 pt-4 px-4">
+                                            <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                Ranking de Disciplinas por Número de Professores
+                                            </h5>
+                                            <p className="text-muted small mb-0">As 10 disciplinas com mais docentes</p>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="table-responsive">
+                                                <table className="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Disciplina</th>
+                                                            <th className="text-center">Total de Professores</th>
+                                                            <th className="text-center">Participação</th>
+                                                            <th>Professores</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {disciplinasMaisMinistradas.length > 0 ? (
+                                                            disciplinasMaisMinistradas.slice(0, 10).map((item, index) => {
+                                                                const totalGeral = disciplinasMaisMinistradas.reduce((acc, curr) => acc + curr.totalProfessores, 0);
+                                                                const percentual = totalGeral > 0 ? ((item.totalProfessores / totalGeral) * 100).toFixed(1) : 0;
+                                                                
+                                                                return (
+                                                                    <tr key={item.iddisciplina || index}>
+                                                                        <td>
+                                                                            <span className={`badge bg-${index < 3 ? 'warning' : 'secondary'} text-dark`} style={{ fontSize: '14px', padding: '8px 12px' }}>
+                                                                                {index + 1}º
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ color: COLORS[index % COLORS.length], fontWeight: '500' }}>
+                                                                            {item.disciplina}
+                                                                        </td>
+                                                                        <td className="text-center fw-bold">{item.totalProfessores}</td>
+                                                                        <td className="text-center">
+                                                                            <div className="d-flex align-items-center justify-content-center gap-2">
+                                                                                <span style={{ minWidth: '45px' }}>{percentual}%</span>
+                                                                                <div className="progress" style={{ width: '100px', height: '8px' }}>
+                                                                                    <div 
+                                                                                        className="progress-bar" 
+                                                                                        style={{ 
+                                                                                            width: `${percentual}%`,
+                                                                                            backgroundColor: COLORS[index % COLORS.length]
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <small className="text-muted" title={item.professoresNomes}>
+                                                                                {item.professoresNomes?.length > 50 
+                                                                                    ? item.professoresNomes.substring(0, 50) + '...' 
+                                                                                    : item.professoresNomes || 'N/A'}
+                                                                            </small>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan="5" className="text-center py-3">
+                                                                    Nenhum dado disponível
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Legenda dos Gráficos */}
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <div className="card border-0 shadow-sm" style={{ borderRadius: '15px', backgroundColor: '#f8f9fa' }}>
+                                        <div className="card-body">
+                                            <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>O que cada gráfico revela:</h6>
+                                            <div className="row">
+                                                <div className="col-md-2">
+                                                    <p className="small mb-2">
+                                                        <span style={{ color: '#B8860B', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Gráfico 1:</strong> Distribuição % ativos
+                                                    </p>
+                                                </div>
+                                                <div className="col-md-2">
+                                                    <p className="small mb-2">
+                                                        <span style={{ color: '#003366', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Gráfico 2:</strong> Volume ativos
+                                                    </p>
+                                                </div>
+                                                <div className="col-md-2">
+                                                    <p className="small mb-2">
+                                                        <span style={{ color: '#50C878', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Gráfico 3:</strong> Peso vs proporção
+                                                    </p>
+                                                </div>
+                                                <div className="col-md-2">
+                                                    <p className="small mb-2">
+                                                        <span style={{ color: '#4A90E2', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Gráfico 4:</strong> Disciplinas top 10
+                                                    </p>
+                                                </div>
+                                                <div className="col-md-2">
+                                                    <p className="small mb-2">
+                                                        <span style={{ color: '#DC143C', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Gráfico 5:</strong> Desativados
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Seção Gestão de Professores */}
+                    {secaoAtiva === "professores" && (
+                        <ProfessorEdit />
+                    )}
+                    {secaoAtiva === "ProfessorRemovidosEdit" && (
+                        <ProfessorRemovidosEdit />
+                    )}
+                </main>
             </div>
         </div>
     );

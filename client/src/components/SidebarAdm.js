@@ -37,12 +37,6 @@ function SidebarAdm(){
                             <Link to="/funcionariosAdmRegistrer" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
-                            <Link to="/professoresAdmRegistrer" className={`nav-link ${Style.Link}`}>
-                                <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
-                            </Link>
-                            <Link to="/cursosAdmRegistrer" className={`nav-link ${Style.Link}`}>
-                                <FaDiscourse className="mb-2 me-2"/>Cursos
-                            </Link>
                         </div>
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
@@ -92,24 +86,6 @@ function SidebarAdm(){
                 </div>
                 <div className="offcanvas-body p-0">
                     <nav className="nav flex-column">
-                        {/* Menu Principal */}
-                        <div className="p-3 border-bottom">
-                            <Link to="/homeAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Painel Geral
-                            </Link>
-                            <h6 className="text-uppercase text-muted small fw-bold mb-2">Registros</h6>
-                            <Link to="/funcionariosAdmRegistrer" className={`nav-link active ${Style.Link}`}>
-                                <FaUserTie className="mb-2 me-2"/> Funcionários
-                            </Link>
-                            <Link to="/professoresAdmRegistrer" className={`nav-link ${Style.Link}`}>
-                                <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
-                            </Link>
-                            <Link to="/cursosAdmRegistrer" className={`nav-link ${Style.Link}`}>
-                                <FaDiscourse className="mb-2 me-2"/>Cursos
-                            </Link>
-                        </div>
-
-                        {/* Menu Secundário */}
                         <div className="p-3 border-bottom">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
                             <Link to="#" className={`nav-link active ${Style.Link}`}>

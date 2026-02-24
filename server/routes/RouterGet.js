@@ -306,7 +306,7 @@ router.get('/periodo/:id', (req, res) => {
 });
 
 router.get('/Professores', (req, res) => {
-    const sql = "SELECT * FROM professor ORDER BY nomeprofessor ASC";
+    const sql = "SELECT * FROM professor WHERE estado = 'Ativo' ORDER BY nomeprofessor ASC";
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores:", error);
@@ -437,7 +437,7 @@ router.get('/professorVinculado/:id', async (req,res)=>{
         FROM disc_prof 
         INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
         INNER JOIN professor ON professor.idprofessor = disc_prof.idprofessor 
-        WHERE disciplina.iddisciplina = ?
+        WHERE disciplina.iddisciplina = ? AND estado = 'Ativo'
         ORDER BY professor.nomeprofessor ASC
     `;
     
@@ -470,7 +470,7 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
         WHERE professor.idprofessor NOT IN (
             SELECT disc_prof.idprofessor 
             FROM disc_prof 
-            WHERE disc_prof.iddisciplina = ?
+            WHERE disc_prof.iddisciplina = ? AND estado = 'Ativo'
         )
         ORDER BY professor.nomeprofessor ASC
     `;
@@ -498,7 +498,7 @@ router.get('/estatisticasProfessores', (req, res) => {
             COUNT(*) as totalProfessores,
             COUNT(CASE WHEN fotoprofessor IS NOT NULL THEN 1 END) as professoresComFoto,
             COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as professoresComTitulacao
-        FROM professor
+        FROM professor WHERE estado = 'Ativo'
     `;
     
     conexao.query(sql, (error, result) => {
@@ -519,7 +519,7 @@ router.get('/distribuicaoTitulacao', (req, res) => {
         SELECT 
             IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
             COUNT(*) as quantidade
-        FROM professor
+        FROM professor  WHERE estado = 'Ativo'
         GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
         ORDER BY quantidade DESC
     `;
@@ -546,7 +546,7 @@ router.get('/professoresPorDisciplina', (req, res) => {
             GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professores
         FROM disc_prof dp
         RIGHT JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
-        LEFT JOIN professor p ON dp.idprofessor = p.idprofessor
+        LEFT JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
         GROUP BY d.iddisciplina, d.disciplina
         ORDER BY totalProfessores DESC, d.disciplina ASC
     `;
@@ -572,7 +572,7 @@ router.get('/disciplinasMaisMinistradas', (req, res) => {
             GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professoresNomes
         FROM disc_prof dp
         INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
-        INNER JOIN professor p ON dp.idprofessor = p.idprofessor
+        INNER JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
         GROUP BY d.iddisciplina, d.disciplina
         HAVING totalProfessores > 0
         ORDER BY totalProfessores DESC
@@ -603,7 +603,8 @@ router.get('/professoresMaisAtivos', (req, res) => {
             GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') as disciplinas
         FROM disc_prof dp
         INNER JOIN professor p ON dp.idprofessor = p.idprofessor
-        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina 
+        WHERE estado = 'Ativo'
         GROUP BY p.idprofessor, p.nomeprofessor, p.titulacaoprofessor
         HAVING totalDisciplinas > 0
         ORDER BY totalDisciplinas DESC
@@ -635,7 +636,7 @@ router.get('/professoresSemDisciplinas', (req, res) => {
             p.titulacaoprofessor
         FROM professor p
         LEFT JOIN disc_prof dp ON p.idprofessor = dp.idprofessor
-        WHERE dp.idprofessor IS NULL
+        WHERE dp.idprofessor IS NULL AND estado = 'Ativo'
         ORDER BY p.nomeprofessor ASC
     `;
     
@@ -662,7 +663,7 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
             disciplina.iddisciplina
         FROM disc_prof 
         INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        WHERE disc_prof.idprofessor = ?
+        WHERE disc_prof.idprofessor = ? AND estado = 'Ativo'
         ORDER BY disciplina.disciplina ASC
     `;
     
@@ -771,7 +772,7 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
 });
 
 router.get('/turmas', async (req,res)=>{
-    const sql = `SELECT p.idperiodo, p.periodo,p.turma,p.anoletivo,ct.categoriacurso,c.curso,a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso=ct.idcategoriacurso INNER JOIN curso c ON p.idcurso=c.idcurso INNER JOIN anocurricular a ON p.idanocurricular=a.idanocurricular LIMIT 100`;
+    const sql = `SELECT p.idperiodo, p.periodo,p.turma,p.anoletivo,ct.categoriacurso,c.curso,a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso=ct.idcategoriacurso INNER JOIN curso c ON p.idcurso=c.idcurso INNER JOIN anocurricular a ON p.idanocurricular=a.idanocurricular ORDER BY p.anoletivo ASC LIMIT 100`;
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores sem disciplinas:", error);
@@ -784,5 +785,69 @@ router.get('/turmas', async (req,res)=>{
         }
     });
 })
+
+router.get('/estatisticasProfessoresDesativados', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalProfessoresDesativados,
+            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as desativadosComTitulacao
+        FROM professor WHERE estado = 'Desativado'
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar estatísticas de professores desativados:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/professoresDesativados', (req, res) => {
+    const sql = "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores desativados:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const professoresComFoto = result.map(professor =>({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/distribuicaoTitulacaoDesativados', (req, res) => {
+    const sql = `
+        SELECT 
+            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
+            COUNT(*) as quantidade
+        FROM professor
+        WHERE estado = 'Desativado'
+        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
+        ORDER BY quantidade DESC
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar distribuição por titulação de desativados:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
 
 module.exports = router;

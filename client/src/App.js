@@ -5,7 +5,6 @@ import Cadastro from "./pages/Cadastro";
 import Home from "./pages/Home";
 import HomeAdm from "./pagesAdm/HomeAdm";
 import FuncionáriosAdmRegistrer from "./pagesAdm/FuncionariosAdmRegistrer";
-import ProfessoresAdmRegistrer from "./pagesAdm/ProfessoresAdmRegistrer";
 import GestaoCursoAdm from "./pagesAdm/GestaoCursoAdm";
 import GestaoProfessoresAdm from "./pagesAdm/GestaoProfessoresAdm";
 
@@ -38,7 +37,6 @@ function App() {
         
         <Route path="/homeAdm" element={<RotaPrivada><HomeAdm/></RotaPrivada>}/>
         <Route path="/funcionariosAdmRegistrer" element={<RotaPrivada><FuncionáriosAdmRegistrer/></RotaPrivada>}/>
-        <Route path="/professoresAdmRegistrer" element={<RotaPrivada><ProfessoresAdmRegistrer/></RotaPrivada>}/>
         <Route path="/gestaoCursoAdm" element={<RotaPrivada><GestaoCursoAdm/></RotaPrivada>}/>
         <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
       </Routes>
