@@ -559,7 +559,7 @@ function ProfessorEdit() {
                     setRemovendoDisciplina(iddisciplina);
                     showInfoToast("Processando", `Removendo disciplina...`);
 
-                    await apiClient.delete(`/delete/desvincularProfessorDisciplina/${iddisciplina}?idprofessor=${idProfessor}`);
+                    await apiClient.delete(`/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`);
                     
                     showSuccessToast(
                         "Sucesso",
@@ -584,7 +584,7 @@ function ProfessorEdit() {
 
     const deletarProfessor = (id, nome) => {
     showConfirmToast(
-        `Tens a certeza que pretendes eliminar o professor ${nome}?`,
+        `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
         async () => {
             try {
                 const response = await axios.put(`http://localhost:8080/put/professor/desativar/${id}`);
@@ -1354,7 +1354,7 @@ function ProfessorEdit() {
                                         {disciplinasProfessor.map((disciplina) => (
                                             <div key={disciplina.iddisciplina} className="col-md-6 mb-2">
                                                 <div className="p-3 border rounded d-flex justify-content-between align-items-center" 
-                                                     style={{backgroundColor:'var(--cinza-claro)'}}>
+                                                    style={{backgroundColor:'var(--cinza-claro)'}}>
                                                     <div className="d-flex align-items-center">
                                                         <MdBook className="me-2" style={{color:'var(--azul-escuro)'}} />
                                                         <span className="fw-semibold" style={{color:'var(--azul-escuro)'}}>

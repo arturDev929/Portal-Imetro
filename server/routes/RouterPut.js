@@ -853,4 +853,31 @@ router.put('/professor/desativar/:id', (req, res) => {
     });
 });
 
+router.put('/professor/ativar/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "UPDATE professor SET estado = 'Ativo' WHERE idprofessor = ?";
+    
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao desativar o professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.affectedRows === 0) {
+                res.status(404).json({
+                    error: "Professor não encontrado"
+                });
+            } else {
+                res.status(200).json({
+                    message: "Professor desativado com sucesso",
+                    professoresAfetados: result.affectedRows
+                });
+            }
+        }
+    });
+});
+
+
 module.exports = router;

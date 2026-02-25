@@ -305,6 +305,24 @@ router.get('/periodo/:id', (req, res) => {
     });
 });
 
+router.get('/ProfessoresDesativados', (req, res) => {
+    const sql = "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const professoresComFoto = result.map(professor =>({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
 router.get('/Professores', (req, res) => {
     const sql = "SELECT * FROM professor WHERE estado = 'Ativo' ORDER BY nomeprofessor ASC";
     conexao.query(sql, (error, result) => {
@@ -663,7 +681,7 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
             disciplina.iddisciplina
         FROM disc_prof 
         INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        WHERE disc_prof.idprofessor = ? AND estado = 'Ativo'
+        WHERE disc_prof.idprofessor = ?
         ORDER BY disciplina.disciplina ASC
     `;
     
