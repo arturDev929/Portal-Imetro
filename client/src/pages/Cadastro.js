@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import Axios from "axios";
 import Navbar from "../components/navbar";
-import imetro from "../img/images.png";
+import imetro from "../img/logo_goldenrod.png";
 import Style from "./Home.module.css";
 // import SelectCursos from "../components/selectCurso";
 import { FiUserPlus } from "react-icons/fi";

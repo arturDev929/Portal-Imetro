@@ -40,7 +40,7 @@ function SidebarAdm(){
                         </div>
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
-                            <Link to="#" className={`nav-link active ${Style.Link}`}>
+                            <Link to="/gestaoFuncionarioAdm" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
                             <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
@@ -88,7 +88,7 @@ function SidebarAdm(){
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
-                            <Link to="#" className={`nav-link active ${Style.Link}`}>
+                            <Link to="/gestaoFuncionarioAdm" className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
                             <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>

@@ -175,8 +175,7 @@ function HomeAdm() {
             <SidebarAdm />
             <div className="col-md-9 ms-md-auto col-lg-10 px-0">
                 <NavbarAdm />
-                <main className="p-4" style={{ backgroundColor: '#f8f9fa' }}>
-                    {/* Header Section */}
+                <main className="p-4" style={{ backgroundColor: 'var(--cinza-claro)' }}>
                     <div className="row mb-4">
                         <div className="col-12">
                             <div className="d-flex justify-content-between align-items-center">

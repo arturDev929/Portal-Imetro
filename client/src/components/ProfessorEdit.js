@@ -1,4 +1,3 @@
-// ProfessorEdit.js - Versão unificada com design consistente
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { 
@@ -761,8 +760,9 @@ function ProfessorEdit() {
                         <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
                             <tr>
                                 <th className="col-1">Foto</th>
-                                <th className="col-5">Nome</th>
-                                <th className="col-2">Código</th>
+                                <th className="col-4">Nome</th>
+                                <th className="col-2">Titulação</th>
+                                <th className="col-1">Código</th>
                                 <th className="col-1 text-center">Disciplinas</th>
                                 <th className="col-1 text-center">Info</th>
                                 <th className="col-1 text-center">Editar</th>
@@ -819,6 +819,9 @@ function ProfessorEdit() {
                                         </td>
                                         <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
                                             <MdPerson className="me-2 mb-1"/>{item.nomeprofessor}
+                                        </td>
+                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
+                                            {item.titulacaoprofessor}
                                         </td>
                                         <td className="align-middle text-muted">
                                             <small>{item.codigoprofessor || 'N/I'}</small>

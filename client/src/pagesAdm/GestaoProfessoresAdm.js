@@ -200,7 +200,7 @@ function GestaoProfessoresAdm() {
             <SidebarAdm />
             <div className="col-md-9 ms-md-auto col-lg-10 px-0">
                 <NavbarAdm />
-                <main className="p-4" style={{ backgroundColor: '#f8f9fa' }}>
+                <main className="p-4" style={{ backgroundColor: 'var(--cinza-claro)' }}>
                     {/* Header Section */}
                     <div className="row mb-4">
                         <div className="col-12">
