@@ -3,272 +3,249 @@ const router = Router();
 const conexao = require("../infra/conexao");
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require("bcryptjs");
 
-router.put('/categoriaCurso/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { categoriacurso } = req.body;
+router.put('/categoriaCurso/:id', (req, res) => {
+    const { id } = req.params;
+    const { categoriacurso } = req.body;
 
-        console.log("ID recebido:", id);
-        console.log("Dados recebidos:", { categoriacurso });
+    console.log("ID recebido:", id);
+    console.log("Dados recebidos:", { categoriacurso });
 
-        if (!id || id.trim() === '') {
-            return res.status(400).json({
+    if (!id || id.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'ID da categoria é obrigatório'
+        });
+    }
+
+    if (isNaN(id) || parseInt(id) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID da categoria inválido'
+        });
+    }
+
+    if (!categoriacurso || categoriacurso.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria é obrigatório'
+        });
+    }
+
+    if (categoriacurso.trim().length < 2) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria deve ter pelo menos 2 caracteres'
+        });
+    }
+
+    if (categoriacurso.trim().length > 100) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria não pode exceder 100 caracteres'
+        });
+    }
+
+    const checkSql = 'SELECT * FROM categoriacurso WHERE idcategoriacurso = ?';
+    
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error('Erro ao verificar categoria:', checkError);
+            return res.status(500).json({
                 success: false,
-                error: 'ID da categoria é obrigatório'
+                error: 'Erro ao verificar categoria no banco de dados'
             });
         }
 
-        if (isNaN(id) || parseInt(id) <= 0) {
-            return res.status(400).json({
+        if (checkResults.length === 0) {
+            return res.status(404).json({
                 success: false,
-                error: 'ID da categoria inválido'
+                error: 'Categoria não encontrada'
             });
         }
 
-        if (!categoriacurso || categoriacurso.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome da categoria é obrigatório'
-            });
-        }
-
-        if (categoriacurso.trim().length < 2) {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome da categoria deve ter pelo menos 2 caracteres'
-            });
-        }
-
-        if (categoriacurso.trim().length > 100) {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome da categoria não pode exceder 100 caracteres'
-            });
-        }
-
-        const checkSql = 'SELECT * FROM categoriacurso WHERE idcategoriacurso = ?';
+        const duplicateSql = 'SELECT * FROM categoriacurso WHERE categoriacurso = ? AND idcategoriacurso != ?';
         
-        conexao.query(checkSql, [id], (checkError, checkResults) => {
-            if (checkError) {
-                console.error('Erro ao verificar categoria:', checkError);
+        conexao.query(duplicateSql, [categoriacurso.trim(), id], (duplicateError, duplicateResults) => {
+            if (duplicateError) {
+                console.error('Erro ao verificar duplicidade:', duplicateError);
                 return res.status(500).json({
                     success: false,
-                    error: 'Erro ao verificar categoria no banco de dados'
+                    error: 'Erro ao verificar se categoria já existe'
                 });
             }
 
-            if (checkResults.length === 0) {
+            if (duplicateResults.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Já existe uma categoria com este nome'
+                });
+            }
+
+            const updateSql = 'UPDATE categoriacurso SET categoriacurso = ? WHERE idcategoriacurso = ?';
+            const values = [categoriacurso.trim(), id];
+            
+            conexao.query(updateSql, values, (error, results) => {
+                if (error) {
+                    console.error('Erro ao atualizar categoria:', error);
+                    return res.status(500).json({ 
+                        success: false,
+                        error: 'Erro ao atualizar categoria no banco de dados'
+                    });
+                }
+                
+                if (results.affectedRows === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Categoria não encontrada para atualização'
+                    });
+                }
+                
+                res.status(200).json({
+                    success: true,
+                    message: 'Categoria atualizada com sucesso',
+                    id: id,
+                    categoriacurso: categoriacurso.trim(),
+                    affectedRows: results.affectedRows
+                });
+            });
+        });
+    });
+});
+
+router.put('/Curso/:id', (req, res) => {
+    const { id } = req.params;
+    const { curso, idcategoriacurso } = req.body;
+
+    console.log("ID do curso recebido:", id);
+    console.log("Dados recebidos:", { curso, idcategoriacurso });
+
+    if (!id || id.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do curso é obrigatório'
+        });
+    }
+
+    if (isNaN(id) || parseInt(id) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do curso inválido'
+        });
+    }
+
+    if (!curso || curso.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome do curso é obrigatório'
+        });
+    }
+
+    if (curso.trim().length < 2) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome do curso deve ter pelo menos 2 caracteres'
+        });
+    }
+
+    if (curso.trim().length > 100) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome do curso não pode exceder 100 caracteres'
+        });
+    }
+
+
+    if (isNaN(idcategoriacurso) || parseInt(idcategoriacurso) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do departamento inválido'
+        });
+    }
+
+    const checkCursoSql = 'SELECT * FROM curso WHERE idcurso = ?';
+    conexao.query(checkCursoSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error('Erro ao verificar curso:', checkError);
+            return res.status(500).json({
+                success: false,
+                error: 'Erro ao verificar curso no banco de dados'
+            });
+        }
+
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Curso não encontrado'
+            });
+        }
+
+        const checkCategoriaSql = 'SELECT categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?';
+        conexao.query(checkCategoriaSql, [idcategoriacurso], (catError, catResults) => {
+            if (catError) {
+                console.error('Erro ao verificar departamento:', catError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Erro ao verificar departamento no banco de dados'
+                });
+            }
+
+            if (catResults.length === 0) {
                 return res.status(404).json({
                     success: false,
-                    error: 'Categoria não encontrada'
+                    error: 'Departamento não encontrado'
                 });
             }
 
-            const duplicateSql = 'SELECT * FROM categoriacurso WHERE categoriacurso = ? AND idcategoriacurso != ?';
-            
-            conexao.query(duplicateSql, [categoriacurso.trim(), id], (duplicateError, duplicateResults) => {
+            const duplicateSql = 'SELECT * FROM curso WHERE curso = ? AND idcurso != ?';
+            conexao.query(duplicateSql, [curso.trim(), id], (duplicateError, duplicateResults) => {
                 if (duplicateError) {
                     console.error('Erro ao verificar duplicidade:', duplicateError);
                     return res.status(500).json({
                         success: false,
-                        error: 'Erro ao verificar se categoria já existe'
+                        error: 'Erro ao verificar se curso já existe'
                     });
                 }
 
                 if (duplicateResults.length > 0) {
                     return res.status(400).json({
                         success: false,
-                        error: 'Já existe uma categoria com este nome'
+                        error: 'Já existe um curso com este nome'
                     });
                 }
 
-                const updateSql = 'UPDATE categoriacurso SET categoriacurso = ? WHERE idcategoriacurso = ?';
-                const values = [categoriacurso.trim(), id];
+                const updateSql = 'UPDATE curso SET curso = ?, idcategoriacurso = ? WHERE idcurso = ?';
+                const values = [curso.trim(), idcategoriacurso, id];
                 
                 conexao.query(updateSql, values, (error, results) => {
                     if (error) {
-                        console.error('Erro ao atualizar categoria:', error);
+                        console.error('Erro ao atualizar curso:', error);
                         return res.status(500).json({ 
                             success: false,
-                            error: 'Erro ao atualizar categoria no banco de dados'
+                            error: 'Erro ao atualizar curso no banco de dados'
                         });
                     }
-                    
+
                     if (results.affectedRows === 0) {
                         return res.status(404).json({
                             success: false,
-                            error: 'Categoria não encontrada para atualização'
+                            error: 'Curso não encontrado para atualização'
                         });
                     }
                     
                     res.status(200).json({
                         success: true,
-                        message: 'Categoria atualizada com sucesso',
+                        message: 'Curso atualizado com sucesso',
                         id: id,
-                        categoriacurso: categoriacurso.trim(),
+                        curso: curso.trim(),
+                        idcategoriacurso: idcategoriacurso,
                         affectedRows: results.affectedRows
                     });
                 });
             });
         });
-    } catch (error) {
-        console.error('Erro na rota PUT:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Erro interno do servidor',
-            details: error.message 
-        });
-    }
-});
-
-router.put('/Curso/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { curso, idcategoriacurso } = req.body;
-
-        console.log("ID do curso recebido:", id);
-        console.log("Dados recebidos:", { curso, idcategoriacurso });
-
-        if (!id || id.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                error: 'ID do curso é obrigatório'
-            });
-        }
-
-        if (isNaN(id) || parseInt(id) <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'ID do curso inválido'
-            });
-        }
-
-        if (!curso || curso.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome do curso é obrigatório'
-            });
-        }
-
-        if (curso.trim().length < 2) {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome do curso deve ter pelo menos 2 caracteres'
-            });
-        }
-
-        if (curso.trim().length > 100) {
-            return res.status(400).json({
-                success: false,
-                error: 'O nome do curso não pode exceder 100 caracteres'
-            });
-        }
-
-        if (!idcategoriacurso || idcategoriacurso.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                error: 'O departamento é obrigatório'
-            });
-        }
-
-        if (isNaN(idcategoriacurso) || parseInt(idcategoriacurso) <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'ID do departamento inválido'
-            });
-        }
-
-        const checkCursoSql = 'SELECT * FROM curso WHERE idcurso = ?';
-        conexao.query(checkCursoSql, [id], (checkError, checkResults) => {
-            if (checkError) {
-                console.error('Erro ao verificar curso:', checkError);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Erro ao verificar curso no banco de dados'
-                });
-            }
-
-            if (checkResults.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Curso não encontrado'
-                });
-            }
-
-            const checkCategoriaSql = 'SELECT categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?';
-            conexao.query(checkCategoriaSql, [idcategoriacurso], (catError, catResults) => {
-                if (catError) {
-                    console.error('Erro ao verificar departamento:', catError);
-                    return res.status(500).json({
-                        success: false,
-                        error: 'Erro ao verificar departamento no banco de dados'
-                    });
-                }
-
-                if (catResults.length === 0) {
-                    return res.status(404).json({
-                        success: false,
-                        error: 'Departamento não encontrado'
-                    });
-                }
-
-                const duplicateSql = 'SELECT * FROM curso WHERE curso = ? AND idcurso != ?';
-                conexao.query(duplicateSql, [curso.trim(), id], (duplicateError, duplicateResults) => {
-                    if (duplicateError) {
-                        console.error('Erro ao verificar duplicidade:', duplicateError);
-                        return res.status(500).json({
-                            success: false,
-                            error: 'Erro ao verificar se curso já existe'
-                        });
-                    }
-
-                    if (duplicateResults.length > 0) {
-                        return res.status(400).json({
-                            success: false,
-                            error: 'Já existe um curso com este nome'
-                        });
-                    }
-
-                    const updateSql = 'UPDATE curso SET curso = ?, idcategoriacurso = ? WHERE idcurso = ?';
-                    const values = [curso.trim(), idcategoriacurso, id];
-                    
-                    conexao.query(updateSql, values, (error, results) => {
-                        if (error) {
-                            console.error('Erro ao atualizar curso:', error);
-                            return res.status(500).json({ 
-                                success: false,
-                                error: 'Erro ao atualizar curso no banco de dados'
-                            });
-                        }
-
-                        if (results.affectedRows === 0) {
-                            return res.status(404).json({
-                                success: false,
-                                error: 'Curso não encontrado para atualização'
-                            });
-                        }
-                        
-                        res.status(200).json({
-                            success: true,
-                            message: 'Curso atualizado com sucesso',
-                            id: id,
-                            curso: curso.trim(),
-                            idcategoriacurso: idcategoriacurso,
-                            affectedRows: results.affectedRows
-                        });
-                    });
-                });
-            });
-        });
-    } catch (error) {
-        console.error('Erro na rota PUT /Curso:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Erro interno do servidor',
-            details: error.message 
-        });
-    }
+    });
 });
 
 router.put('/disciplina/:id', (req, res) => {
@@ -663,7 +640,7 @@ router.put('/atulizarprofessor/:id', (req, res) => {
     }
 });
 
-router.put('/turma/:id', async (req, res) => {
+router.put('/turma/:id', (req, res) => {
     const { id } = req.params;
     console.log("ID recebido:", id);
     
@@ -678,10 +655,18 @@ router.put('/turma/:id', async (req, res) => {
         });
     }
 
-    try {
-
-        const verificarExistenciaSQL = "SELECT idperiodo FROM periodo WHERE idperiodo = ?";
-        const [existe] = await conexao.promise().query(verificarExistenciaSQL, [id]);
+    const verificarExistenciaSQL = "SELECT idperiodo FROM periodo WHERE idperiodo = ?";
+    
+    conexao.query(verificarExistenciaSQL, [id], (erroExistencia, existe) => {
+        if (erroExistencia) {
+            console.error("Erro ao verificar existência:", erroExistencia);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno do servidor"
+            });
+        }
         
         if (existe.length === 0) {
             return res.status(404).json({
@@ -693,138 +678,201 @@ router.put('/turma/:id', async (req, res) => {
         }
 
         const verificarAnoSQL = "SELECT idanocurricular, anocurricular FROM anocurricular WHERE idanocurricular = ?";
-        const [resultadosAno] = await conexao.promise().query(verificarAnoSQL, [idanocurricular]);
         
-        if (resultadosAno.length === 0) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Ano Curricular inválido",
-                mensagem: "O ano curricular selecionado não existe"
+        conexao.query(verificarAnoSQL, [idanocurricular], (erroAno, resultadosAno) => {
+            if (erroAno) {
+                console.error("Erro ao verificar Ano:", erroAno);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro interno do servidor"
+                });
+            }
+            
+            if (resultadosAno.length === 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Ano Curricular inválido",
+                    mensagem: "O ano curricular selecionado não existe"
+                });
+            }
+
+            const verificarCursoSQL = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
+            
+            conexao.query(verificarCursoSQL, [idcurso], (erroCurso, resultadosCurso) => {
+                if (erroCurso) {
+                    console.error("Erro ao verificar Curso:", erroCurso);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: "Erro interno do servidor"
+                    });
+                }
+                
+                if (resultadosCurso.length === 0) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Curso inválido",
+                        mensagem: "O curso selecionado não existe"
+                    });
+                }
+
+                const verificarCategoriaSQL = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+                
+                conexao.query(verificarCategoriaSQL, [idcategoriacurso], (erroCategoria, resultadosCategoria) => {
+                    if (erroCategoria) {
+                        console.error("Erro ao verificar Categoria:", erroCategoria);
+                        return res.status(500).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Erro no servidor",
+                            mensagem: "Erro interno do servidor"
+                        });
+                    }
+                    
+                    if (resultadosCategoria.length === 0) {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Categoria inválida",
+                            mensagem: "A categoria selecionada não existe"
+                        });
+                    }
+
+                    if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Inconsistência de dados",
+                            mensagem: "O curso selecionado não pertence à categoria informada"
+                        });
+                    }
+
+                    const verificarDuplicadoSQL = `
+                        SELECT idperiodo 
+                        FROM periodo 
+                        WHERE idanocurricular = ? 
+                            AND idcurso = ? 
+                            AND turma = ? 
+                            AND periodo = ? 
+                            AND anoletivo = ?
+                            AND idperiodo != ?
+                    `;
+                    
+                    conexao.query(verificarDuplicadoSQL, [idanocurricular, idcurso, turma, periodo, anoletivo, id], (erroDuplicado, resultadosDuplicado) => {
+                        if (erroDuplicado) {
+                            console.error("Erro ao verificar duplicidade:", erroDuplicado);
+                            return res.status(500).json({
+                                sucesso: false,
+                                tipo: "erro",
+                                titulo: "Erro no servidor",
+                                mensagem: "Erro interno do servidor"
+                            });
+                        }
+                        
+                        if (resultadosDuplicado.length > 0) {
+                            return res.status(400).json({
+                                sucesso: false,
+                                tipo: "erro",
+                                titulo: "Turma/Período Duplicado",
+                                mensagem: `Já existe outra turma "${turma}" no período "${periodo}" para este curso/ano`
+                            });
+                        }
+
+                        const updateSQL = `
+                            UPDATE periodo 
+                            SET idanocurricular = ?, 
+                                idcategoriacurso = ?, 
+                                idcurso = ?, 
+                                turma = ?, 
+                                periodo = ?, 
+                                anoletivo = ?
+                            WHERE idperiodo = ?
+                        `;
+                        
+                        conexao.query(updateSQL, [idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo, id], (erroUpdate, resultados) => {
+                            if (erroUpdate) {
+                                console.error("Erro ao atualizar período:", erroUpdate);
+                                
+                                if (erroUpdate.code === 'ER_NO_REFERENCED_ROW_2') {
+                                    return res.status(400).json({
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Chave estrangeira inválida",
+                                        mensagem: "Uma das referências (ano curricular, curso ou categoria) não existe no sistema"
+                                    });
+                                }
+                                
+                                if (erroUpdate.code === 'ER_DUP_ENTRY') {
+                                    return res.status(400).json({
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Entrada duplicada",
+                                        mensagem: "Esta turma/período já existe para este curso/ano"
+                                    });
+                                }
+
+                                return res.status(500).json({
+                                    sucesso: false,
+                                    tipo: "erro",
+                                    titulo: "Erro no servidor",
+                                    mensagem: "Erro interno ao atualizar turma/período"
+                                });
+                            }
+
+                            const buscaDadosSQL = `
+                                SELECT 
+                                    p.*,
+                                    ac.anocurricular,
+                                    c.curso,
+                                    cc.categoriacurso
+                                FROM periodo p
+                                INNER JOIN anocurricular ac ON ac.idanocurricular = p.idanocurricular
+                                INNER JOIN curso c ON c.idcurso = p.idcurso
+                                INNER JOIN categoriacurso cc ON cc.idcategoriacurso = p.idcategoriacurso
+                                WHERE p.idperiodo = ?
+                            `;
+                            
+                            conexao.query(buscaDadosSQL, [id], (erroBusca, dadosCompletos) => {
+                                if (erroBusca) {
+                                    console.error("Erro ao buscar dados completos:", erroBusca);
+                                    return res.status(500).json({
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Erro no servidor",
+                                        mensagem: "Erro interno ao buscar dados atualizados"
+                                    });
+                                }
+
+                                return res.status(200).json({
+                                    sucesso: true,
+                                    tipo: "sucesso",
+                                    titulo: "Turma/Período Atualizado",
+                                    mensagem: `Turma "${turma}" no período "${periodo}" atualizada com sucesso!`,
+                                    dados: dadosCompletos[0] || {
+                                        idperiodo: id,
+                                        idanocurricular,
+                                        idcurso,
+                                        idcategoriacurso,
+                                        turma,
+                                        periodo,
+                                        anoletivo,
+                                        anocurricular: resultadosAno[0].anocurricular,
+                                        curso: resultadosCurso[0].curso,
+                                        categoriacurso: resultadosCategoria[0].categoriacurso
+                                    }
+                                });
+                            });
+                        });
+                    });
+                });
             });
-        }
-
-        const verificarCursoSQL = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
-        const [resultadosCurso] = await conexao.promise().query(verificarCursoSQL, [idcurso]);
-        
-        if (resultadosCurso.length === 0) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Curso inválido",
-                mensagem: "O curso selecionado não existe"
-            });
-        }
-
-        const verificarCategoriaSQL = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
-        const [resultadosCategoria] = await conexao.promise().query(verificarCategoriaSQL, [idcategoriacurso]);
-        
-        if (resultadosCategoria.length === 0) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Categoria inválida",
-                mensagem: "A categoria selecionada não existe"
-            });
-        }
-
-        if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Inconsistência de dados",
-                mensagem: "O curso selecionado não pertence à categoria informada"
-            });
-        }
-
-        const verificarDuplicadoSQL = `
-            SELECT idperiodo 
-            FROM periodo 
-            WHERE idanocurricular = ? 
-                AND idcurso = ? 
-                AND turma = ? 
-                AND periodo = ? 
-                AND anoletivo = ?
-                AND idperiodo != ?
-        `;
-        const [resultadosDuplicado] = await conexao.promise().query(
-            verificarDuplicadoSQL, 
-            [idanocurricular, idcurso, turma, periodo, anoletivo, id]
-        );
-        
-        if (resultadosDuplicado.length > 0) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Turma/Período Duplicado",
-                mensagem: `Já existe outra turma "${turma}" no período "${periodo}" para este curso/ano`
-            });
-        }
-
-        const updateSQL = `
-            UPDATE periodo 
-            SET idanocurricular = ?, 
-                idcategoriacurso = ?, 
-                idcurso = ?, 
-                turma = ?, 
-                periodo = ?, 
-                anoletivo = ?
-            WHERE idperiodo = ?
-        `;
-        const [resultados] = await conexao.promise().query(updateSQL, 
-            [idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo, id]
-        );
-
-        const [dadosCompletos] = await conexao.promise().query(`
-            SELECT 
-                p.*,
-                ac.anocurricular,
-                c.curso,
-                cc.categoriacurso
-            FROM periodo p
-            INNER JOIN anocurricular ac ON ac.idanocurricular = p.idanocurricular
-            INNER JOIN curso c ON c.idcurso = p.idcurso
-            INNER JOIN categoriacurso cc ON cc.idcategoriacurso = p.idcategoriacurso
-            WHERE p.idperiodo = ?
-        `, [id]);
-
-        return res.status(200).json({
-            sucesso: true,
-            tipo: "sucesso",
-            titulo: "Turma/Período Atualizado",
-            mensagem: `Turma "${turma}" no período "${periodo}" atualizada com sucesso!`,
-            dados: dadosCompletos[0]
         });
-
-    } catch (erro) {
-        console.error("Erro ao atualizar Turma/Período:", erro);
-        console.error("Detalhes do erro:", erro.sqlMessage || erro.message);
-        
-        if (erro.code === 'ER_NO_REFERENCED_ROW_2') {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Chave estrangeira inválida",
-                mensagem: "Uma das referências (ano curricular, curso ou categoria) não existe no sistema"
-            });
-        }
-        
-        if (erro.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Entrada duplicada",
-                mensagem: "Esta turma/período já existe para este curso/ano"
-            });
-        }
-
-        return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro no servidor",
-            mensagem: "Erro interno ao atualizar turma/período: " + (erro.message || "Erro desconhecido")
-        });
-    }
+    });
 });
 
 router.put('/professor/desativar/:id', (req, res) => {
@@ -859,7 +907,7 @@ router.put('/professor/ativar/:id', (req, res) => {
     
     conexao.query(sql, [id], (error, result) => {
         if (error) {
-            console.error("Erro ao desativar o professor:", error);
+            console.error("Erro ao ativar o professor:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -871,7 +919,7 @@ router.put('/professor/ativar/:id', (req, res) => {
                 });
             } else {
                 res.status(200).json({
-                    message: "Professor desativado com sucesso",
+                    message: "Professor ativado com sucesso",
                     professoresAfetados: result.affectedRows
                 });
             }
@@ -879,5 +927,434 @@ router.put('/professor/ativar/:id', (req, res) => {
     });
 });
 
+router.put('/funcionario/:id', (req, res) => {
+    const { id } = req.params;
+    const { nome_funcionario, contacto_funcionario, bi_funcionario, cargo_funcionario, idAdm } = req.body;
+
+    // Validações
+    if (!id || id.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do funcionário é obrigatório'
+        });
+    }
+
+    if (isNaN(id) || parseInt(id) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do funcionário inválido'
+        });
+    }
+
+    if (!nome_funcionario || nome_funcionario.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome do funcionário é obrigatório'
+        });
+    }
+
+    if (!contacto_funcionario || contacto_funcionario.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O contacto é obrigatório'
+        });
+    }
+
+    if (!bi_funcionario || bi_funcionario.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O BI é obrigatório'
+        });
+    }
+
+    if (!cargo_funcionario || cargo_funcionario.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O cargo é obrigatório'
+        });
+    }
+
+    if (!idAdm) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do administrador é obrigatório'
+        });
+    }
+
+    conexao.beginTransaction((erroTransacao) => {
+        if (erroTransacao) {
+            console.error("Erro ao iniciar transação:", erroTransacao);
+            return res.status(500).json({
+                success: false,
+                error: 'Erro ao iniciar transação'
+            });
+        }
+
+        const checkSql = 'SELECT * FROM funcionario WHERE id_funcionario = ?';
+        
+        conexao.query(checkSql, [id], (checkError, checkResults) => {
+            if (checkError) {
+                return conexao.rollback(() => {
+                    console.error('Erro ao verificar funcionário:', checkError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Erro ao verificar funcionário no banco de dados'
+                    });
+                });
+            }
+
+            if (checkResults.length === 0) {
+                return conexao.rollback(() => {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Funcionário não encontrado'
+                    });
+                });
+            }
+
+            const checkContactoSql = 'SELECT id_funcionario FROM funcionario WHERE contacto_funcionario = ? AND id_funcionario != ?';
+            
+            conexao.query(checkContactoSql, [contacto_funcionario.trim(), id], (contactoError, contactoResults) => {
+                if (contactoError) {
+                    return conexao.rollback(() => {
+                        console.error('Erro ao verificar contacto:', contactoError);
+                        return res.status(500).json({
+                            success: false,
+                            error: 'Erro ao verificar contacto no banco de dados'
+                        });
+                    });
+                }
+
+                if (contactoResults.length > 0) {
+                    return conexao.rollback(() => {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Este contacto já está em uso por outro funcionário'
+                        });
+                    });
+                }
+
+                const checkBISql = 'SELECT id_funcionario FROM funcionario WHERE bi_funcionario = ? AND id_funcionario != ?';
+                
+                conexao.query(checkBISql, [bi_funcionario.trim(), id], (BIError, BIResults) => {
+                    if (BIError) {
+                        return conexao.rollback(() => {
+                            console.error('Erro ao verificar BI:', BIError);
+                            return res.status(500).json({
+                                success: false,
+                                error: 'Erro ao verificar BI no banco de dados'
+                            });
+                        });
+                    }
+
+                    if (BIResults.length > 0) {
+                        return conexao.rollback(() => {
+                            return res.status(400).json({
+                                success: false,
+                                error: 'Este BI já está em uso por outro funcionário'
+                            });
+                        });
+                    }
+
+                    const updateSql = `
+                        UPDATE funcionario 
+                        SET nome_funcionario = ?, 
+                            contacto_funcionario = ?, 
+                            bi_funcionario = ?, 
+                            idAdm = ? 
+                        WHERE id_funcionario = ? AND estado_funcionario = 'Ativo'
+                    `;
+                    
+                    conexao.query(updateSql, [
+                        nome_funcionario.trim(),
+                        contacto_funcionario.trim(),
+                        bi_funcionario.trim(),
+                        idAdm,
+                        id
+                    ], (updateError, updateResults) => {
+                        if (updateError) {
+                            return conexao.rollback(() => {
+                                console.error('Erro ao atualizar funcionário:', updateError);
+                                return res.status(500).json({
+                                    success: false,
+                                    error: 'Erro ao atualizar funcionário no banco de dados'
+                                });
+                            });
+                        }
+
+                        const buscarCargoSQL = "SELECT id_cargo FROM cargo_funcionario WHERE cargo = ?";
+                        
+                        conexao.query(buscarCargoSQL, [cargo_funcionario], (cargoError, cargoResult) => {
+                            if (cargoError) {
+                                return conexao.rollback(() => {
+                                    console.error('Erro ao buscar cargo:', cargoError);
+                                    return res.status(500).json({
+                                        success: false,
+                                        error: 'Erro ao verificar cargo no banco de dados'
+                                    });
+                                });
+                            }
+
+                            if (cargoResult.length === 0) {
+                                return conexao.rollback(() => {
+                                    return res.status(400).json({
+                                        success: false,
+                                        error: 'Cargo não encontrado'
+                                    });
+                                });
+                            }
+
+                            const id_cargo = cargoResult[0].id_cargo;
+
+                            const updateRelacaoSQL = `
+                                UPDATE cargo_funcionario_relation 
+                                SET id_cargo = ? 
+                                WHERE id_funcionario = ?
+                            `;
+                            
+                            conexao.query(updateRelacaoSQL, [id_cargo, id], (relacaoError) => {
+                                if (relacaoError) {
+                                    return conexao.rollback(() => {
+                                        console.error('Erro ao atualizar relação cargo:', relacaoError);
+                                        return res.status(500).json({
+                                            success: false,
+                                            error: 'Erro ao atualizar cargo do funcionário'
+                                        });
+                                    });
+                                }
+
+                                conexao.commit((commitError) => {
+                                    if (commitError) {
+                                        return conexao.rollback(() => {
+                                            console.error('Erro ao fazer commit:', commitError);
+                                            return res.status(500).json({
+                                                success: false,
+                                                error: 'Erro ao finalizar transação'
+                                            });
+                                        });
+                                    }
+
+                                    res.status(200).json({
+                                        success: true,
+                                        message: 'Funcionário atualizado com sucesso',
+                                        dados: {
+                                            id: id,
+                                            nome_funcionario: nome_funcionario.trim(),
+                                            contacto_funcionario: contacto_funcionario.trim(),
+                                            bi_funcionario: bi_funcionario.trim(),
+                                            cargo_funcionario: cargo_funcionario,
+                                            idAdm: idAdm
+                                        }
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+router.put('/funcionario/senha/:id', (req, res) => {
+    const { id } = req.params;
+    const { senha_funcionario } = req.body;
+
+    // Validações
+    if (!id || id.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do funcionário é obrigatório'
+        });
+    }
+
+    if (isNaN(id) || parseInt(id) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do funcionário inválido'
+        });
+    }
+
+    if (!senha_funcionario || senha_funcionario.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'A nova senha é obrigatória'
+        });
+    }
+
+    if (senha_funcionario.trim().length < 4) {
+        return res.status(400).json({
+            success: false,
+            error: 'A senha deve ter pelo menos 4 caracteres'
+        });
+    }
+
+    // Verificar se o funcionário existe
+    const checkSql = 'SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ?';
+    
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error('Erro ao verificar funcionário:', checkError);
+            return res.status(500).json({
+                success: false,
+                error: 'Erro ao verificar funcionário no banco de dados'
+            });
+        }
+
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Funcionário não encontrado'
+            });
+        }
+
+        const nome_funcionario = checkResults[0].nome_funcionario;
+
+        // Criptografar a nova senha
+        bcrypt.genSalt(10, (saltError, salt) => {
+            if (saltError) {
+                console.error('Erro ao gerar salt:', saltError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Erro interno de segurança'
+                });
+            }
+
+            bcrypt.hash(senha_funcionario, salt, (hashError, senhaCriptografada) => {
+                if (hashError) {
+                    console.error('Erro ao criptografar senha:', hashError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Erro interno de segurança'
+                    });
+                }
+
+                // Atualizar apenas a senha
+                const updateSql = 'UPDATE funcionario SET senha_funcionario = ? WHERE id_funcionario = ?';
+                
+                conexao.query(updateSql, [senhaCriptografada, id], (updateError, updateResults) => {
+                    if (updateError) {
+                        console.error('Erro ao atualizar senha:', updateError);
+                        return res.status(500).json({
+                            success: false,
+                            error: 'Erro ao atualizar senha no banco de dados'
+                        });
+                    }
+
+                    if (updateResults.affectedRows === 0) {
+                        return res.status(404).json({
+                            success: false,
+                            error: 'Funcionário não encontrado para atualização'
+                        });
+                    }
+
+                    res.status(200).json({
+                        success: true,
+                        message: 'Senha alterada com sucesso',
+                        dados: {
+                            id: id,
+                            nome_funcionario: nome_funcionario,
+                            senha_alterada: true
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
+router.put('/funcionario/desativar/:id', (req, res) => {
+    const { id } = req.params;
+    
+    if (!id || isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: "ID do funcionário inválido" });
+    }
+
+    const checkSql = "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Ativo'";
+    
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error("Erro ao verificar funcionário:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+        
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                error: "Funcionário não encontrado ou já está desativado"
+            });
+        }
+
+        const nome = checkResults[0].nome_funcionario;
+
+        const sql = "UPDATE funcionario SET estado_funcionario = 'Desativado' WHERE id_funcionario = ?";
+        
+        conexao.query(sql, [id], (error, result) => {
+            if (error) {
+                console.error("Erro ao desativar funcionário:", error);
+                res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: error.message
+                });
+            } else {
+                res.status(200).json({
+                    success: true,
+                    message: `Funcionário ${nome} desativado com sucesso`,
+                    funcionario: nome,
+                    affectedRows: result.affectedRows
+                });
+            }
+        });
+    });
+});
+
+router.put('/funcionario/ativar/:id', (req, res) => {
+    const { id } = req.params;
+    
+    if (!id || isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: "ID do funcionário inválido" });
+    }
+
+    const checkSql = "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Desativado'";
+    
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error("Erro ao verificar funcionário:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+        
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                error: "Funcionário não encontrado ou já está ativo"
+            });
+        }
+
+        const nome = checkResults[0].nome_funcionario;
+
+        const sql = "UPDATE funcionario SET estado_funcionario = 'Ativo' WHERE id_funcionario = ?";
+        
+        conexao.query(sql, [id], (error, result) => {
+            if (error) {
+                console.error("Erro ao ativar funcionário:", error);
+                res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: error.message
+                });
+            } else {
+                res.status(200).json({
+                    success: true,
+                    message: `Funcionário ${nome} ativado com sucesso`,
+                    funcionario: nome,
+                    affectedRows: result.affectedRows
+                });
+            }
+        });
+    });
+});
 
 module.exports = router;

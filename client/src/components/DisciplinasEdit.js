@@ -241,20 +241,23 @@ function DisciplinaEdit() {
         return '/default-avatar.png';
     }
 
-    const desvincularProfessor = (idprofessor) => {
-        Axios.delete(`${API_BASE_URL}/delete/desvincularProfessor/${idprofessor}`)
-        .then(() => {
-            showSuccessToast("Sucesso", "Professor desvinculado com sucesso!");
-            const professorParaDesvincular = professoresVinculados.find(p => p.idprofessor === idprofessor);
+    const desvincularProfessor = (prof) => {
+        showConfirmToast(
+            `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da discplina de ${prof.disciplina}?`,
+            async () =>{
+                try{
+                    await Axios.delete(`http://localhost:8080/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
+                    const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
+                    setProfessoresVinculados(updateLista);
+                    showSuccessToast(
+                        "Sucesso!",
+                        `Professor ${prof.nomeprofessor} foi descinculado da disciplina de ${prof.disciplina}`
+                    )
+                }catch(error){
 
-            setProfessoresVinculados(prev => prev.filter(p => p.idprofessor !== idprofessor));
-
-            const { iddisciplina, disciplina, iddisc_prof, ...professorLimpo } = professorParaDesvincular;
-            setProfessoresDisponiveis(prev => [...prev, professorLimpo]);
-        })
-        .catch(() => {
-            showErrorToast("Erro", "Não foi possível desvincular o professor");
-        });
+                }
+            }
+        )
     };
 
     const closeModalProfessor = () =>{
@@ -691,11 +694,12 @@ function DisciplinaEdit() {
                                                                 <div>
                                                                     <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>
                                                                     <small className="text-muted">{prof.titulacaoprofessor}</small>
+                                                                    {/* <small className="text-muted">{prof.iddisciplina}</small> */}
                                                                 </div>
                                                             </div>
                                                             <button 
                                                                 className={`btn btn-sm ${Style.btnDeletar}`}
-                                                                onClick={() => desvincularProfessor(prof.idprofessor)}
+                                                                onClick={() => desvincularProfessor(prof)}
                                                                 disabled={isConfirming}
                                                                 title="Remover vinculação"
                                                             >

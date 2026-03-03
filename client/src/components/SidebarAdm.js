@@ -65,10 +65,10 @@ function SidebarAdm(){
                     </nav>
                     <div className=" p-3 mt-auto position-absolute bottom-0 w-100">
                         <hr/>
-                        <div className="d-flex align-items-center">
+                        <div className="d-flex align-items-center text-light">
                             <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
                             <div>
-                                {user && <h6 className="mb-0 text-light">{user.nome}</h6>}
+                                {user && <h6 className="mb-0">{user.nome}</h6>}
                             </div>
                         </div>
                     </div>
@@ -115,10 +115,10 @@ function SidebarAdm(){
                     </nav>
                 </div>
                 <div className="border-top p-3">
-                    <div className="d-flex align-items-center">
-                        <IoPersonCircleOutline className="rounded-circle me-2 text-light" alt="Usuário"/>
+                    <div className="d-flex align-items-center text-light">
+                        <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
                         <div>
-                            {user && <h6 className="mb-0 text-light">{user.nome}</h6>}
+                            {user && <h6 className="mb-0">{user.nome}</h6>}
                         </div>
                     </div>
                 </div>

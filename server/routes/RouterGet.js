@@ -485,10 +485,10 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
             professor.titulacaoprofessor,
             professor.fotoprofessor
         FROM professor
-        WHERE professor.idprofessor NOT IN (
+        WHERE estado = 'Ativo' AND  professor.idprofessor NOT IN (
             SELECT disc_prof.idprofessor 
             FROM disc_prof 
-            WHERE disc_prof.iddisciplina = ? AND estado = 'Ativo'
+            WHERE disc_prof.iddisciplina = ? 
         )
         ORDER BY professor.nomeprofessor ASC
     `;
@@ -868,4 +868,164 @@ router.get('/distribuicaoTitulacaoDesativados', (req, res) => {
     });
 });
 
+router.get('/estatisticasFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalFuncionarios,
+            COUNT(CASE WHEN bi_funcionario IS NOT NULL AND bi_funcionario != '' THEN 1 END) as funcionariosComBI,
+            COUNT(CASE WHEN contacto_funcionario IS NOT NULL AND contacto_funcionario != '' THEN 1 END) as funcionariosComContacto
+        FROM funcionario 
+        WHERE estado_funcionario = 'Ativo'
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar estatísticas de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/estatisticasFuncionariosDesativados', (req, res) => {
+    const sql = "SELECT COUNT(*) as totalFuncionariosDesativados FROM funcionario WHERE estado_funcionario = 'Desativado'";
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar estatísticas de funcionários desativados:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/funcionarios', (req, res) => {
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Ativo' ORDER BY funcionario.nome_funcionario ASC";
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/funcionariosDesativados', (req, res) => {
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Desativado' ORDER BY funcionario.nome_funcionario ASC";
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar funcionários desativados:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/funcionario/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.id_funcionario = ?";
+    
+    conexao.query(sql, [id], (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar funcionário:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        } else {
+            if(result.length === 0) {
+                res.status(404).json({ error: "Funcionário não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/funcionariosPorCargo/:id_cargo', (req, res) => {
+    const { id_cargo } = req.params;
+    const sql = "SELECT f.*, cf.cargo FROM funcionario f INNER JOIN cargo_funcionario_relation cfr ON f.id_funcionario = cfr.id_funcionario INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo WHERE cf.id_cargo = ? AND f.estado_funcionario = 'Ativo' ORDER BY f.nome_funcionario ASC";
+    
+    conexao.query(sql, [id_cargo], (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar funcionários por cargo:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/dashboardFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Ativo') as ativos,
+            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Desativado') as desativados,
+            (SELECT COUNT(*) FROM funcionario) as total
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar dashboard de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            const dados = result[0] || { ativos: 0, desativados: 0, total: 0 };
+            const total = dados.total || 1;
+            const percentAtivos = ((dados.ativos / total) * 100).toFixed(1);
+            const percentDesativados = ((dados.desativados / total) * 100).toFixed(1);
+            
+            res.status(200).json({
+                ...dados,
+                percentAtivos,
+                percentDesativados,
+                dadosGrafico: [
+                    { nome: 'Ativos', valor: dados.ativos, cor: '#003366' },
+                    { nome: 'Desativados', valor: dados.desativados, cor: '#DC143C' }
+                ]
+            });
+        }
+    });
+});
+
+router.get('/cargosFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            cargo_funcionario.cargo as cargo,
+            COUNT(*) as quantidade
+        FROM funcionario 
+        INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario 
+        INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo
+        WHERE estado_funcionario = 'Ativo'
+        GROUP BY cargo_funcionario.cargo
+        ORDER BY quantidade DESC LIMIT 100
+    `;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar cargos de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/cargosDisponiveis', (req, res) => {
+    const sql = "SELECT id_cargo, cargo FROM cargo_funcionario ORDER BY cargo ASC";
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar cargos disponíveis:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
 module.exports = router;
