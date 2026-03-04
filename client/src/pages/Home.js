@@ -1,4 +1,6 @@
 import { useState } from "react";
+import {FaIdCard} from "react-icons/fa"
+import {MdLock} from "react-icons/md"
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import imetro from "../img/logoFundo.png";
@@ -77,28 +79,34 @@ function Home() {
                                     
                                     <form onSubmit={handleLogin}>
                                         <div className="mb-3">
-                                            <input 
-                                                type="text" 
-                                                className={`${Style.inputHome} form-control`} 
-                                                id="numEstudante"
-                                                placeholder="Ínsira o seu código"
-                                                value={numEstudante}
-                                                onChange={(e) => setNumEstudante(e.target.value)}
-                                                required
-                                                disabled={loading}
-                                            />
+                                            <div className="input-group">
+                                                <span className="input-group-text"><FaIdCard /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="numEstudante"
+                                                    placeholder="Ínsira o seu código"
+                                                    value={numEstudante}
+                                                    onChange={(e) => setNumEstudante(e.target.value)}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
                                         </div>
                                         <div className="mb-3">
-                                            <input 
-                                                type="password" 
-                                                className={`${Style.inputHome} form-control`} 
-                                                id="password"
-                                                placeholder="Insira a sua senha"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                required
-                                                disabled={loading}
-                                            />
+                                            <div className="input-group">
+                                                <span className="input-group-text"><MdLock /></span>
+                                                <input 
+                                                    type="password" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="password"
+                                                    placeholder="Insira a sua senha"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
                                         </div>
                                         <button type="submit" className={`${Style.ButtonHome} btn w-100 py-2`} disabled={loading || !numEstudante.trim() || !password.trim()}>
                                             {loading ? (
