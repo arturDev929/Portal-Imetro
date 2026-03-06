@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import Axios from "axios";
+import axios from "axios";
 import { FaBook } from "react-icons/fa";
 import { MdEdit, MdDeleteForever, MdSearch, MdRefresh, MdAdd } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
@@ -7,7 +7,7 @@ import { showErrorToast, showSuccessToast, useConfirmToast} from "./CustomToast"
 import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 
 function DisciplinaEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
@@ -32,6 +32,7 @@ function DisciplinaEdit() {
     });
     const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
+    
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -47,7 +48,7 @@ function DisciplinaEdit() {
     const fetchDisciplinas = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await Axios.get(`${API_BASE_URL}/get/Disciplinas`);
+            const response = await axios.get(`${API_URL}/get/Disciplinas`);
             setListaDisciplina(response.data);
             setListaFiltrada(response.data);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -128,7 +129,7 @@ function DisciplinaEdit() {
 
     const AtualizarDisciplina = () => {
         setSalvando(true);
-        Axios.put(`${API_BASE_URL}/put/disciplina/${Editar.iddisciplina}`, {
+        axios.put(`${API_URL}/put/disciplina/${Editar.iddisciplina}`, {
             disciplina: Editar.disciplina,
             iddisciplina: Editar.iddisciplina
         }).then(() => {
@@ -153,7 +154,7 @@ function DisciplinaEdit() {
             `Ao deletar esta disciplina irá desvincular a todos os cursos. Tem a certeza que pretendes deletar "${disciplina.disciplina}"?`,
             async () =>{
                 try{
-                    await Axios.delete(`${API_BASE_URL}/delete/disciplina/${disciplina.iddisciplina}`);
+                    await axios.delete(`${API_URL}/delete/disciplina/${disciplina.iddisciplina}`);
                     const updatedList = listaDisciplina.filter(
                         item => item.iddisciplina !== disciplina.iddisciplina
                     );
@@ -189,7 +190,7 @@ function DisciplinaEdit() {
         setProfessor(disciplina);
         setIsModalOpenProfessor(true);
         
-        Axios.get(`${API_BASE_URL}/get/professorVinculado/${disciplina.iddisciplina}`)
+        axios.get(`${API_URL}/get/professorVinculado/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresVinculados(response.data)
             })
@@ -198,7 +199,7 @@ function DisciplinaEdit() {
                 showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
             })
         
-        Axios.get(`${API_BASE_URL}/get/professorDisponivel/${disciplina.iddisciplina}`)
+        axios.get(`${API_URL}/get/professorDisponivel/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresDisponiveis(response.data)
             })
@@ -209,7 +210,7 @@ function DisciplinaEdit() {
     }
 
     const vincularProfessor = (professorId) => {
-        Axios.post(`${API_BASE_URL}/post/vincularProfessor`, {
+        axios.post(`${API_URL}/post/vincularProfessor`, {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
         })
@@ -236,7 +237,7 @@ function DisciplinaEdit() {
             return professor.fotoUrl
         }
         if (professor.fotoprofessor) {
-            return `${API_BASE_URL}/api/img/professores/${professor.fotoprofessor}`;
+            return `${API_URL}/api/img/professores/${professor.fotoprofessor}`;
         }
         return '/default-avatar.png';
     }
@@ -246,12 +247,12 @@ function DisciplinaEdit() {
             `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da discplina de ${prof.disciplina}?`,
             async () =>{
                 try{
-                    await Axios.delete(`http://localhost:8080/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
+                    await axios.delete(`${API_URL}/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
                     const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
                     setProfessoresVinculados(updateLista);
                     showSuccessToast(
                         "Sucesso!",
-                        `Professor ${prof.nomeprofessor} foi descinculado da disciplina de ${prof.disciplina}`
+                        `Professor ${prof.nomeprofessor} foi desvinculado da disciplina de ${prof.disciplina}`
                     )
                 }catch(error){
 
@@ -307,7 +308,7 @@ function DisciplinaEdit() {
         setSalvando(true);
         
         try {
-            await Axios.post('http://localhost:8080/post/registrardisciplina', {
+            await axios.post(`${API_URL}/post/registrardisciplina`, {
                 disciplina: nome,
                 idAdm: user.id
             });
@@ -370,7 +371,6 @@ function DisciplinaEdit() {
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -414,7 +414,6 @@ function DisciplinaEdit() {
                                     </div>
                                 </div>
                                 
-                                {/* INDICADOR DE RESULTADOS */}
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -515,7 +514,6 @@ function DisciplinaEdit() {
                     </table>
                 </div>
 
-                {/* Modal de Adicionar Nova Disciplina */}
                 {modalAdicionarAberto && (
                     <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                         <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -582,7 +580,6 @@ function DisciplinaEdit() {
                     </div>
                 )}
 
-                {/* Modal de Edição */}
                 {isModalOpen && (
                     <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                         <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -653,7 +650,6 @@ function DisciplinaEdit() {
                     </div>
                 )}
 
-                {/* Modal professor */}
                 {isModalOpenProfessor && (
                     <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                         <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -673,7 +669,6 @@ function DisciplinaEdit() {
 
                                 <div className="modal-body">
                                     <div className="row">
-                                        {/* Lado Esquerdo - Professores Vinculados */}
                                         <div className="col-12 col-md-6 border-end">
                                             <h4 className="text-center mb-4" style={{color:'var(--azul-escuro)'}}>Professores Vinculados</h4>
                                             <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
@@ -694,7 +689,6 @@ function DisciplinaEdit() {
                                                                 <div>
                                                                     <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>
                                                                     <small className="text-muted">{prof.titulacaoprofessor}</small>
-                                                                    {/* <small className="text-muted">{prof.iddisciplina}</small> */}
                                                                 </div>
                                                             </div>
                                                             <button 
@@ -715,7 +709,6 @@ function DisciplinaEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Lado Direito - Professores Disponíveis */}
                                         <div className="col-12 col-md-6">
                                             <h4 className="text-center mb-4" style={{color:'var(--azul-escuro)'}}>Professores Disponíveis</h4>
                                             <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>

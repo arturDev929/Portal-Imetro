@@ -3,10 +3,10 @@ import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons
 import { MdFlightClass } from "react-icons/md";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
-import CategoriaCursoAno from "./CategoriaCursoAno"; // Import do componente
+import CategoriaCursoAno from "./CategoriaCursoAno";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 5000;
 
 function TurmasAdm() {
@@ -31,7 +31,6 @@ function TurmasAdm() {
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     
-    // Estado para os dados do CategoriaCursoAno
     const [categoriaCursoAnoData, setCategoriaCursoAnoData] = useState({
         idcategoriacurso: '',
         idcurso: '',
@@ -63,7 +62,7 @@ function TurmasAdm() {
 
     const apiClient = useMemo(() => {
         const client = axios.create({
-            baseURL: API_BASE_URL,
+            baseURL: API_URL,
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -152,21 +151,6 @@ function TurmasAdm() {
         }
     }, [lista, termoPesquisa]);
 
-    // const adicionarItemLocal = useCallback((novoItem) => {
-    //     setLista(prev => [...prev, novoItem]);
-    // }, []);
-
-    // const atualizarItemLocal = useCallback((id, dadosAtualizados) => {
-    //     setLista(prev => {
-    //         const updatedList = prev.map(item => 
-    //             item.idperiodo === id 
-    //                 ? { ...item, ...dadosAtualizados }
-    //                 : item
-    //         );
-    //         return updatedList;
-    //     });
-    // }, []);
-
     const removerItemLocal = useCallback((id) => {
         setLista(prev => {
             const updatedList = prev.filter(item => item.idperiodo !== id);
@@ -198,7 +182,6 @@ function TurmasAdm() {
             idcurso: item.idcurso || '',
             idanocurricular: item.idanocurricular || '',
             idcategoriacurso: item.idcategoriacurso || '',
-            // Campos para exibição
             nomeCurso: item.curso || '',
             nomeCategoria: item.categoriacurso || '',
             anoCurricular: item.anocurricular || ''
@@ -269,7 +252,7 @@ function TurmasAdm() {
 
     setSalvando(true);
     try {
-        const response = await apiClient.put(`http://localhost:8080/put/turma/${dadosEdicao.idperiodo}`, {
+        const response = await apiClient.put(`/put/turma/${dadosEdicao.idperiodo}`, {
             turma: dadosEdicao.turma,
             periodo: dadosEdicao.periodo,
             anoletivo: dadosEdicao.anoletivo,
@@ -285,13 +268,11 @@ function TurmasAdm() {
             response.data.mensagem || "Turma atualizada com sucesso"
         );
         
-        // Buscar dados atualizados
         await fetchData(false);
         fecharModalEditar();
     } catch (error) {
         console.error("Erro ao editar:", error);
         
-        // Mostrar mensagem de erro específica do backend
         if (error.response?.data?.mensagem) {
             showErrorToast("Erro", error.response.data.mensagem);
         } else if (error.response?.data?.error) {
@@ -327,7 +308,7 @@ function TurmasAdm() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.post('http://localhost:8080/post/registrarPeriodo', {
+            const response = await apiClient.post('/post/registrarPeriodo', {
                 turma: novaTurma.turma,
                 periodo: novaTurma.periodo,
                 anoletivo: novaTurma.anoletivo,
@@ -368,7 +349,7 @@ function TurmasAdm() {
                 try {
                     showInfoToast("Processando", "Excluindo turma...");
                     
-                    const response = await apiClient.delete(`http://localhost:8080/delete/turma/${id}`);
+                    const response = await apiClient.delete(`/delete/turma/${id}`);
                     
                     showSuccessToast(
                         "Sucesso",
@@ -438,7 +419,6 @@ function TurmasAdm() {
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -583,7 +563,6 @@ function TurmasAdm() {
                 </div>
             </div>
 
-            {/* MODAL DE EDIÇÃO */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -601,7 +580,6 @@ function TurmasAdm() {
                                 />
                             </div>
                             
-                            {/* Informações da turma sendo editada */}
                             <div className="bg-light p-3 border-bottom">
                                 <div className="row">
                                     <div className="col-md-4">
@@ -621,7 +599,6 @@ function TurmasAdm() {
 
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body">
-                                    {/* Componente CategoriaCursoAno para edição */}
                                     <CategoriaCursoAno 
                                         onChange={handleCategoriaCursoAnoEditChange}
                                         initialValues={{
@@ -710,7 +687,6 @@ function TurmasAdm() {
                 </div>
             )}
 
-            {/* MODAL DE ADICIONAR */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">

@@ -1,12 +1,14 @@
 import { useState} from "react";
 import "react-toastify/dist/ReactToastify.css";
-import Axios from "axios";
+import axios from "axios";
 import SelectCurso from "./selectCursos";
 import CategoriaCursoAno from "./CategoriaCursoAno";
 import SelectDisciplina from "./SelectDisciplina";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { showSuccessToast, showErrorToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function OutrosRegistros() {
     const [anoCurricular, setAnoCurricular] = useState("");
@@ -42,7 +44,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await Axios.post('http://localhost:8080/post/registrarAnoCurricular', {
+            const response = await axios.post(`${API_URL}/post/registrarAnoCurricular`, {
                 anocurricular: anoCurricular,
                 idcurso: idCurso
             }, {
@@ -56,8 +58,6 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Ano curricular registrado com sucesso"
                 );
-                // setAnoCurricular("");
-                // setIdCurso("");
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -102,7 +102,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await Axios.post('http://localhost:8080/post/registrarDisciplinaCurso', {
+            const response = await axios.post(`${API_URL}/post/registrarDisciplinaCurso`, {
                 iddisciplina: formDataDisciplinaCurso.iddisciplina,
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
@@ -119,13 +119,6 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Disciplina atribuída ao curso com sucesso"
                 );
-                // setFormDataDisciplinaCurso({
-                //     idcategoriacurso: "",
-                //     idcurso: "",
-                //     idanocurricular: "",
-                //     iddisciplina: ""
-                // });
-                // setSemestre("");
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -173,7 +166,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await Axios.post('http://localhost:8080/post/registrarPeriodo', {
+            const response = await axios.post(`${API_URL}/post/registrarPeriodo`, {
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
                 idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,
@@ -191,16 +184,6 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Turma registrada com sucesso"
                 );
-                
-                // Limpar campos após sucesso (opcional)
-                // setTurma("");
-                // setPeriodo("");
-                // setFormDataDisciplinaCurso({
-                //     idcategoriacurso: "",
-                //     idcurso: "",
-                //     idanocurricular: "",
-                //     iddisciplina: ""
-                // });
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -272,7 +255,6 @@ function OutrosRegistros() {
                             </form>
                         </div>
                     </div>
-                        {/* Disciplina no Curso */}
                     <div className="col-12 col-lg-4 mb-3">
                         <div className="shadow-sm rounded-3 p-4 border" style={{backgroundColor:'var(--cinza-claro)'}}>
                             <h5 className="mb-3" style={{color:'var(--azul-escuro)'}}>
@@ -325,7 +307,6 @@ function OutrosRegistros() {
                             </form>
                         </div>
                     </div>
-                    {/* Turmas */}
                     <div className="col-12 col-lg-4 mb-3">
                         <div className="shadow-sm rounded-3 p-4 border" style={{backgroundColor:'var(--cinza-claro)'}}>
                             <h5 className="mb-3" style={{color:'var(--azul-escuro)'}}>

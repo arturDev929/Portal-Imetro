@@ -100,7 +100,7 @@ function Cadastro() {
         <div>
             <Navbar />
             <div className={Style.loginContainer}>
-                <div className="container">
+                <div className="container-fluid">
                     <div className="d-flex justify-content-center align-items-center min-vh-100">
                         <div className="col-11 col-sm-8 col-md-6 col-lg-4">
                             <div className="card shadow-lg">

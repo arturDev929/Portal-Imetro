@@ -11,6 +11,7 @@
     "bootstrap": "^5.3.8",
     "build": "^0.1.4",
     "chart.js": "^4.5.1",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "pdfjs-dist": "^5.4.624",
     "react": "^19.2.3",
@@ -28,7 +29,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node check-env.js && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Axios from "axios";
+import axios from "axios";
 import SidebarAdm from "../components/SidebarAdm";
 import NavbarAdm from "../components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
@@ -19,6 +19,8 @@ import { MdAdd, MdFlightClass } from "react-icons/md";
 import OutrosRegistros from "../components/OutrosRegistros";
 import TurmasAdm from "../components/TurmasAdm";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function HomeAdm() {
     const [user, setUser] = useState(null);
     const [departamento, setDepartamento] = useState(0);
@@ -30,14 +32,13 @@ function HomeAdm() {
     const [loading, setLoading] = useState(true);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date());
     
-    // Estado para controlar qual seção está visível
-    const [secaoAtiva, setSecaoAtiva] = useState("geral"); // geral, departamentos, cursos, disciplinas
+    const [secaoAtiva, setSecaoAtiva] = useState("geral");
 
     const COLORS = ['#003366', '#B8860B', '#4A90E2', '#50C878', '#DC143C', '#FF8C00', '#9370DB', '#20B2AA', '#FF69B4', '#CD5C5C'];
 
     useEffect(() => {
         const fetchDepartamento = () => {
-            Axios.get('http://localhost:8080/get/totalcategoriacurso')
+            axios.get(`${API_URL}/get/totalcategoriacurso`)
                 .then(response => {
                     setDepartamento(response.data[0]?.total_categorias || 0);
                     setUltimaAtualizacao(new Date());
@@ -66,7 +67,7 @@ function HomeAdm() {
 
     useEffect(()=>{
         const fetchDataLicenciatura = () =>{
-            Axios.get('http://localhost:8080/get/totallicenciaturas')
+            axios.get(`${API_URL}/get/totallicenciaturas`)
                 .then(response => {
                     setLicenciatura(response.data[0]?.total_licenciaturas || 0);
                 })
@@ -83,7 +84,7 @@ function HomeAdm() {
 
     useEffect(()=>{
         const fetchDataDisciplina = () =>{
-            Axios.get('http://localhost:8080/get/totaldisciplina')
+            axios.get(`${API_URL}/get/totaldisciplina`)
                 .then(response => {
                     setDisciplina(response.data[0]?.total_disciplinas || 0);
                 })
@@ -100,7 +101,7 @@ function HomeAdm() {
 
     useEffect(() => {
         const fetchDataGraficos = () => {
-            Axios.get('http://localhost:8080/get/dadosGraficosCategoria')
+            axios.get(`${API_URL}/get/dadosGraficosCategoria`)
                 .then(response => {
                     const dadosFormatados = response.data.map((item) => ({
                         cursos: item.total_cursos,
@@ -110,7 +111,6 @@ function HomeAdm() {
                     
                     setDadosGrafico(dadosFormatados);
                     
-                    // Dados para gráfico comparativo de proporções
                     const totalCursos = response.data.reduce((acc, curr) => acc + curr.total_cursos, 0);
                     const comparativo = response.data.map((item) => ({
                         departamento: item.categoriacurso,
@@ -133,10 +133,9 @@ function HomeAdm() {
         }
     }, []);
 
-    // useEffect para buscar disciplinas por curso
     useEffect(() => {
         const fetchDisciplinasPorCurso = () => {
-            Axios.get('http://localhost:8080/get/totalDisciplinasPorCurso')
+            axios.get(`${API_URL}/get/totalDisciplinasPorCurso`)
                 .then(response => {
                     setDadosDisciplinasPorCurso(response.data);
                 })
@@ -200,7 +199,6 @@ function HomeAdm() {
                         </div>
                     </div>
 
-                    {/* Botões de Navegação */}
                     <div className="row mb-4 g-2">
                         <div className="col-md-2">
                             <button 
@@ -261,12 +259,9 @@ function HomeAdm() {
                         </div>
                     </div>
 
-                    {/* Seção Painel Geral (todos os gráficos) */}
                     {secaoAtiva === "geral" && (
                         <>
-                            {/* Cards Estatísticos */}
                             <div className="row mb-4 g-3">
-                                {/* Card Departamentos */}
                                 <div className="col-md-4">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #003366 0%, #1a4d80 100%)' }}>
                                         <div className="card-body">
@@ -286,7 +281,6 @@ function HomeAdm() {
                                     </div>
                                 </div>
 
-                                {/* Card Licenciaturas (Cursos) */}
                                 <div className="col-md-4">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #B8860B 0%, #DAA520 100%)' }}>
                                         <div className="card-body">
@@ -306,7 +300,6 @@ function HomeAdm() {
                                     </div>
                                 </div>
 
-                                {/* Card Disciplinas */}
                                 <div className="col-md-4">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #4A90E2 0%, #6AA6E8 100%)' }}>
                                         <div className="card-body">
@@ -327,7 +320,6 @@ function HomeAdm() {
                                 </div>
                             </div>
 
-                            {/* GRÁFICO 1 - Pizza (Distribuição Percentual) */}
                             <div className="row g-4 mb-4">
                                 <div className="col-md-6">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
@@ -395,7 +387,6 @@ function HomeAdm() {
                                     </div>
                                 </div>
 
-                                {/* GRÁFICO 2 - Barras (Cursos por Departamento) */}
                                 <div className="col-md-6">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
                                         <div className="card-header bg-white border-0 pt-4 px-4">
@@ -434,7 +425,6 @@ function HomeAdm() {
                                 </div>
                             </div>
 
-                            {/* GRÁFICO 3 - Scatter (Relação Peso vs Proporção) */}
                             <div className="row g-4 mb-4">
                                 <div className="col-md-6">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
@@ -513,7 +503,6 @@ function HomeAdm() {
                                     </div>
                                 </div>
 
-                                {/* GRÁFICO 4 - Disciplinas por Curso (Barras Horizontais) */}
                                 <div className="col-md-6">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
                                         <div className="card-header bg-white border-0 pt-4 px-4">
@@ -568,7 +557,6 @@ function HomeAdm() {
                                 </div>
                             </div>
 
-                            {/* Ranking de Cursos por Número de Disciplinas */}
                             <div className="row mt-4">
                                 <div className="col-12">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
@@ -630,7 +618,6 @@ function HomeAdm() {
                                 </div>
                             </div>
 
-                            {/* Legenda dos Gráficos */}
                             <div className="row mt-4">
                                 <div className="col-12">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px', backgroundColor: '#f8f9fa' }}>
@@ -669,17 +656,14 @@ function HomeAdm() {
                         </>
                     )}
 
-                    {/* Seção Departamentos */}
                     {secaoAtiva === "departamentos" && (
                         <DepartamentoEdit />
                     )}
 
-                    {/* Seção Cursos */}
                     {secaoAtiva === "cursos" && (
                         <CursoEdit />
                     )}
 
-                    {/* Seção Disciplinas */}
                     {secaoAtiva === "disciplinas" && (
                         <DisciplinasEdit />
                     )}

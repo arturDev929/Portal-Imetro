@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import imetro from "../img/logoFundo.png";
-import Style from "./SiderbarAdm.module.css";
+import imetro from "../../img/logoFundo.png";
+import Style from "./Sidebar.module.css";
 import { Link } from "react-router-dom";
 import { IoPersonCircleOutline } from "react-icons/io5";
-import { FaUserTie } from "react-icons/fa";
-import { LiaChalkboardTeacherSolid } from "react-icons/lia";
-import { FaDiscourse } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
+import { MdTopic } from "react-icons/md";
+import { CiChat2 } from "react-icons/ci";
+import { PiStudentDuotone,PiNotePencilLight  } from "react-icons/pi";
 import { GrSecure } from "react-icons/gr";
-import { PiStudentDuotone } from "react-icons/pi";
-import { FaRegNewspaper } from "react-icons/fa";
-function SidebarAdm(){
+function Sidebar(){
     const [user, setUser] = useState(null);
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
@@ -30,23 +28,21 @@ function SidebarAdm(){
                     </div>
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
-                            <Link to="/homeAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaRegNewspaper  className="mb-2 me-2 mt-1"/> Painel Geral
-                            </Link>
-                        </div>
-                        <div className="mb-3">
-                            <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
-                            <Link to="/gestaoFuncionarioAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaUserTie className="mb-2 me-2"/> Funcionários
-                            </Link>
-                            <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
-                                <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
-                            </Link>
-                            <Link to="/gestaoCursoAdm" className={`nav-link ${Style.Link}`}>
-                                <FaDiscourse className="mb-2 me-2"/>Cursos
+                            {/* <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6> */}
+                            <Link to="#" className={`nav-link active ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/>Estudantes
+                                <CiChat2 className="mb-2 me-2"/>Mensagens
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2"/>Alunos Admitidos
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <MdTopic className="mb-2 me-2"/>Add. Tópicos
                             </Link>
                         </div>
                         <div className="mb-3">
@@ -83,18 +79,20 @@ function SidebarAdm(){
                 <div className="offcanvas-body p-0">
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
-                            <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
-                            <Link to="/gestaoFuncionarioAdm" className={`nav-link active ${Style.Link}`}>
-                                <FaUserTie className="mb-2 me-2"/> Funcionários
-                            </Link>
-                            <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
-                                <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
-                            </Link>
-                            <Link to="/gestaoCursoAdm" className={`nav-link ${Style.Link}`}>
-                                <FaDiscourse className="mb-2 me-2"/>Cursos
+                            <Link to="#" className={`nav-link active ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/>Estudantes
+                                <CiChat2 className="mb-2 me-2"/>Mensagens
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2"/>Alunos Admitidos
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <MdTopic className="mb-2 me-2"/>Add. Tópicos
                             </Link>
                         </div>
 
@@ -122,4 +120,4 @@ function SidebarAdm(){
         </div>
     )
 }
-export default SidebarAdm
+export default Sidebar

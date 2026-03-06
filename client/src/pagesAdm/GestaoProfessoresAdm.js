@@ -46,6 +46,8 @@ function GestaoProfessoresAdm() {
 
     const COLORS = ['#003366', '#B8860B', '#4A90E2', '#50C878', '#DC143C', '#FF8C00', '#9370DB', '#20B2AA', '#FF69B4', '#CD5C5C'];
 
+    const API_URL = process.env.REACT_APP_API_URL;
+
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -58,10 +60,8 @@ function GestaoProfessoresAdm() {
             setLoading(true);
             setErroDesativados(false);
             
-            // Buscar estatísticas gerais
-            Axios.get('http://localhost:8080/get/estatisticasProfessores')
+            Axios.get(`${API_URL}/get/estatisticasProfessores`)
                 .then(response => {
-                    console.log("Estatísticas gerais:", response.data);
                     setTotalProfessores(response.data.totalProfessores || 0);
                     setProfessoresComTitulacao(response.data.professoresComTitulacao || 0);
                     setProfessoresComFoto(response.data.professoresComFoto || 0);
@@ -71,10 +71,8 @@ function GestaoProfessoresAdm() {
                     console.error('Erro ao buscar estatísticas:', error);
                 });
 
-            // Buscar estatísticas de professores desativados
-            Axios.get('http://localhost:8080/get/estatisticasProfessoresDesativados')
+            Axios.get(`${API_URL}/get/estatisticasProfessoresDesativados`)
                 .then(response => {
-                    console.log("Estatísticas de desativados:", response.data);
                     setTotalProfessoresDesativados(response.data.totalProfessoresDesativados || 0);
                     setDesativadosComTitulacao(response.data.desativadosComTitulacao || 0);
                 })
@@ -83,10 +81,8 @@ function GestaoProfessoresAdm() {
                     setErroDesativados(true);
                 });
 
-            // Buscar distribuição por titulação
-            Axios.get('http://localhost:8080/get/distribuicaoTitulacao')
+            Axios.get(`${API_URL}/get/distribuicaoTitulacao`)
                 .then(response => {
-                    console.log("Distribuição titulação:", response.data);
                     const dadosFormatados = response.data.map((item, index) => ({
                         titulacao: item.titulacao || 'Não informado',
                         quantidade: item.quantidade || 0,
@@ -95,7 +91,6 @@ function GestaoProfessoresAdm() {
                     
                     setDadosProfessoresPorTitulacao(dadosFormatados);
                     
-                    // Dados para gráfico comparativo
                     const total = dadosFormatados.reduce((acc, curr) => acc + curr.quantidade, 0);
                     const comparativo = dadosFormatados.map((item) => ({
                         titulacao: item.titulacao,
@@ -107,14 +102,11 @@ function GestaoProfessoresAdm() {
                     setDadosGrafico(dadosFormatados);
                 })
                 .catch(error => {
-                    console.log("Erro na distribuição titulação:", error);
                     setDadosGrafico([]);
                 });
 
-            // Buscar distribuição por titulação de professores desativados
-            Axios.get('http://localhost:8080/get/distribuicaoTitulacaoDesativados')
+            Axios.get(`${API_URL}/get/distribuicaoTitulacaoDesativados`)
                 .then(response => {
-                    console.log("Distribuição desativados:", response.data);
                     if (response.data && response.data.length > 0) {
                         const dadosFormatados = response.data.map((item, index) => ({
                             titulacao: item.titulacao || 'Não informado',
@@ -123,7 +115,6 @@ function GestaoProfessoresAdm() {
                         }));
                         setDadosGraficoDesativados(dadosFormatados);
                     } else {
-                        // Se não houver dados, criar um conjunto vazio
                         setDadosGraficoDesativados([]);
                     }
                 })
@@ -132,10 +123,8 @@ function GestaoProfessoresAdm() {
                     setDadosGraficoDesativados([]);
                 });
 
-            // Buscar professores recentes
-            Axios.get('http://localhost:8080/get/Professores')
+            Axios.get(`${API_URL}/get/Professores`)
                 .then(response => {
-                    console.log("Professores recentes:", response.data);
                     const recentes = response.data
                         .sort((a, b) => new Date(b.dataadmissaoprofessor) - new Date(a.dataadmissaoprofessor))
                         .slice(0, 5);
@@ -143,27 +132,21 @@ function GestaoProfessoresAdm() {
                 })
                 .catch(error => console.log("Erro professores recentes:", error));
 
-            // Buscar disciplinas mais ministradas
-            Axios.get('http://localhost:8080/get/disciplinasMaisMinistradas')
+            Axios.get(`${API_URL}/get/disciplinasMaisMinistradas`)
                 .then(response => {
-                    console.log("Disciplinas mais ministradas:", response.data);
                     setDisciplinasMaisMinistradas(response.data || []);
                 })
                 .catch(error => console.log("Erro disciplinas:", error));
 
-            // Buscar professores sem disciplina
-            Axios.get('http://localhost:8080/get/professoresSemDisciplinas')
+            Axios.get(`${API_URL}/get/professoresSemDisciplinas`)
                 .then(response => {
-                    console.log("Professores sem disciplina:", response.data);
                     setProfessoresSemDisciplina(response.data || []);
                     setProfessoresVinculados(totalProfessores - (response.data?.length || 0));
                 })
                 .catch(error => console.log("Erro sem disciplina:", error));
 
-            // Buscar professores desativados
-            Axios.get('http://localhost:8080/get/professoresDesativados')
+            Axios.get(`${API_URL}/get/professoresDesativados`)
                 .then(response => {
-                    console.log("Professores desativados lista:", response.data);
                     setProfessoresDesativados(response.data || []);
                 })
                 .catch(error => console.log("Erro lista desativados:", error));
@@ -243,7 +226,7 @@ function GestaoProfessoresAdm() {
                                 onClick={() => setSecaoAtiva("professores")}
                             >
                                 <FaUserGraduate className="me-2 mb-1" />
-                                Gestão de Professores
+                                Professores
                             </button>
                         </div>
                         <div className="col-md-2">
@@ -252,7 +235,7 @@ function GestaoProfessoresAdm() {
                                 onClick={() => setSecaoAtiva("ProfessorRemovidosEdit")}
                             >
                                 <FaUserGraduate className="me-2 mb-1" />
-                                Professores Removidos
+                                Prof. Removidos
                             </button>
                         </div>
                     </div>

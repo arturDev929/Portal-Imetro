@@ -1,6 +1,6 @@
 import { useState } from "react";
-import {FaIdCard} from "react-icons/fa"
-import {MdLock} from "react-icons/md"
+import { FaIdCard } from "react-icons/fa";
+import { MdLock } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import imetro from "../img/logoFundo.png";
@@ -15,12 +15,14 @@ function Home() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const API_URL = process.env.REACT_APP_API_URL;
+
     const handleLogin = async (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         setLoading(true);
 
         try {
-            const response = await axios.post("http://localhost:8080/login", {
+            const response = await axios.post(`${API_URL}/login`, {
                 numEstudante: numEstudante,
                 password: password
             });
@@ -31,11 +33,22 @@ function Home() {
                     response.data.mensagem || "Login realizado com sucesso!"
                 );
                 
-                localStorage.setItem("usuarioLogado", JSON.stringify(response.data.dados));
+                // Salva os dados do usuário no localStorage
+                localStorage.setItem("usuarioLogado", JSON.stringify({
+                    ...response.data.dados,
+                    tipoUsuario: response.data.tipoUsuario
+                }));
                 
-                
+                // Redireciona baseado no tipo de usuário
                 setTimeout(() => {
-                    navigate("/homeAdm");
+                    if (response.data.tipoUsuario === "adm") {
+                        navigate("/homeAdm");
+                    } else if (response.data.tipoUsuario === "Coordenador de Admissões e Matrículas") {
+                        navigate("/homefuncionarioM");
+                    } else {
+                        // Para outros funcionários, você pode definir uma rota padrão
+                        navigate("/homefuncionario");
+                    }
                 }, 100);
             } else {
                 showErrorToast(
@@ -85,7 +98,7 @@ function Home() {
                                                     type="text" 
                                                     className={`${Style.inputHome} form-control`} 
                                                     id="numEstudante"
-                                                    placeholder="Ínsira o seu código"
+                                                    placeholder="Insira o seu código ou BI"
                                                     value={numEstudante}
                                                     onChange={(e) => setNumEstudante(e.target.value)}
                                                     required
@@ -108,7 +121,11 @@ function Home() {
                                                 />
                                             </div>
                                         </div>
-                                        <button type="submit" className={`${Style.ButtonHome} btn w-100 py-2`} disabled={loading || !numEstudante.trim() || !password.trim()}>
+                                        <button 
+                                            type="submit" 
+                                            className={`${Style.ButtonHome} btn w-100 py-2`} 
+                                            disabled={loading || !numEstudante.trim() || !password.trim()}
+                                        >
                                             {loading ? (
                                                 <>
                                                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -118,7 +135,9 @@ function Home() {
                                                 "Entrar no Sistema"
                                             )}
                                         </button>
-                                        <p className="mt-3 text-white">Ainda não tens uma conta? <Link to="/cadastro" className={Style.LinkHome}>Cadastrar-se</Link></p>
+                                        <p className="mt-3 text-white">
+                                            Ainda não tens uma conta? <Link to="/cadastro" className={Style.LinkHome}>Cadastrar-se</Link>
+                                        </p>
                                     </form>
                                 </div>
                             </div>

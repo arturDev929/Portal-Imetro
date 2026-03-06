@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import Axios from "axios";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function SelectCurso({onChange}){
     const [cursos, setCursos] = useState([]); 
@@ -8,7 +10,7 @@ function SelectCurso({onChange}){
 
     useEffect(() => {
         const fetchData = () => {
-            Axios.get('http://localhost:8080/get/Disciplinas')
+            axios.get(`${API_URL}/get/Disciplinas`)
                 .then((response) => {
                     setCursos(response.data);
                     setError(null);

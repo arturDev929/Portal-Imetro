@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import Axios from "axios";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function CategoriaCursoAno({ onChange }) {
     const [formData, setFormData] = useState({
@@ -12,20 +14,17 @@ function CategoriaCursoAno({ onChange }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Usar useRef para armazenar a versão atual de onChange
     const onChangeRef = useRef(onChange);
     
-    // Atualizar a ref quando onChange mudar
     useEffect(() => {
         onChangeRef.current = onChange;
     }, [onChange]);
 
-    // Notificar o pai APENAS quando formData mudar (e não depender de onChange)
     useEffect(() => {
         if (onChangeRef.current) {
             onChangeRef.current(formData);
         }
-    }, [formData]); // Removido onChange das dependências
+    }, [formData]);
 
     const uniqueCategorias = Array.from(
         new Map(allData.map(item => [item.idcategoriacurso, item])).values()
@@ -63,7 +62,7 @@ function CategoriaCursoAno({ onChange }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await Axios.get('http://localhost:8080/get/CategoriaCursosAno');
+                const response = await axios.get(`${API_URL}/get/CategoriaCursosAno`);
                 setAllData(response.data);
                 setError(null);
             } catch (error) {
@@ -86,7 +85,6 @@ function CategoriaCursoAno({ onChange }) {
             
             {!loading && !error && (
                 <div className="row">
-                    {/* CATEGORIA */}
                     <div className="col-md-12 mb-3">
                         <select 
                             className="form-control form-control-sm"
@@ -102,7 +100,6 @@ function CategoriaCursoAno({ onChange }) {
                         </select>
                     </div>
 
-                    {/* CURSO */}
                     <div className="col-md-12 mb-3">
                         <select 
                             className="form-control form-control-sm"
@@ -119,7 +116,6 @@ function CategoriaCursoAno({ onChange }) {
                         </select>
                     </div>
 
-                    {/* ANO */}
                     <div className="col-md-12 mb-3">
                         <select 
                             className="form-control form-control-sm"

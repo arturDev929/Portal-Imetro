@@ -14,7 +14,7 @@ import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function FuncionarioRemovidosEdit() {
@@ -26,7 +26,7 @@ function FuncionarioRemovidosEdit() {
 
     const apiClient = useMemo(() => {
         const client = axios.create({
-            baseURL: API_BASE_URL,
+            baseURL: API_URL,
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -100,7 +100,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes ativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`http://localhost:8080/put/funcionario/ativar/${id}`);
+                    const response = await axios.put(`${API_URL}/put/funcionario/ativar/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
@@ -127,7 +127,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes EXCLUIR PERMANENTEMENTE o funcionário ${nome}? Esta ação não pode ser desfeita.`,
             async () => {
                 try {
-                    const response = await axios.delete(`http://localhost:8080/delete/funcionario/permanent/${id}`);
+                    const response = await axios.delete(`${API_URL}/delete/funcionario/permanent/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
@@ -235,11 +235,10 @@ function FuncionarioRemovidosEdit() {
                     <table className="table table-hover table-striped border">
                         <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
                             <tr>
-                                <th className="col-1">ID</th>
                                 <th className="col-3">Nome</th>
                                 <th className="col-2">Contacto</th>
                                 <th className="col-2">BI</th>
-                                <th className="col-2">Cargo</th>
+                                <th className="col-3">Cargo</th>
                                 <th className="col-1 text-center">Ativar</th>
                                 <th className="col-1 text-center">Excluir</th>
                             </tr>
@@ -281,9 +280,6 @@ function FuncionarioRemovidosEdit() {
                             ) : (
                                 listaFiltrada.map((item) => (
                                     <tr key={item.id_funcionario}>
-                                        <td className="align-middle fw-bold" style={{color:'var(--azul-escuro)'}}>
-                                            #{item.id_funcionario}
-                                        </td>
                                         <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
                                             <MdPerson className="me-2 mb-1"/>{item.nome_funcionario}
                                         </td>

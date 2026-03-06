@@ -15,7 +15,7 @@ import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 5000;
 
 function CursosEdit() {
@@ -50,7 +50,7 @@ function CursosEdit() {
 
     const apiClient = useMemo(() => {
         const client = axios.create({
-            baseURL: API_BASE_URL,
+            baseURL: API_URL,
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -185,7 +185,6 @@ function CursosEdit() {
             setDisciplinasCurso(response.data);
             setModalDisciplinasAberto(true);
             
-            // Expandir todos os anos inicialmente
             if (response.data && response.data.disciplinas) {
                 const anos = Object.keys(response.data.disciplinas);
                 const expandidoInicial = {};
@@ -219,7 +218,6 @@ function CursosEdit() {
                         { "Disciplina": disciplinaNome }
                     );
 
-                    // Recarregar as disciplinas do curso
                     await fetchDisciplinasPorCurso(cursoSelecionadoId, cursoSelecionado);
                     
                 } catch (error) {
@@ -468,7 +466,6 @@ function CursosEdit() {
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA E BOTÃO ADICIONAR */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -512,7 +509,6 @@ function CursosEdit() {
                                     </div>
                                 </div>
                                 
-                                {/* INDICADOR DE RESULTADOS */}
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -614,7 +610,6 @@ function CursosEdit() {
                 </div>
             </div>
 
-            {/* Modal de Adicionar Nova Licenciatura */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -699,7 +694,6 @@ function CursosEdit() {
                 </div>
             )}
 
-            {/* Modal de Edição */}
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -754,7 +748,6 @@ function CursosEdit() {
                                         </div>
                                     </div>
 
-                                    {/* Seção de Anos Curriculares */}
                                     <div className="border-top pt-3 mt-3">
                                         <h6 className={`mb-3`} style={{color:'var(--azul-escuro)'}}>
                                             <FaCalendarAlt className="me-2 mb-1" />
@@ -831,7 +824,6 @@ function CursosEdit() {
                 </div>
             )}
 
-            {/* Modal de Disciplinas do Curso */}
             {modalDisciplinasAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -863,7 +855,6 @@ function CursosEdit() {
                                     </div>
                                 ) : disciplinasCurso ? (
                                     <div>
-                                        {/* Cabeçalho com informações do curso */}
                                         <div className="row mb-4">
                                             <div className="col-md-12">
                                                 <div className="card bg-light border-0">
@@ -890,7 +881,6 @@ function CursosEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Lista de disciplinas por ano e semestre */}
                                         {Object.keys(disciplinasCurso.disciplinas || {}).length === 0 ? (
                                             <div className="alert text-center py-4" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
                                                 <i className="bi bi-exclamation-triangle display-4 d-block mb-3 text-warning"></i>
@@ -906,7 +896,6 @@ function CursosEdit() {
                                             }}>
                                                 {Object.entries(disciplinasCurso.disciplinas || {}).map(([ano, semestres]) => (
                                                     <div key={ano} className="mb-4">
-                                                        {/* Cabeçalho do Ano */}
                                                         <div 
                                                             className="card card-header text-white mb-2"
                                                             onClick={() => toggleAnoExpandido(ano)}
@@ -926,7 +915,6 @@ function CursosEdit() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Semestres (expansível) */}
                                                         {anoExpandido[ano] && (
                                                             <div className="row">
                                                                 {Object.entries(semestres).map(([semestre, disciplinas]) => (

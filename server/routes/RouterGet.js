@@ -317,7 +317,7 @@ router.get('/ProfessoresDesativados', (req, res) => {
         }else{
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -335,7 +335,7 @@ router.get('/Professores', (req, res) => {
         }else{
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -469,7 +469,7 @@ router.get('/professorVinculado/:id', async (req,res)=>{
         }else{
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(result);
         }
@@ -503,7 +503,7 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
         }else{
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -639,7 +639,7 @@ router.get('/professoresMaisAtivos', (req, res) => {
         }else{
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `http://localhost:8080/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -766,13 +766,13 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
             
             let curriculoUrl = null;
             if (professor.bipdfprofessor) {
-                curriculoUrl = `http://localhost:8080/api/img/professores/${professor.bipdfprofessor}`;
+                curriculoUrl = `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.bipdfprofessor}`;
             }
             
             const professorCompleto = {
                 ...professor,
                 fotoUrl: professor.fotoprofessor ? 
-                    `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : 
+                    `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : 
                     '/default-avatar.png',
                 curriculoUrl: curriculoUrl,
                 datanascimentoFormatada: professor.datanascimentoprofessor ? 
@@ -790,7 +790,7 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
 });
 
 router.get('/turmas', async (req,res)=>{
-    const sql = `SELECT p.idperiodo, p.periodo,p.turma,p.anoletivo,ct.categoriacurso,c.curso,a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso=ct.idcategoriacurso INNER JOIN curso c ON p.idcurso=c.idcurso INNER JOIN anocurricular a ON p.idanocurricular=a.idanocurricular ORDER BY p.anoletivo ASC LIMIT 100`;
+    const sql = `SELECT p.idperiodo, p.periodo, p.turma, p.anoletivo, ct.categoriacurso, c.curso, a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso = ct.idcategoriacurso INNER JOIN curso c ON p.idcurso = c.idcurso INNER JOIN anocurricular a ON p.idanocurricular = a.idanocurricular ORDER BY (p.anoletivo IS NOT NULL AND a.anocurricular IS NOT NULL) DESC,p.anoletivo ASC,a.anocurricular ASC,p.turma ASC LIMIT 10000`;
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores sem disciplinas:", error);
@@ -837,7 +837,7 @@ router.get('/professoresDesativados', (req, res) => {
         }else{
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `http://localhost:8080/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }

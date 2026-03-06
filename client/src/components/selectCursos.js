@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import Axios from "axios";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function SelectCurso({onChange}){
-    const [cursos, setCursos] = useState([]); // Mudei o nome para "cursos" para ser mais descritivo
+    const [cursos, setCursos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchData = () => {
-            Axios.get('http://localhost:8080/get/Cursos')
+            axios.get(`${API_URL}/get/Cursos`)
                 .then((response) => {
                     setCursos(response.data);
                     setError(null);
@@ -22,13 +24,10 @@ function SelectCurso({onChange}){
                 });
         };
         
-        // Chamar imediatamente ao montar
         fetchData();
         
-        // Configurar intervalo para atualizar a cada 2 segundos
         const interval = setInterval(fetchData, 2000);
         
-        // Função de limpeza
         return () => {
             clearInterval(interval);
         };

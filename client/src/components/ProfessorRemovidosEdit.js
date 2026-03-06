@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { 
     MdRefresh, 
@@ -24,7 +24,7 @@ import { RiContactsBook3Line } from "react-icons/ri";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function ProfessorRemovidosEdit() {
@@ -32,48 +32,20 @@ function ProfessorRemovidosEdit() {
     const [listaFiltrada, setListaFiltrada] = useState([]);
     const [termoPesquisa, setTermoPesquisa] = useState('');
     const [loading, setLoading] = useState(false);
-    // Estados para modais
     const [modalInfoAberto, setModalInfoAberto] = useState(false);
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
-    // Estados para dados selecionados
     const [professorSelecionado, setProfessorSelecionado] = useState(null);
     const [professorSelecionadoInfo, setProfessorSelecionadoInfo] = useState(null);
     const [disciplinasProfessor, setDisciplinasProfessor] = useState([]);
     const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
-    // const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
-
-    const apiClient = useMemo(() => {
-        const client = axios.create({
-            baseURL: API_BASE_URL,
-            timeout: API_TIMEOUT,
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        client.interceptors.response.use(
-            (response) => response,
-            (error) => {
-                if (error.response?.data?.error) {
-                    showErrorToast("Erro", error.response.data.error);
-                } else if (error.response?.data?.message) {
-                    showErrorToast("Erro", error.response.data.message);
-                } else if (error.response?.status === 404) {
-                    showErrorToast("Erro de Conexão", "Endpoint não encontrado");
-                } else if (error.code === 'ECONNABORTED') {
-                    showErrorToast("Tempo Esgotado", "Tempo de requisição esgotado");
-                } else {
-                    showErrorToast("Erro", "Erro na comunicação com o servidor");
-                }
-                return Promise.reject(error);
-            }
-        );
-        return client;
-    }, []);
 
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/ProfessoresDesativados');
+            const response = await axios.get(`${API_URL}/get/ProfessoresDesativados`, {
+                timeout: API_TIMEOUT
+            });
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             
@@ -86,10 +58,21 @@ function ProfessorRemovidosEdit() {
             }
         } catch (error) {
             console.error("Erro ao buscar professores:", error);
+            if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            } else if (error.response?.data?.message) {
+                showErrorToast("Erro", error.response.data.message);
+            } else if (error.response?.status === 404) {
+                showErrorToast("Erro de Conexão", "Endpoint não encontrado");
+            } else if (error.code === 'ECONNABORTED') {
+                showErrorToast("Tempo Esgotado", "Tempo de requisição esgotado");
+            } else {
+                showErrorToast("Erro", "Erro na comunicação com o servidor");
+            }
         } finally {
             setLoading(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
@@ -120,7 +103,9 @@ function ProfessorRemovidosEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
             
-            const response = await apiClient.get(`/get/professorVinculadoDisciplinas/${idProfessor}`);
+            const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+                timeout: API_TIMEOUT
+            });
             setDisciplinasProfessor(response.data || []);
             setModalDisciplinasAberto(true);
         } catch (error) {
@@ -129,12 +114,14 @@ function ProfessorRemovidosEdit() {
         } finally {
             setLoadingDisciplinas(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await apiClient.get(`/get/InformacoesProfessor/${professor.idprofessor}`);
+            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+                timeout: API_TIMEOUT
+            });
             setProfessorSelecionadoInfo({
                 ...professor,
                 ...response.data
@@ -146,14 +133,16 @@ function ProfessorRemovidosEdit() {
         } finally {
             setLoading(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const ativarProfessor = (id, nome) => {
         showConfirmToast(
             `Tens a certeza que pretendes Ativar o professor ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`http://localhost:8080/put/professor/ativar/${id}`);
+                    const response = await axios.put(`${API_URL}/put/professor/ativar/${id}`, {}, {
+                        timeout: API_TIMEOUT
+                    });
                     
                     if (response.status === 200) {
                         await fetchProfessores(false);
@@ -203,7 +192,6 @@ function ProfessorRemovidosEdit() {
                     </h2>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -247,7 +235,6 @@ function ProfessorRemovidosEdit() {
                                     </div>
                                 </div>
                                 
-                                {/* INDICADOR DE RESULTADOS */}
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -368,7 +355,6 @@ function ProfessorRemovidosEdit() {
                 </div>
             </div>
 
-            {/* Modal de Disciplinas do Professor */}
             {modalDisciplinasAberto && professorSelecionado && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -430,7 +416,6 @@ function ProfessorRemovidosEdit() {
                 </div>
             )}
 
-            {/* Modal de Informações do Professor */}
             {modalInfoAberto && professorSelecionadoInfo && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -448,7 +433,6 @@ function ProfessorRemovidosEdit() {
                             </div>
                             <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                                 <div className="container-fluid">
-                                    {/* Foto e Identificação */}
                                     <div className="row mb-4">
                                         <div className="col-md-2 text-center">
                                             <img
@@ -487,7 +471,6 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Contato e Residência */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <RiContactsBook3Line className="me-2" />
                                         Contato e Residência
@@ -521,7 +504,6 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Dados Profissionais */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <FaBriefcase className="me-2" />
                                         Dados Profissionais
@@ -563,7 +545,6 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Dados Bancários e Saúde */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <FaUniversity className="me-2" />/<FaHeartbeat className="me-2" />
                                         Dados Bancários e Saúde
@@ -595,7 +576,6 @@ function ProfessorRemovidosEdit() {
                                         </div>
                                     </div>
 
-                                    {/* Documentos */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <MdAttachFile className="me-2" />
                                         Documentos

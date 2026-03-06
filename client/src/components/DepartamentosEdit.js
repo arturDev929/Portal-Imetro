@@ -5,7 +5,7 @@ import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 5000;
 
 function Departamento() {
@@ -38,7 +38,7 @@ function Departamento() {
 
     const apiClient = useMemo(() => {
         const client = axios.create({
-            baseURL: API_BASE_URL,
+            baseURL: API_URL,
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -46,7 +46,6 @@ function Departamento() {
         client.interceptors.response.use(
             (response) => response,
             (error) => {
-                // Mostra mensagem de erro do backend se disponível
                 if (error.response?.data?.error) {
                     showErrorToast("Erro", error.response.data.error);
                 } else if (error.response?.data?.message) {
@@ -72,7 +71,6 @@ function Departamento() {
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
             
-            // Só mostra notificação se explicitamente solicitado (botão de atualizar)
             if (mostrarNotificacao && response.data && response.data.length > 0) {
                 showSuccessToast(
                     "Sucesso",
@@ -82,13 +80,11 @@ function Departamento() {
             }
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
-            // A mensagem de erro já foi tratada no interceptor
         } finally {
             setLoading(false);
         }
     }, [apiClient]);
 
-    // Função de pesquisa
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -104,18 +100,15 @@ function Departamento() {
         }
     }, [lista]);
 
-    // Limpar pesquisa
     const limparPesquisa = useCallback(() => {
         setTermoPesquisa('');
         setListaFiltrada(lista);
     }, [lista]);
 
-    // Carrega apenas uma vez na montagem do componente SEM notificação
     useEffect(() => {
-        fetchData(false); // false = não mostrar notificação
+        fetchData(false);
     }, [fetchData]);
 
-    // Atualiza lista filtrada quando a lista original muda
     useEffect(() => {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
@@ -186,7 +179,6 @@ function Departamento() {
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
         
-        // Validação mínima no front (só para não enviar vazio)
         const nome = dadosEdicao.categoriacurso?.trim();
         if (!nome) {
             showErrorToast("Validação", "Preencha o nome do departamento");
@@ -199,7 +191,6 @@ function Departamento() {
                 categoriacurso: nome
             });
 
-            // Usa a mensagem do backend
             showSuccessToast(
                 "Sucesso",
                 response.data.message || "Departamento atualizado",
@@ -209,7 +200,6 @@ function Departamento() {
             atualizarItemLocal(dadosEdicao.idcategoriacurso, nome);
             fecharModal();
         } catch (error) {
-            // A mensagem de erro já foi tratada no interceptor
             console.error("Erro ao editar:", error);
         } finally {
             setSalvando(false);
@@ -219,7 +209,6 @@ function Departamento() {
     const salvarNovoDepartamento = useCallback(async (e) => {
         e?.preventDefault();
         
-        // Validar se user existe
         if (!user || !user.id) {
             showErrorToast("Erro", "Usuário não autenticado");
             return;
@@ -291,7 +280,6 @@ function Departamento() {
         );
     }, [apiClient, removerItemLocal, showConfirmToast]);
 
-    // States derivados
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcategoriacurso !== '';
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
@@ -330,7 +318,6 @@ function Departamento() {
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -374,7 +361,6 @@ function Departamento() {
                                     </div>
                                 </div>
                                 
-                                {/* INDICADOR DE RESULTADOS */}
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -469,7 +455,6 @@ function Departamento() {
                 </div>
             </div>
 
-            {/* MODAL DE EDIÇÃO */}
             {showModal && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered">
@@ -533,7 +518,6 @@ function Departamento() {
                 </div>
             )}
 
-            {/* MODAL DE ADICIONAR */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered">

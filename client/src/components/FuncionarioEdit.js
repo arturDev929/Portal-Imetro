@@ -15,7 +15,7 @@ import { IoMdPersonAdd } from "react-icons/io";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function FuncionarioEdit() {
@@ -65,7 +65,7 @@ function FuncionarioEdit() {
     }, []);
 
     useEffect(() => {
-        axios.get(`${API_BASE_URL}/get/cargosDisponiveis`)
+        axios.get(`${API_URL}/get/cargosDisponiveis`)
             .then(response => {
                 setCargos(response.data || []);
             })
@@ -76,7 +76,7 @@ function FuncionarioEdit() {
 
     const apiClient = useMemo(() => {
         const client = axios.create({
-            baseURL: API_BASE_URL,
+            baseURL: API_URL,
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -208,7 +208,7 @@ function FuncionarioEdit() {
 
         setSalvando(true);
         try {
-            const response = await axios.post(`${API_BASE_URL}/post/registrarfuncionario`, {
+            const response = await axios.post(`${API_URL}/post/registrarfuncionario`, {
                 ...dadosNovoFuncionario,
                 idAdm: user.id
             });
@@ -375,7 +375,7 @@ function FuncionarioEdit() {
             `Tens a certeza que pretendes desativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`http://localhost:8080/put/funcionario/desativar/${id}`);
+                    const response = await axios.put(`${API_URL}/put/funcionario/desativar/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);

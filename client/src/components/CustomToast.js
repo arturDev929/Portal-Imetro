@@ -27,7 +27,6 @@ export const showSuccessToast = (titulo, mensagem, dadosAdicionais = null) => {
             closeOnClick: false,
             draggable: true,
             pauseOnHover: true,
-            // className: 'bg-success border-0 text-white',
             bodyClassName: 'p-0',
             progressClassName: 'bg-white',
             style: {
@@ -56,7 +55,6 @@ export const showErrorToast = (titulo, mensagem) => {
             closeOnClick: false,
             draggable: true,
             pauseOnHover: true,
-            // className: 'bg-danger border-0 text-white',
             bodyClassName: 'p-0',
             progressClassName: 'bg-white',
             style: {

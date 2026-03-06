@@ -8,6 +8,7 @@ import FuncionáriosAdmRegistrer from "./pagesAdm/FuncionariosAdmRegistrer";
 import GestaoCursoAdm from "./pagesAdm/GestaoCursoAdm";
 import GestaoProfessoresAdm from "./pagesAdm/GestaoProfessoresAdm";
 import GestaoFuncionarioAdm from "./pagesAdm/GestaoFuncionarioAdm";
+import HomeFuncionarioM from "./pagesFuncionarioMatricula/Home";
 
 const RotaPrivada = ({ children }) => {
   const isLogado = localStorage.getItem("usuarioLogado");
@@ -41,6 +42,7 @@ function App() {
         <Route path="/gestaoCursoAdm" element={<RotaPrivada><GestaoCursoAdm/></RotaPrivada>}/>
         <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
         <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
+        <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
       </Routes>
     </Router>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { 
     MdEdit, 
@@ -31,7 +31,7 @@ import SelectProfessor from "./SelectProfessor";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function ProfessorEdit() {
@@ -42,25 +42,21 @@ function ProfessorEdit() {
     const [salvando, setSalvando] = useState(false);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     
-    // Estados para modais
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [modalInfoAberto, setModalInfoAberto] = useState(false);
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [modalAdicionarDisciplinaAberto, setModalAdicionarDisciplinaAberto] = useState(false);
     
-    // Estados para dados selecionados
     const [professorSelecionado, setProfessorSelecionado] = useState(null);
     const [professorSelecionadoInfo, setProfessorSelecionadoInfo] = useState(null);
     const [disciplinasProfessor, setDisciplinasProfessor] = useState([]);
     const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
     const [removendoDisciplina, setRemovendoDisciplina] = useState(null);
     
-    // Estados para adicionar disciplina
     const [iddisciplina, setIdDisciplina] = useState("");
     const [idprofessor, setIdProfessor] = useState("");
     
-    // Estado para novo professor
     const [dadosNovoProfessor, setDadosNovoProfessor] = useState({
         fotoprofessor: null,
         nomeprofessore: "",
@@ -86,7 +82,6 @@ function ProfessorEdit() {
         contactoemergenciaprofessor: ""
     });
     
-    // Estado para edição
     const [dadosEdicao, setDadosEdicao] = useState({
         idprofessor: '',
         codigoprofessor: '',
@@ -124,37 +119,12 @@ function ProfessorEdit() {
         }
     }, []);
 
-    const apiClient = useMemo(() => {
-        const client = axios.create({
-            baseURL: API_BASE_URL,
-            timeout: API_TIMEOUT,
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        client.interceptors.response.use(
-            (response) => response,
-            (error) => {
-                if (error.response?.data?.error) {
-                    showErrorToast("Erro", error.response.data.error);
-                } else if (error.response?.data?.message) {
-                    showErrorToast("Erro", error.response.data.message);
-                } else if (error.response?.status === 404) {
-                    showErrorToast("Erro de Conexão", "Endpoint não encontrado");
-                } else if (error.code === 'ECONNABORTED') {
-                    showErrorToast("Tempo Esgotado", "Tempo de requisição esgotado");
-                } else {
-                    showErrorToast("Erro", "Erro na comunicação com o servidor");
-                }
-                return Promise.reject(error);
-            }
-        );
-        return client;
-    }, []);
-
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/Professores');
+            const response = await axios.get(`${API_URL}/get/Professores`, {
+                timeout: API_TIMEOUT
+            });
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -168,10 +138,21 @@ function ProfessorEdit() {
             }
         } catch (error) {
             console.error("Erro ao buscar professores:", error);
+            if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            } else if (error.response?.data?.message) {
+                showErrorToast("Erro", error.response.data.message);
+            } else if (error.response?.status === 404) {
+                showErrorToast("Erro de Conexão", "Endpoint não encontrado");
+            } else if (error.code === 'ECONNABORTED') {
+                showErrorToast("Tempo Esgotado", "Tempo de requisição esgotado");
+            } else {
+                showErrorToast("Erro", "Erro na comunicação com o servidor");
+            }
         } finally {
             setLoading(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
@@ -212,7 +193,9 @@ function ProfessorEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
             
-            const response = await apiClient.get(`/get/professorVinculadoDisciplinas/${idProfessor}`);
+            const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+                timeout: API_TIMEOUT
+            });
             setDisciplinasProfessor(response.data || []);
             setModalDisciplinasAberto(true);
         } catch (error) {
@@ -221,12 +204,14 @@ function ProfessorEdit() {
         } finally {
             setLoadingDisciplinas(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await apiClient.get(`/get/InformacoesProfessor/${professor.idprofessor}`);
+            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+                timeout: API_TIMEOUT
+            });
             setProfessorSelecionadoInfo({
                 ...professor,
                 ...response.data
@@ -238,7 +223,7 @@ function ProfessorEdit() {
         } finally {
             setLoading(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const abrirModalAdicionar = useCallback(() => {
         setDadosNovoProfessor({
@@ -339,10 +324,11 @@ function ProfessorEdit() {
             
             formData.append('idAdm', user.id);
 
-            const response = await axios.post(`${API_BASE_URL}/post/registrarprofessor`, formData, {
+            const response = await axios.post(`${API_URL}/post/registrarprofessor`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                }
+                },
+                timeout: API_TIMEOUT
             });
 
             if (response.data.sucesso) {
@@ -372,7 +358,9 @@ function ProfessorEdit() {
     const abrirModalEditar = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await apiClient.get(`/get/InformacoesProfessor/${professor.idprofessor}`);
+            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+                timeout: API_TIMEOUT
+            });
             const infoCompletas = response.data;
             
             setDadosEdicao({
@@ -408,7 +396,7 @@ function ProfessorEdit() {
         } finally {
             setLoading(false);
         }
-    }, [apiClient]);
+    }, []);
 
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
@@ -448,7 +436,7 @@ function ProfessorEdit() {
 
         setSalvando(true);
         try {
-            await apiClient.put(`/put/atulizarprofessor/${dadosEdicao.idprofessor}`, {
+            await axios.put(`${API_URL}/put/atulizarprofessor/${dadosEdicao.idprofessor}`, {
                 codigoprofessor: dadosEdicao.codigoprofessor,
                 nomeprofessor: dadosEdicao.nomeprofessor,
                 generoprofessor: dadosEdicao.generoprofessor,
@@ -472,6 +460,9 @@ function ProfessorEdit() {
                 contactoemergenciaprofessor: dadosEdicao.contactoemergenciaprofessor,
                 foto: dadosEdicao.fotoUrl,
                 curriculo: dadosEdicao.curriculoUrl
+            }, {
+                timeout: API_TIMEOUT,
+                headers: { 'Content-Type': 'application/json' }
             });
 
             showSuccessToast(
@@ -488,7 +479,7 @@ function ProfessorEdit() {
         } finally {
             setSalvando(false);
         }
-    }, [dadosEdicao, apiClient, fetchProfessores]);
+    }, [dadosEdicao, fetchProfessores]);
 
     const abrirModalAdicionarDisciplina = useCallback(() => {
         setModalAdicionarDisciplinaAberto(true);
@@ -511,22 +502,15 @@ function ProfessorEdit() {
         setSalvando(true);
         
         try {
-            const response = await fetch(`${API_BASE_URL}/post/registrerDisciplinaProfessor`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    iddisciplina,
-                    idprofessor
-                }),
+            const response = await axios.post(`${API_URL}/post/registrerDisciplinaProfessor`, {
+                iddisciplina,
+                idprofessor
+            }, {
+                timeout: API_TIMEOUT,
+                headers: { 'Content-Type': 'application/json' }
             });
             
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.mensagem || 'Erro ao adicionar disciplina ao professor');
-            }
+            const data = response.data;
             
             if (data.sucesso) {
                 showSuccessToast(
@@ -558,7 +542,9 @@ function ProfessorEdit() {
                     setRemovendoDisciplina(iddisciplina);
                     showInfoToast("Processando", `Removendo disciplina...`);
 
-                    await apiClient.delete(`/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`);
+                    await axios.delete(`${API_URL}/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
+                        timeout: API_TIMEOUT
+                    });
                     
                     showSuccessToast(
                         "Sucesso",
@@ -566,7 +552,9 @@ function ProfessorEdit() {
                         { "Disciplina": disciplinaNome }
                     );
 
-                    const response = await apiClient.get(`/get/professorVinculadoDisciplinas/${idProfessor}`);
+                    const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+                        timeout: API_TIMEOUT
+                    });
                     setDisciplinasProfessor(response.data || []);
                     
                 } catch (error) {
@@ -579,33 +567,34 @@ function ProfessorEdit() {
             null,
             "Confirmar Desvinculação"
         );
-    }, [apiClient, showConfirmToast]);
+    }, [showConfirmToast]);
 
     const deletarProfessor = (id, nome) => {
-    showConfirmToast(
-        `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
-        async () => {
-            try {
-                const response = await axios.put(`http://localhost:8080/put/professor/desativar/${id}`);
-                
-                if (response.status === 200) {
-                    // Recarrega a lista completa do servidor
-                    await fetchProfessores(false);
-                    showSuccessToast(`Professor ${nome} desativado com sucesso!`);
-                }
-            } catch (error) {
-                console.error("Erro ao desativar professor:", error);
-                if (error.response) {
-                    showErrorToast(error.response.data.error || `Erro ao desativar professor ${nome}`);
-                } else if (error.request) {
-                    showErrorToast("Erro de conexão com o servidor");
-                } else {
-                    showErrorToast(`Erro ao desativar professor ${nome}`);
+        showConfirmToast(
+            `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
+            async () => {
+                try {
+                    const response = await axios.put(`${API_URL}/put/professor/desativar/${id}`, {}, {
+                        timeout: API_TIMEOUT
+                    });
+                    
+                    if (response.status === 200) {
+                        await fetchProfessores(false);
+                        showSuccessToast(`Professor ${nome} desativado com sucesso!`);
+                    }
+                } catch (error) {
+                    console.error("Erro ao desativar professor:", error);
+                    if (error.response) {
+                        showErrorToast(error.response.data.error || `Erro ao desativar professor ${nome}`);
+                    } else if (error.request) {
+                        showErrorToast("Erro de conexão com o servidor");
+                    } else {
+                        showErrorToast(`Erro ao desativar professor ${nome}`);
+                    }
                 }
             }
-        }
-    );
-};
+        );
+    };
 
     const fecharModalInfo = useCallback(() => {
         setModalInfoAberto(false);
@@ -698,7 +687,6 @@ function ProfessorEdit() {
                     </div>
                 </div>
 
-                {/* BARRA DE PESQUISA */}
                 <div className="row mb-4">
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
@@ -742,7 +730,6 @@ function ProfessorEdit() {
                                     </div>
                                 </div>
                                 
-                                {/* INDICADOR DE RESULTADOS */}
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -772,7 +759,7 @@ function ProfessorEdit() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-5">
+                                    <td colSpan="8" className="text-center py-5">
                                         <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
                                             <span className="visually-hidden">Carregando...</span>
                                         </div>
@@ -781,7 +768,7 @@ function ProfessorEdit() {
                                 </tr>
                             ) : semResultados ? (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-5">
+                                    <td colSpan="8" className="text-center py-5">
                                         <MdSearch size={48} className="text-muted mb-3" />
                                         <p className="text-muted mb-2">Nenhum professor encontrado para "{termoPesquisa}"</p>
                                         <button 
@@ -794,7 +781,7 @@ function ProfessorEdit() {
                                 </tr>
                             ) : isEmpty ? (
                                 <tr>
-                                    <td colSpan="7" className="text-center py-5">
+                                    <td colSpan="8" className="text-center py-5">
                                         <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
                                         <p className="text-muted mb-3">Nenhum professor encontrado</p>
                                         <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
@@ -874,7 +861,6 @@ function ProfessorEdit() {
                 </div>
             </div>
 
-            {/* Modal de Adicionar Professor */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -894,7 +880,6 @@ function ProfessorEdit() {
                             <form onSubmit={adicionarProfessor} encType="multipart/form-data">
                                 <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                                     <div className="container-fluid">
-                                        {/* Dados Pessoais */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <IoMdPersonAdd className="me-2" />
                                             Dados Pessoais
@@ -1038,7 +1023,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados de Contato */}
                                         <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
                                             <RiContactsBook3Line className="me-2" />
                                             Dados de Contato
@@ -1111,7 +1095,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados Profissionais */}
                                         <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
                                             <FaBriefcase className="me-2" />
                                             Dados Profissionais
@@ -1194,7 +1177,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados de Saúde */}
                                         <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
                                             <MdOutlineLocalHospital className="me-2" />
                                             Dados de Saúde
@@ -1259,7 +1241,6 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* Modal de Adicionar Disciplina ao Professor */}
             {modalAdicionarDisciplinaAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -1327,7 +1308,6 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* Modal de Disciplinas do Professor */}
             {modalDisciplinasAberto && professorSelecionado && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -1406,7 +1386,6 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* Modal de Informações do Professor */}
             {modalInfoAberto && professorSelecionadoInfo && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -1424,7 +1403,6 @@ function ProfessorEdit() {
                             </div>
                             <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                                 <div className="container-fluid">
-                                    {/* Foto e Identificação */}
                                     <div className="row mb-4">
                                         <div className="col-md-2 text-center">
                                             <img
@@ -1463,7 +1441,6 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Contato e Residência */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <RiContactsBook3Line className="me-2" />
                                         Contato e Residência
@@ -1497,7 +1474,6 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Dados Profissionais */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <FaBriefcase className="me-2" />
                                         Dados Profissionais
@@ -1539,7 +1515,6 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    {/* Dados Bancários e Saúde */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <FaUniversity className="me-2" />/<FaHeartbeat className="me-2" />
                                         Dados Bancários e Saúde
@@ -1571,7 +1546,6 @@ function ProfessorEdit() {
                                         </div>
                                     </div>
 
-                                    {/* Documentos */}
                                     <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                         <MdAttachFile className="me-2" />
                                         Documentos
@@ -1613,7 +1587,6 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* Modal de Edição */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -1633,7 +1606,6 @@ function ProfessorEdit() {
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                                     <div className="container-fluid">
-                                        {/* Foto */}
                                         <div className="row mb-4">
                                             <div className="col-md-12 text-center">
                                                 <div className="position-relative d-inline-block">
@@ -1662,7 +1634,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Identificação Básica */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <MdPerson className="me-2" />
                                             Identificação Básica
@@ -1693,7 +1664,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados Pessoais */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <FaIdCard className="me-2" />
                                             Dados Pessoais
@@ -1784,7 +1754,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Contato e Residência */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <RiContactsBook3Line className="me-2" />
                                             Contato e Residência
@@ -1847,7 +1816,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados Profissionais */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <FaBriefcase className="me-2" />
                                             Dados Profissionais
@@ -1918,7 +1886,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Dados de Saúde */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <MdOutlineLocalHospital className="me-2" />
                                             Dados de Saúde
@@ -1956,7 +1923,6 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        {/* Documentos */}
                                         <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
                                             <MdAttachFile className="me-2" />
                                             Documentos
