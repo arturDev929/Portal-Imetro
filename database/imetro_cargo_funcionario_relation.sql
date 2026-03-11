@@ -16,36 +16,32 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `estudantes`
+-- Table structure for table `cargo_funcionario_relation`
 --
 
-DROP TABLE IF EXISTS `estudantes`;
+DROP TABLE IF EXISTS `cargo_funcionario_relation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `estudantes` (
-  `idEstudante` int NOT NULL AUTO_INCREMENT,
-  `nomeEstudante` varchar(200) NOT NULL,
-  `fotoEstudante` varchar(255) NOT NULL,
-  `contactoEstudante` varchar(15) NOT NULL,
-  `numEstudante` varchar(8) NOT NULL,
-  `senhaEstudante` varchar(255) NOT NULL,
-  `idCursos` int NOT NULL,
-  PRIMARY KEY (`idEstudante`),
-  UNIQUE KEY `contactoEstudante` (`contactoEstudante`),
-  UNIQUE KEY `numEstudante` (`numEstudante`),
-  KEY `idCursos` (`idCursos`),
-  CONSTRAINT `estudantes_ibfk_1` FOREIGN KEY (`idCursos`) REFERENCES `cursos` (`idCursos`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `cargo_funcionario_relation` (
+  `id_cargo_funcionario_relation` int NOT NULL AUTO_INCREMENT,
+  `id_cargo` int NOT NULL,
+  `id_funcionario` int NOT NULL,
+  PRIMARY KEY (`id_cargo_funcionario_relation`),
+  KEY `id_funcionario` (`id_funcionario`),
+  KEY `id_cargo` (`id_cargo`),
+  CONSTRAINT `cargo_funcionario_relation_ibfk_1` FOREIGN KEY (`id_funcionario`) REFERENCES `funcionario` (`id_funcionario`),
+  CONSTRAINT `cargo_funcionario_relation_ibfk_2` FOREIGN KEY (`id_cargo`) REFERENCES `cargo_funcionario` (`id_cargo`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `estudantes`
+-- Dumping data for table `cargo_funcionario_relation`
 --
 
-LOCK TABLES `estudantes` WRITE;
-/*!40000 ALTER TABLE `estudantes` DISABLE KEYS */;
-INSERT INTO `estudantes` VALUES (7,'Artur Macumba Paulo','estudante_AM_1769096618797.png','+244 929277043','20250497','$2b$10$5w/syExxg.7N0P9Ky5UpFe9gvuF0AGJx4lAQ2EtdSPw3zLN4DD/vy',2),(8,'Nsimba Paula Suami','estudante_NP_1769096687191.png','+244 937260507','20250602','$2b$10$sQ6hUdqTzG3zPiuk4BxgdetBfWyq1R2QPHlpk0OlVWJlE/9z3eG.m',2),(16,'Maria Pedro','estudante_MP_1769372011472.png','+244 928583366','20251313','$2b$10$Pw7o7bZmmIguDz8rH4Mq3.wjfZ4xbtnOh/RFXOe7QTp1iKKP4oa6C',2);
-/*!40000 ALTER TABLE `estudantes` ENABLE KEYS */;
+LOCK TABLES `cargo_funcionario_relation` WRITE;
+/*!40000 ALTER TABLE `cargo_funcionario_relation` DISABLE KEYS */;
+INSERT INTO `cargo_funcionario_relation` VALUES (6,1,6),(7,1,7);
+/*!40000 ALTER TABLE `cargo_funcionario_relation` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

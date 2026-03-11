@@ -31,7 +31,7 @@ CREATE TABLE `disc_prof` (
   KEY `iddisciplina` (`iddisciplina`),
   CONSTRAINT `disc_prof_ibfk_1` FOREIGN KEY (`idprofessor`) REFERENCES `professor` (`idprofessor`),
   CONSTRAINT `disc_prof_ibfk_2` FOREIGN KEY (`iddisciplina`) REFERENCES `disciplina` (`iddisciplina`)
-) ENGINE=InnoDB AUTO_INCREMENT=152 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=184 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `disc_prof` (
 
 LOCK TABLES `disc_prof` WRITE;
 /*!40000 ALTER TABLE `disc_prof` DISABLE KEYS */;
-INSERT INTO `disc_prof` VALUES (124,3,73),(125,3,64),(127,3,68),(130,4,68),(131,4,77),(132,12,57),(133,9,93),(134,2,100),(135,2,58),(136,13,58),(137,10,58),(138,4,58),(139,6,73),(140,2,73),(141,10,73),(142,2,63),(143,13,63),(145,11,63),(146,9,63),(147,14,63),(148,2,77),(149,13,77),(150,6,77),(151,14,77);
+INSERT INTO `disc_prof` VALUES (137,10,58),(138,4,58),(141,10,73),(166,13,57),(167,2,57),(168,8,57),(169,10,57),(170,5,57),(171,12,73),(172,11,73),(173,9,73),(174,3,73),(175,2,100),(176,10,100),(177,8,100),(178,4,100),(179,14,100),(180,7,100),(181,2,58),(182,7,58);
 /*!40000 ALTER TABLE `disc_prof` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-26 16:07:47
+-- Dump completed on 2026-03-11 20:53:29

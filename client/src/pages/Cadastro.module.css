@@ -1,0 +1,47 @@
+.loginContainer{
+    background-image: url(../img/imetro3.jpeg);
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.card{
+    background-color: var(--azul-metropolitano);
+    border-radius: 1%;
+}
+.logoImetro{
+    width: 100px;
+    height: 100px;
+}
+.inputHome{
+  background-color: var(--cinza-claro);
+  color: var(--dourado);
+  padding: 10px;
+  border-radius:0px 5px 5px 0px ;
+}
+.span{
+    border-radius:5px 0px 0px 5px ;
+}
+.inputHome::placeholder{
+  color: var(--dourado);
+}
+.inputHome:focus{
+  background-color: var(--cinza-claro);
+  color: var(--dourado);
+  border: 2px solid var(--dourado);
+  outline: none;
+}
+.ButtonHome{
+    background-color: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+}
+.ButtonHome:hover{
+    background-color: var(--branco);
+    color: var(--dourado);
+    border: none;
+    opacity: 0.9;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}

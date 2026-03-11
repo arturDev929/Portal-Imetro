@@ -16,30 +16,36 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `anocurricular`
+-- Table structure for table `funcionario`
 --
 
-DROP TABLE IF EXISTS `anocurricular`;
+DROP TABLE IF EXISTS `funcionario`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `anocurricular` (
-  `idanocurricular` int NOT NULL AUTO_INCREMENT,
-  `anocurricular` enum('1','2','3','4','5') NOT NULL,
-  `idcurso` int NOT NULL,
-  PRIMARY KEY (`idanocurricular`),
-  KEY `idcurso` (`idcurso`),
-  CONSTRAINT `anocurricular_ibfk_1` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=134 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `funcionario` (
+  `id_funcionario` int NOT NULL AUTO_INCREMENT,
+  `nome_funcionario` varchar(255) NOT NULL,
+  `contacto_funcionario` varchar(16) NOT NULL,
+  `bi_funcionario` varchar(50) NOT NULL,
+  `estado_funcionario` enum('Ativo','Desativado') DEFAULT 'Ativo',
+  `senha_funcionario` varchar(255) NOT NULL,
+  `idAdm` int NOT NULL,
+  PRIMARY KEY (`id_funcionario`),
+  UNIQUE KEY `contacto_funcionario` (`contacto_funcionario`),
+  UNIQUE KEY `bi_funcionario` (`bi_funcionario`),
+  KEY `idAdm` (`idAdm`),
+  CONSTRAINT `funcionario_ibfk_1` FOREIGN KEY (`idAdm`) REFERENCES `admimetro` (`idAdm`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `anocurricular`
+-- Dumping data for table `funcionario`
 --
 
-LOCK TABLES `anocurricular` WRITE;
-/*!40000 ALTER TABLE `anocurricular` DISABLE KEYS */;
-INSERT INTO `anocurricular` VALUES (74,'1',24),(75,'2',24),(76,'3',24),(77,'4',24),(78,'1',35),(79,'2',35),(80,'3',35),(81,'4',35),(82,'5',35),(83,'4',34),(84,'3',34),(85,'2',34),(86,'1',34),(87,'1',30),(88,'2',30),(89,'3',30),(90,'4',30),(91,'5',30),(92,'1',33),(93,'2',33),(94,'3',33),(95,'4',33),(96,'1',29),(97,'2',29),(98,'3',29),(99,'4',29),(100,'1',27),(101,'2',27),(102,'3',27),(103,'4',27),(104,'5',27),(106,'4',26),(107,'3',26),(108,'2',26),(109,'1',26),(110,'1',32),(111,'2',32),(112,'3',32),(113,'4',32),(114,'5',32),(115,'5',31),(116,'4',31),(117,'3',31),(118,'2',31),(119,'1',31),(120,'1',23),(121,'2',23),(122,'3',23),(124,'4',25),(125,'3',25),(126,'2',25),(127,'1',25),(128,'1',28),(129,'2',28),(130,'3',28),(131,'4',28);
-/*!40000 ALTER TABLE `anocurricular` ENABLE KEYS */;
+LOCK TABLES `funcionario` WRITE;
+/*!40000 ALTER TABLE `funcionario` DISABLE KEYS */;
+INSERT INTO `funcionario` VALUES (6,'Artur Macumba Paulo','+244 929-277-043','008555379LA047','Ativo','$2b$10$62uglWrhvtVX5NWZmqQ2euS9fWrcVx0ovsCPD.IehIHbM9M9aYVve',2),(7,'Nsimba Paula Maniongo Suami','937250607','008649051la049','Ativo','$2b$10$5n.Q.8.F/6DIER62pkBiN.2Nf/V68haj.OYDVt1Jr/x/WSSVSJXE2',2);
+/*!40000 ALTER TABLE `funcionario` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

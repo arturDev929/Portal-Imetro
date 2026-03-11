@@ -3,7 +3,8 @@ import { useState } from "react";
 import Axios from "axios";
 import Navbar from "../components/navbar";
 import imetro from "../img/logo_goldenrod.png";
-import Style from "./Home.module.css";
+import Style from "./Cadastro.module.css";
+import { FaUser } from "react-icons/fa";
 // import SelectCursos from "../components/selectCurso";
 import { FiUserPlus } from "react-icons/fi";
 import { showSuccessToast, showErrorToast } from "../components/CustomToast";
@@ -100,106 +101,147 @@ function Cadastro() {
         <div>
             <Navbar />
             <div className={Style.loginContainer}>
-                <div className="container-fluid">
-                    <div className="d-flex justify-content-center align-items-center min-vh-100">
-                        <div className="col-11 col-sm-8 col-md-6 col-lg-4">
-                            <div className="card shadow-lg">
+                <div className="container-sm">
+                    <div className="justify-content-center">
+                        <div>
+                            <div className={`${Style.card} shadow-sm`}>
                                 <div className="card-body p-4 text-center">
                                     <img 
                                         src={imetro} 
                                         alt="Logotipo Imetro" 
                                         className={`${Style.logoImetro} mb-4`}
                                     />
-                                    <h3 className="mb-4">Registrar-se</h3>
+                                    <h3 className="mb-4 text-white">Formulário de Inscrição</h3>
                                     <form onSubmit={handleSubmit}>
-                                        <div className="mb-3">
-                                            <input 
-                                                type="text" 
-                                                className="form-control" 
-                                                id="nomeEstudante"
-                                                name="nomeEstudante"
-                                                placeholder="Nome Estudante"
-                                                value={valores.nomeEstudante}
-                                                onChange={handleChangeInput}
-                                                required
-                                                disabled={loading}
-                                            />
+                                        <div className="row">
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="nomeEstudante"
+                                                    name="nomeEstudante"
+                                                    placeholder="Nome Estudante"
+                                                    value={valores.nomeEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="contactoEstudante"
+                                                    name="contactoEstudante"
+                                                    placeholder="+244 --- --- ---"
+                                                    value={valores.contactoEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="emailEstudante"
+                                                    name="emailEstudante"
+                                                    placeholder="exemplo@mail.com"
+                                                    value={valores.emailEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <select 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="sexoEstudante"
+                                                    name="sexoEstudanteemailstudante"
+                                                    value={valores.sexoEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                >
+                                                    <option value="">Selecione seu Sexo</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                    <option value="Feminino">Feminino</option>
+                                                </select>
+                                            </div>
+                                            <div className="d-flex mb-3">
+                                                <span className={`${Style.span} input-group-text`}>Coloque a cópia do B.I e do Certificado</span>
+                                                <input 
+                                                    type="file" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="documentoEstudante"
+                                                    name="documentoEstudante"
+                                                    value={valores.documentoEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex mb-3">
+                                                <span className={`${Style.span} input-group-text`}>Insira uma foto tipo passe</span>
+                                                <input 
+                                                    type="file" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="fotoEstudante"
+                                                    name="fotoEstudante"
+                                                    value={valores.fotoEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="senhaEstudante"
+                                                    name="senhaEstudante"
+                                                    placeholder="Insira a sua senha"
+                                                    value={valores.emailEstudante}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <div className="d-flex col-md-6 mb-3">
+                                                <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                                                <input 
+                                                    type="text" 
+                                                    className={`${Style.inputHome} form-control`} 
+                                                    id="ConfirmarSenha"
+                                                    name="ConfirmarSenha"
+                                                    placeholder="Confirma a senha"
+                                                    value={valores.ConfirmarSenha}
+                                                    onChange={handleChangeInput}
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <button type="submit" className="btn btn-primary w-100 py-2" disabled={loading}>
+                                                {loading ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                        Registrando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Registrar <FiUserPlus/>
+                                                    </>
+                                                )}
+                                            </button>
+                                            <p className="mt-3">
+                                                Já tens uma conta? <Link to="/">Fazer o Login</Link>
+                                            </p>
                                         </div>
-                                        <div className="mb-3">
-                                            <input 
-                                                type="tel"
-                                                className="form-control" 
-                                                id="contactoEstudante"
-                                                name="contactoEstudante"
-                                                placeholder="+244 --- --- ---"
-                                                value={valores.contactoEstudante}
-                                                onChange={handleChangeInput}
-                                                required
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        <div className="mb-3">
-                                            <input 
-                                                type="text" 
-                                                className="form-control" 
-                                                id="numEstudante"
-                                                name="numEstudante"
-                                                placeholder="Número da Matrícula"
-                                                value={valores.numEstudante}
-                                                onChange={handleChangeInput}
-                                                required
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        
-                                        {/* <SelectCursos 
-                                            onChange={handleChangeInput}
-                                            value={valores.idCursos}
-                                            disabled={loading}
-                                        /> */}
-                                        
-                                        <div className="mb-3">
-                                            <input 
-                                                type="password" 
-                                                className="form-control" 
-                                                id="senhaEstudante"
-                                                name="senhaEstudante"
-                                                placeholder="Sua senha"
-                                                value={valores.senhaEstudante}
-                                                onChange={handleChangeInput}
-                                                required
-                                                minLength="6"
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        <div className="mb-3">
-                                            <input 
-                                                type="password" 
-                                                className="form-control" 
-                                                id="senhaConfirmar"
-                                                name="senhaConfirmar"
-                                                placeholder="Confirmar Senha"
-                                                value={valores.senhaConfirmar}
-                                                onChange={handleChangeInput}
-                                                required
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        <button type="submit" className="btn btn-primary w-100 py-2" disabled={loading}>
-                                            {loading ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                    Registrando...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    Registrar <FiUserPlus/>
-                                                </>
-                                            )}
-                                        </button>
-                                        <p className="mt-3">
-                                            Já tens uma conta? <Link to="/">Fazer o Login</Link>
-                                        </p>
                                     </form>
                                 </div>
                             </div>

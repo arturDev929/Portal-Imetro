@@ -29,7 +29,7 @@ CREATE TABLE `curso` (
   PRIMARY KEY (`idcurso`),
   KEY `idcategoriacurso` (`idcategoriacurso`),
   CONSTRAINT `curso_ibfk_1` FOREIGN KEY (`idcategoriacurso`) REFERENCES `categoriacurso` (`idcategoriacurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +38,7 @@ CREATE TABLE `curso` (
 
 LOCK TABLES `curso` WRITE;
 /*!40000 ALTER TABLE `curso` DISABLE KEYS */;
-INSERT INTO `curso` VALUES (23,'Gestão de Recursos Humanos',25),(24,' Administração de Empresas',25),(25,'Gestão Pública',25),(26,'Economia',25),(27,'Direito',26),(28,'Jornalismo',26),(29,'Cinema e TV',26),(30,'Arquitectura',27),(31,'Geologia e Minas',27),(32,'Engenharia Civil',27),(33,'Ciências da Computação',27),(34,'Planeamento Regional e Urbano',27),(35,' Engenharia Electrónica e Telecomunicações',27);
+INSERT INTO `curso` VALUES (23,'Gestão de Recursos Humanos',25),(24,'Administração de Empresas',25),(25,'Gestão Pública',25),(26,'Economia',25),(27,'Direito',26),(28,'Jornalismo',26),(29,'Cinema e TV',26),(30,'Arquitectura',27),(31,'Geologia e Minas',27),(32,'Engenharia Civil',27),(33,'Ciências da Computação',27),(34,'Planeamento Regional e Urbano',27),(35,' Engenharia Electrónica e Telecomunicações',27);
 /*!40000 ALTER TABLE `curso` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -51,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-02-26 16:07:47
+-- Dump completed on 2026-03-11 20:53:28
