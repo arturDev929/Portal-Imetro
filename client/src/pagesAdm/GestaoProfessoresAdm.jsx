@@ -1,6 +1,6 @@
 // GestaoProfessoresAdm.js
 import { useState, useEffect } from "react";
-import Axios from "axios";
+import { api } from "../service/api";
 import SidebarAdm from "../components/SidebarAdm";
 import NavbarAdm from "../components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
@@ -60,7 +60,7 @@ function GestaoProfessoresAdm() {
             setLoading(true);
             setErroDesativados(false);
             
-            Axios.get(`${API_URL}/get/estatisticasProfessores`)
+            api.get(`/get/estatisticasProfessores`)
                 .then(response => {
                     setTotalProfessores(response.data.totalProfessores || 0);
                     setProfessoresComTitulacao(response.data.professoresComTitulacao || 0);
@@ -71,7 +71,7 @@ function GestaoProfessoresAdm() {
                     console.error('Erro ao buscar estatísticas:', error);
                 });
 
-            Axios.get(`${API_URL}/get/estatisticasProfessoresDesativados`)
+            api.get(`/get/estatisticasProfessoresDesativados`)
                 .then(response => {
                     setTotalProfessoresDesativados(response.data.totalProfessoresDesativados || 0);
                     setDesativadosComTitulacao(response.data.desativadosComTitulacao || 0);
@@ -81,7 +81,7 @@ function GestaoProfessoresAdm() {
                     setErroDesativados(true);
                 });
 
-            Axios.get(`${API_URL}/get/distribuicaoTitulacao`)
+            api.get(`/get/distribuicaoTitulacao`)
                 .then(response => {
                     const dadosFormatados = response.data.map((item, index) => ({
                         titulacao: item.titulacao || 'Não informado',
@@ -105,7 +105,7 @@ function GestaoProfessoresAdm() {
                     setDadosGrafico([]);
                 });
 
-            Axios.get(`${API_URL}/get/distribuicaoTitulacaoDesativados`)
+            api.get(`/get/distribuicaoTitulacaoDesativados`)
                 .then(response => {
                     if (response.data && response.data.length > 0) {
                         const dadosFormatados = response.data.map((item, index) => ({
@@ -123,7 +123,7 @@ function GestaoProfessoresAdm() {
                     setDadosGraficoDesativados([]);
                 });
 
-            Axios.get(`${API_URL}/get/Professores`)
+            api.get(`/get/Professores`)
                 .then(response => {
                     const recentes = response.data
                         .sort((a, b) => new Date(b.dataadmissaoprofessor) - new Date(a.dataadmissaoprofessor))
@@ -132,20 +132,20 @@ function GestaoProfessoresAdm() {
                 })
                 .catch(error => console.log("Erro professores recentes:", error));
 
-            Axios.get(`${API_URL}/get/disciplinasMaisMinistradas`)
+            api.get(`/get/disciplinasMaisMinistradas`)
                 .then(response => {
                     setDisciplinasMaisMinistradas(response.data || []);
                 })
                 .catch(error => console.log("Erro disciplinas:", error));
 
-            Axios.get(`${API_URL}/get/professoresSemDisciplinas`)
+            api.get(`/get/professoresSemDisciplinas`)
                 .then(response => {
                     setProfessoresSemDisciplina(response.data || []);
                     setProfessoresVinculados(totalProfessores - (response.data?.length || 0));
                 })
                 .catch(error => console.log("Erro sem disciplina:", error));
 
-            Axios.get(`${API_URL}/get/professoresDesativados`)
+            api.get(`/get/professoresDesativados`)
                 .then(response => {
                     setProfessoresDesativados(response.data || []);
                 })

@@ -3,7 +3,9 @@
   margin: 0;
   box-sizing: border-box;
   font-family:Poppins;
-  /* scrollbar-width: none; */
+  scrollbar-width: none;
+  /*font-family: 'Times New Roman', Times, serif;*/
+  scrollbar-width: none;
 }
 :root {
   --azul-metropolitano: #003366;
