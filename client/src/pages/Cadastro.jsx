@@ -1,15 +1,15 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Axios from "axios";
 import Navbar from "../components/navbar";
 import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
 import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
-import { FiUserPlus, FiMail, FiArrowLeft } from "react-icons/fi";
+import { FiMail, FiArrowLeft } from "react-icons/fi";
 import { showSuccessToast, showErrorToast } from "../components/CustomToast";
 import SelectCurso from "../components/selectCursos";
+import Api from "../service/api"
 
 function Cadastro() {
     const [etapa, setEtapa] = useState(1); // 1: formulário, 2: verificação
@@ -36,8 +36,6 @@ function Cadastro() {
         documentoEstudante: null,
         fotoEstudante: null
     });
-
-    const API_URL = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         let interval;
@@ -134,7 +132,7 @@ function Cadastro() {
 
         setLoading(true);
         try {
-            const response = await Axios.post(`${API_URL}/post/enviarCodigoVerificacao`, {
+            const response = await Api.post(`/post/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
                 nomeEstudante: valores.nomeEstudante
             });
@@ -193,8 +191,8 @@ function Cadastro() {
             formData.append('documentoEstudante', arquivos.documentoEstudante);
             formData.append('fotoEstudante', arquivos.fotoEstudante);
 
-            const response = await Axios.post(
-                `${API_URL}/post/verificarCodigoECompletarCadastro`, 
+            const response = await Api.post(
+                `/post/verificarCodigoECompletarCadastro`, 
                 formData,
                 {
                     headers: {
@@ -262,7 +260,7 @@ function Cadastro() {
     const handleReenviarCodigo = async () => {
         setLoading(true);
         try {
-            const response = await Axios.post(`${API_URL}/post/enviarCodigoVerificacao`, {
+            const response = await Api.post(`/post/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
                 nomeEstudante: valores.nomeEstudante
             });
