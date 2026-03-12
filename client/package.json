@@ -28,11 +28,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "vite",
-    "build": "node check-env.js && vite build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "eslintConfig": {
     "extends": [

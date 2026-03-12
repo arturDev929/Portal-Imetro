@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cadastro from "./pages/Cadastro";
-import Home from "./pages/Home";
+import Home from "./pages/Home"
 import HomeAdm from "./pagesAdm/HomeAdm";
 import FuncionáriosAdmRegistrer from "./pagesAdm/FuncionariosAdmRegistrer";
 import GestaoCursoAdm from "./pagesAdm/GestaoCursoAdm";
