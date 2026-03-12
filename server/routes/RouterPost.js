@@ -4,81 +4,286 @@ const conexao = require("../infra/conexao");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
-const { createCanvas } = require("canvas");
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
-const gerarImagemIniciais = (nome) => {
-    try {
-        const palavras = nome.trim().split(/\s+/);
-
-        if (palavras.length === 0) return null;
-        
-        const primeiraLetra = palavras[0].charAt(0).toUpperCase();
-
-        let segundaLetra;
-        if (palavras.length > 1) {
-            segundaLetra = palavras[1].charAt(0).toUpperCase();
-        } else if (palavras[0].length > 1) {
-            segundaLetra = palavras[0].charAt(1).toUpperCase();
-        } else {
-            segundaLetra = palavras[0].charAt(0).toUpperCase();
-        }
-        
-        const iniciais = primeiraLetra + segundaLetra;
-        
-        const tamanho = 200;
-        const canvas = createCanvas(tamanho, tamanho);
-        const ctx = canvas.getContext('2d');
-
-        const cores = [
-            '#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#1abc9c',
-            '#34495e', '#f39c12', '#d35400', '#16a085', '#27ae60'
-        ];
-        const corFundo = cores[Math.floor(Math.random() * cores.length)];
-
-        ctx.fillStyle = corFundo;
-        ctx.fillRect(0, 0, tamanho, tamanho);
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${tamanho / 2}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        ctx.fillText(iniciais, tamanho / 2, tamanho / 2);
-        
-        const nomeArquivo = `estudante_${iniciais}_${Date.now()}.png`;
-        
-        const pastaImagens = path.join(__dirname, '../../client/src/img/estudantes');
-        const caminhoCompleto = path.join(pastaImagens, nomeArquivo);
-        
-        if (!fs.existsSync(pastaImagens)) {
-            fs.mkdirSync(pastaImagens, { recursive: true });
-        }
-
-        const buffer = canvas.toBuffer('image/png');
-        fs.writeFileSync(caminhoCompleto, buffer);
-        
-        console.log(`📸 Imagem gerada: ${nomeArquivo} com iniciais: ${iniciais}`);
-        
-        return nomeArquivo;
-        
-    } catch (erro) {
-        console.error("Erro ao gerar imagem:", erro);
-        return null;
+// Configuração do email
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
+});
+
+// Armazenamento temporário de códigos
+const codigosVerificacao = new Map();
+
+// Limpar códigos expirados a cada 5 minutos
+setInterval(() => {
+    const agora = Date.now();
+    for (const [email, dados] of codigosVerificacao.entries()) {
+        if (dados.expiracao < agora) {
+            codigosVerificacao.delete(email);
+        }
+    }
+}, 5 * 60 * 1000);
+
+// Função para gerar código de 6 dígitos
+const gerarCodigo = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-router.post('/registrarEstudante', async (req, res) => {
-    try {
-        const { 
-            nomeEstudante, 
-            contactoEstudante, 
-            numEstudante, 
-            idCursos, 
-            senhaEstudante, 
-            senhaConfirmar
-        } = req.body;
+// Função para enviar email de confirmação
+const enviarEmailConfirmacao = async (email, nome, codigo) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Código de Verificação - IPS Metropolitano',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #FFD700; margin: 0;">IPS METROPOLITANO</h1>
+                    <p style="color: #666; font-size: 14px;">Instituto Politécnico Superior Metropolitano de Angola</p>
+                </div>
+                
+                <h2 style="color: #333; text-align: center;">Confirme seu Email</h2>
+                
+                <p>Olá <strong>${nome}</strong>,</p>
+                
+                <p>Recebemos uma solicitação de cadastro no Sistema de Gestão Acadêmica do <strong>IPS Metropolitano</strong>.</p>
+                
+                <p>Para confirmar seu email e completar seu cadastro, utilize o seguinte código de verificação:</p>
+                
+                <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0; color: #333; border: 2px solid #FFD700;">
+                    ${codigo}
+                </div>
+                
+                <p><strong>Prazo de validade:</strong> 10 minutos</p>
+                <p><strong>Tentativas permitidas:</strong> 3</p>
+                
+                <p style="color: #666; font-size: 14px;">Se você não solicitou este cadastro, ignore este email.</p>
+                
+                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    IPS Metropolitano - Instituto Politécnico Superior Metropolitano de Angola<br>
+                    Este é um email automático, por favor não responda.
+                </p>
+            </div>
+        `
+    };
 
-        if (!nomeEstudante || !contactoEstudante || !numEstudante || !idCursos || !senhaEstudante) {
+    await transporter.sendMail(mailOptions);
+};
+
+// Função para enviar credenciais após cadastro
+const enviarCredenciais = async (email, nome, numEstudante, senha) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Bem-vindo ao IPS Metropolitano - Credenciais de Acesso',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #FFD700; margin: 0;">IPS METROPOLITANO</h1>
+                    <p style="color: #666; font-size: 14px;">Instituto Politécnico Superior Metropolitano de Angola</p>
+                </div>
+                
+                <h2 style="color: #333; text-align: center;">Cadastro Confirmado com Sucesso!</h2>
+                
+                <p>Olá <strong>${nome}</strong>,</p>
+                
+                <p>Seu cadastro no <strong>Sistema de Gestão Acadêmica do IPS Metropolitano</strong> foi realizado com sucesso!</p>
+                
+                <p>Abaixo estão suas credenciais de acesso. Guarde-as em local seguro:</p>
+                
+                <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #FFD700;">
+                    <p style="margin: 5px 0;"><strong>Número de Inscrição:</strong></p>
+                    <p style="font-size: 24px; color: #FFD700; margin: 5px 0; font-weight: bold;">${numEstudante}</p>
+                    
+                    <p style="margin: 15px 0 5px 0;"><strong>Senha de Acesso:</strong></p>
+                    <p style="font-size: 18px; background-color: #fff; padding: 10px; border-radius: 3px; font-family: monospace;">${senha}</p>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">Para acessar o sistema, utilize seu número de inscrição e a senha fornecida acima.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${process.env.FRONTEND_URL}" style="background-color: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Acessar o Sistema</a>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    IPS Metropolitano - Instituto Politécnico Superior Metropolitano de Angola<br>
+                    Este é um email automático, por favor não responda.
+                </p>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+};
+
+// Rota para enviar código de verificação
+router.post('/enviarCodigoVerificacao', async (req, res) => {
+    try {
+        const { emailEstudante, nomeEstudante } = req.body;
+
+        if (!emailEstudante || !nomeEstudante) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: "Email e nome são obrigatórios"
+            });
+        }
+
+        // Verificar se email já existe no banco
+        const verificarEmailSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE email_estudanteInscricao = ?";
+        
+        const emailExistente = await new Promise((resolve, reject) => {
+            conexao.query(verificarEmailSQL, [emailEstudante], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+
+        if (emailExistente.length > 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Email existente",
+                mensagem: "Este email já está registrado!"
+            });
+        }
+
+        // Gerar novo código
+        const codigo = gerarCodigo();
+        const expiracao = Date.now() + 10 * 60 * 1000; // 10 minutos
+
+        // Armazenar código
+        codigosVerificacao.set(emailEstudante, {
+            codigo,
+            expiracao,
+            tentativas: 0
+        });
+
+        // Enviar email
+        await enviarEmailConfirmacao(emailEstudante, nomeEstudante, codigo);
+
+        res.json({
+            sucesso: true,
+            mensagem: "Código de verificação enviado para seu email!"
+        });
+
+    } catch (error) {
+        console.error("Erro ao enviar código:", error);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: "Erro ao enviar código de verificação"
+        });
+    }
+});
+
+// Rota para verificar código e completar cadastro
+router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
+    try {
+        console.log("Body recebido:", req.body);
+        console.log("Files recebidos:", req.files ? Object.keys(req.files) : "Nenhum arquivo");
+        
+        const { codigo, email } = req.body;
+        const files = req.files || {};
+
+        if (!email || !codigo) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Dados incompletos",
+                mensagem: "Email e código são obrigatórios"
+            });
+        }
+
+        // Buscar dados de verificação
+        const dadosVerificacao = codigosVerificacao.get(email);
+
+        if (!dadosVerificacao) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Código expirado",
+                mensagem: "Código não encontrado ou expirado. Solicite um novo código."
+            });
+        }
+
+        // Verificar expiração
+        if (dadosVerificacao.expiracao < Date.now()) {
+            codigosVerificacao.delete(email);
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Código expirado",
+                mensagem: "Código expirado. Solicite um novo código."
+            });
+        }
+
+        // Verificar tentativas
+        if (dadosVerificacao.tentativas >= 3) {
+            codigosVerificacao.delete(email);
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Muitas tentativas",
+                mensagem: "Você excedeu o número de tentativas. Solicite um novo código."
+            });
+        }
+
+        // Verificar código
+        if (dadosVerificacao.codigo !== codigo) {
+            dadosVerificacao.tentativas++;
+            codigosVerificacao.set(email, dadosVerificacao);
+
+            const tentativasRestantes = 3 - dadosVerificacao.tentativas;
+            
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Código inválido",
+                mensagem: `Código inválido. Você tem mais ${tentativasRestantes} tentativa(s).`
+            });
+        }
+
+        // Código correto - remover da memória
+        codigosVerificacao.delete(email);
+
+        // Continuar com o cadastro
+        await completarCadastroEstudante(req, res, req.body, files);
+
+    } catch (error) {
+        console.error("Erro na verificação:", error);
+        res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro interno",
+            mensagem: "Erro ao verificar código"
+        });
+    }
+});
+
+// Função auxiliar para completar o cadastro
+async function completarCadastroEstudante(req, res, body, files) {
+    try {
+        const nomeEstudante = body.nomeEstudante || "";
+        const contactoEstudante = body.contactoEstudante || "";
+        const emailEstudante = body.email || body.emailEstudante || "";
+        const biEstudante = body.biEstudante || "";
+        const sexoEstudante = body.sexoEstudante || "";
+        const periodoEstudante = body.periodoEstudante || "";
+        const idcurso = body.idcurso || "";
+        const senhaEstudante = body.senhaEstudante || "";
+
+        // Validação dos campos obrigatórios
+        if (!nomeEstudante || !contactoEstudante || !emailEstudante || !biEstudante || 
+            !sexoEstudante || !periodoEstudante || !idcurso || !senhaEstudante) {
+            
             return res.status(400).json({
                 sucesso: false,
                 tipo: "erro",
@@ -87,19 +292,297 @@ router.post('/registrarEstudante', async (req, res) => {
             });
         }
 
-        if (senhaEstudante !== senhaConfirmar) {
+        // Verificar se os arquivos foram enviados
+        if (!files.documentoEstudante || !files.fotoEstudante) {
             return res.status(400).json({
                 sucesso: false,
                 tipo: "erro",
-                titulo: "Senhas não coincidem",
-                mensagem: "As senhas não coincidem!"
+                titulo: "Arquivos obrigatórios",
+                mensagem: "Documento (BI/Certificado) e Foto são obrigatórios!"
             });
         }
 
-        const verificarMatricula = "SELECT idEstudante FROM estudantes WHERE numEstudante = ?";
-        conexao.query(verificarMatricula, [numEstudante], async (erro, resultados) => {
+        // GERAR NÚMERO DE INSCRIÇÃO
+        const anoAtual = new Date().getFullYear().toString();
+        const gerarNumeroEstudante = () => {
+            const randomDigits = Math.floor(100000 + Math.random() * 900000).toString();
+            return anoAtual + randomDigits;
+        };
+
+        let numEstudante = gerarNumeroEstudante();
+        let numeroExiste = true;
+        let tentativas = 0;
+        const maxTentativas = 10;
+
+        while (numeroExiste && tentativas < maxTentativas) {
+            const verificarNumeroSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE numeroInscricao_estudanteInscricao = ?";
+            
+            const resultadoVerificacao = await new Promise((resolve, reject) => {
+                conexao.query(verificarNumeroSQL, [numEstudante], (erro, resultados) => {
+                    if (erro) reject(erro);
+                    else resolve(resultados);
+                });
+            });
+
+            if (resultadoVerificacao.length === 0) {
+                numeroExiste = false;
+            } else {
+                numEstudante = gerarNumeroEstudante();
+                tentativas++;
+            }
+        }
+
+        if (numeroExiste) {
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro ao gerar número",
+                mensagem: "Não foi possível gerar um número único de inscrição. Tente novamente."
+            });
+        }
+
+        console.log("Número de inscrição gerado:", numEstudante);
+
+        // Criptografar senha
+        const salt = await bcrypt.genSalt(10);
+        const senhaCriptografada = await bcrypt.hash(senhaEstudante, salt);
+
+        // Salvar arquivos
+        let nomeDocumento = null;
+        let nomeFoto = null;
+
+        const pastaEstudantes = path.join(__dirname, '../../client/src/img/estudantes');
+        const pastaDocumentos = path.join(__dirname, '../../client/src/img/estudantes/documentos');
+        
+        if (!fs.existsSync(pastaEstudantes)) {
+            fs.mkdirSync(pastaEstudantes, { recursive: true });
+        }
+        if (!fs.existsSync(pastaDocumentos)) {
+            fs.mkdirSync(pastaDocumentos, { recursive: true });
+        }
+
+        // Processar documento
+        if (files.documentoEstudante) {
+            const documento = files.documentoEstudante;
+            const extensao = path.extname(documento.name);
+            nomeDocumento = `estudante_${numEstudante}_doc_${Date.now()}${extensao}`;
+            const caminhoDocumento = path.join(pastaDocumentos, nomeDocumento);
+
+            await new Promise((resolve, reject) => {
+                documento.mv(caminhoDocumento, (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        }
+
+        // Processar foto
+        if (files.fotoEstudante) {
+            const foto = files.fotoEstudante;
+            const extensao = path.extname(foto.name);
+            nomeFoto = `estudante_${numEstudante}_foto_${Date.now()}${extensao}`;
+            const caminhoFoto = path.join(pastaEstudantes, nomeFoto);
+
+            await new Promise((resolve, reject) => {
+                foto.mv(caminhoFoto, (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        }
+
+        // Inserir no banco
+        const inserirSQL = `
+            INSERT INTO estudanteInscricao (
+                nome_estudanteInscricao, 
+                contacto_estudanteInscricao, 
+                email_estudanteInscricao,
+                bi_estudanteInscricao,
+                numeroInscricao_estudanteInscricao,
+                sexo_estudanteInscricao, 
+                periodo_estudanteInscricao, 
+                idcurso, 
+                documento_estudanteInscricao, 
+                foto_estudanteInscricao, 
+                senha_estudanteInscricao
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const valores = [
+            nomeEstudante,
+            contactoEstudante,
+            emailEstudante,
+            biEstudante,
+            numEstudante,
+            sexoEstudante,
+            periodoEstudante,
+            idcurso,
+            nomeDocumento,
+            nomeFoto,
+            senhaCriptografada
+        ];
+
+        conexao.query(inserirSQL, valores, async (erro, resultados) => {
             if (erro) {
-                console.error("Erro ao verificar matrícula:", erro);
+                console.error("Erro ao inserir estudante:", erro);
+                
+                // Limpar arquivos se houver erro
+                if (nomeDocumento && fs.existsSync(path.join(pastaDocumentos, nomeDocumento))) {
+                    fs.unlinkSync(path.join(pastaDocumentos, nomeDocumento));
+                }
+                if (nomeFoto && fs.existsSync(path.join(pastaEstudantes, nomeFoto))) {
+                    fs.unlinkSync(path.join(pastaEstudantes, nomeFoto));
+                }
+                
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no cadastro",
+                    mensagem: "Erro ao registrar estudante: " + erro.message
+                });
+            }
+
+            // Enviar credenciais por email
+            try {
+                await enviarCredenciais(emailEstudante, nomeEstudante, numEstudante, senhaEstudante);
+                console.log(`Credenciais enviadas para ${emailEstudante}`);
+            } catch (emailError) {
+                console.error("Erro ao enviar email com credenciais:", emailError);
+            }
+
+            res.status(201).json({
+                sucesso: true,
+                tipo: "sucesso",
+                titulo: "Inscrição Realizada!",
+                mensagem: `Estudante registrado com sucesso! Nº de Inscrição: ${numEstudante}`,
+                redirect: "/",
+                dados: {
+                    id: resultados.insertId,
+                    nome: nomeEstudante,
+                    numEstudante: numEstudante
+                }
+            });
+        });
+
+    } catch (erro) {
+        console.error("Erro ao processar cadastro:", erro);
+        return res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro no processamento",
+            mensagem: "Erro ao processar cadastro: " + erro.message
+        });
+    }
+}
+
+// ============ OUTRAS ROTAS EXISTENTES ============
+
+router.post('/registrarEstudanteInscricao', async (req, res) => {
+    try {
+        console.log("Body recebido:", req.body);
+        console.log("Files recebidos:", req.files ? Object.keys(req.files) : "Nenhum arquivo");
+        
+        const body = req.body || {};
+        const files = req.files || {};
+
+        const nomeEstudante = body.nomeEstudante || "";
+        const contactoEstudante = body.contactoEstudante || "";
+        const emailEstudante = body.emailEstudante || "";
+        const biEstudante = body.biEstudante || "";
+        const sexoEstudante = body.sexoEstudante || "";
+        const periodoEstudante = body.periodoEstudante || "";
+        const idcurso = body.idcurso || "";
+        const senhaEstudante = body.senhaEstudante || "";
+
+        // Validação dos campos obrigatórios
+        if (!nomeEstudante || !contactoEstudante || !emailEstudante || !biEstudante || 
+            !sexoEstudante || !periodoEstudante || !idcurso || !senhaEstudante) {
+            
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Campos obrigatórios",
+                mensagem: "Todos os campos são obrigatórios!"
+            });
+        }
+
+        // Verificar se os arquivos foram enviados
+        if (!files.documentoEstudante || !files.fotoEstudante) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Arquivos obrigatórios",
+                mensagem: "Documento (BI/Certificado) e Foto são obrigatórios!"
+            });
+        }
+
+        if (senhaEstudante.length < 6) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Senha inválida",
+                mensagem: "A senha deve ter pelo menos 6 caracteres!"
+            });
+        }
+
+        // GERAR NÚMERO DE INSCRIÇÃO: 10 dígitos começando com ano atual
+        const anoAtual = new Date().getFullYear().toString(); // "2026"
+        
+        // Função para gerar número único
+        const gerarNumeroEstudante = () => {
+            const randomDigits = Math.floor(100000 + Math.random() * 900000).toString(); // 6 dígitos aleatórios
+            return anoAtual + randomDigits; // 2026 + 6 dígitos = 10 dígitos
+        };
+
+        let numEstudante = gerarNumeroEstudante();
+        let numeroExiste = true;
+        let tentativas = 0;
+        const maxTentativas = 10;
+
+        // Verificar se o número gerado já existe (para evitar duplicatas)
+        while (numeroExiste && tentativas < maxTentativas) {
+            try {
+                const verificarNumeroSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE numeroInscricao_estudanteInscricao = ?";
+                
+                const resultadoVerificacao = await new Promise((resolve, reject) => {
+                    conexao.query(verificarNumeroSQL, [numEstudante], (erro, resultados) => {
+                        if (erro) reject(erro);
+                        else resolve(resultados);
+                    });
+                });
+
+                if (resultadoVerificacao.length === 0) {
+                    numeroExiste = false;
+                } else {
+                    numEstudante = gerarNumeroEstudante();
+                    tentativas++;
+                }
+            } catch (erro) {
+                console.error("Erro ao verificar número existente:", erro);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro interno do servidor"
+                });
+            }
+        }
+
+        if (numeroExiste) {
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro ao gerar número",
+                mensagem: "Não foi possível gerar um número único de inscrição. Tente novamente."
+            });
+        }
+
+        console.log("Número de inscrição gerado:", numEstudante);
+
+        const verificarEmailSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE email_estudanteInscricao = ?";
+        conexao.query(verificarEmailSQL, [emailEstudante], async (erro, resultados) => {
+            if (erro) {
+                console.error("Erro ao verificar email:", erro);
                 return res.status(500).json({
                     sucesso: false,
                     tipo: "erro",
@@ -112,105 +595,194 @@ router.post('/registrarEstudante', async (req, res) => {
                 return res.status(400).json({
                     sucesso: false,
                     tipo: "erro",
-                    titulo: "Matrícula existente",
-                    mensagem: "Número de matrícula já está em uso!"
+                    titulo: "Email existente",
+                    mensagem: "Este email já está registrado!"
                 });
             }
 
-            try {
-                const salt = await bcrypt.genSalt(10);
-                const senhaCriptografada = await bcrypt.hash(senhaEstudante, salt);
-                let nomeFoto = gerarImagemIniciais(nomeEstudante);
-                
-                if (!nomeFoto) {
-                    console.log("Não foi possível gerar a imagem, usando padrão");
-                    nomeFoto = `estudante_default_${Date.now()}.png`;
+            const verificarContatoSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE contacto_estudanteInscricao = ?";
+            conexao.query(verificarContatoSQL, [contactoEstudante], async (erro, resultados) => {
+                if (erro) {
+                    console.error("Erro ao verificar contato:", erro);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: "Erro interno do servidor"
+                    });
                 }
 
-                const sql = `
-                    INSERT INTO estudantes 
-                    (nomeEstudante, fotoEstudante, contactoEstudante, numEstudante, senhaEstudante, idCursos) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                `;
+                if (resultados.length > 0) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Contato existente",
+                        mensagem: "Este número de contato já está registrado!"
+                    });
+                }
 
-                const valores = [
-                    nomeEstudante,
-                    nomeFoto,
-                    contactoEstudante,
-                    numEstudante,
-                    senhaCriptografada,
-                    idCursos
-                ];
-
-                conexao.query(sql, valores, (erro, resultado) => {
+                const verificarBISQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE bi_estudanteInscricao = ?";
+                conexao.query(verificarBISQL, [biEstudante], async (erro, resultados) => {
                     if (erro) {
-                        console.error("Erro ao inserir estudante:", erro);
-                        console.error("SQL Message:", erro.sqlMessage);
-
-                        if (nomeFoto && fs.existsSync(path.join(__dirname, '../../client/src/img/estudantes', nomeFoto))) {
-                            fs.unlinkSync(path.join(__dirname, '../../client/src/img/estudantes', nomeFoto));
-                            console.log("Imagem removida devido ao erro");
-                        }
-                        
+                        console.error("Erro ao verificar BI:", erro);
                         return res.status(500).json({
                             sucesso: false,
                             tipo: "erro",
-                            titulo: "Erro no cadastro",
-                            mensagem: "Erro ao registrar estudante: " + erro.message
+                            titulo: "Erro no servidor",
+                            mensagem: "Erro interno do servidor"
                         });
                     }
 
-                    console.log("Estudante inserido com ID:", resultado.insertId);
+                    if (resultados.length > 0) {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "BI existente",
+                            mensagem: "Este número de BI já está registrado!"
+                        });
+                    }
 
-                    res.status(201).json({
-                        sucesso: true,
-                        tipo: "sucesso",
-                        titulo: "Cadastro realizado!",
-                        mensagem: "Estudante registrado com sucesso!",
-                        redirect: "/",
-                        dados: {
-                            idEstudante: resultado.insertId,
-                            nomeEstudante,
-                            numEstudante,
-                            foto: nomeFoto 
+                    try {
+                        const salt = await bcrypt.genSalt(10);
+                        const senhaCriptografada = await bcrypt.hash(senhaEstudante, salt);
+
+                        let nomeDocumento = null;
+                        let nomeFoto = null;
+
+                        const pastaEstudantes = path.join(__dirname, '../../client/src/img/estudantes');
+                        const pastaDocumentos = path.join(__dirname, '../../client/src/img/estudantes/documentos');
+                        
+                        if (!fs.existsSync(pastaEstudantes)) {
+                            fs.mkdirSync(pastaEstudantes, { recursive: true });
                         }
-                    });
-                });
+                        if (!fs.existsSync(pastaDocumentos)) {
+                            fs.mkdirSync(pastaDocumentos, { recursive: true });
+                        }
 
-            } catch (erroHash) {
-                console.error("Erro ao criptografar senha:", erroHash);
-                res.status(500).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Erro de segurança",
-                    mensagem: "Erro interno do servidor"
+                        // Processar documento
+                        if (files.documentoEstudante) {
+                            const documento = files.documentoEstudante;
+                            const extensao = path.extname(documento.name);
+                            nomeDocumento = `estudante_${numEstudante}_doc_${Date.now()}${extensao}`;
+                            const caminhoDocumento = path.join(pastaDocumentos, nomeDocumento);
+
+                            await new Promise((resolve, reject) => {
+                                documento.mv(caminhoDocumento, (err) => {
+                                    if (err) {
+                                        console.error("Erro ao salvar documento:", err);
+                                        reject(err);
+                                    } else {
+                                        resolve();
+                                    }
+                                });
+                            });
+                        }
+
+                        // Processar foto
+                        if (files.fotoEstudante) {
+                            const foto = files.fotoEstudante;
+                            const extensao = path.extname(foto.name);
+                            nomeFoto = `estudante_${numEstudante}_foto_${Date.now()}${extensao}`;
+                            const caminhoFoto = path.join(pastaEstudantes, nomeFoto);
+
+                            await new Promise((resolve, reject) => {
+                                foto.mv(caminhoFoto, (err) => {
+                                    if (err) {
+                                        console.error("Erro ao salvar foto:", err);
+                                        reject(err);
+                                    } else {
+                                        resolve();
+                                    }
+                                });
+                            });
+                        }
+
+                        // CORREÇÃO: Adicionar numEstudante na query INSERT
+                        const inserirSQL = `
+                            INSERT INTO estudanteInscricao (
+                                nome_estudanteInscricao, 
+                                contacto_estudanteInscricao, 
+                                email_estudanteInscricao,
+                                bi_estudanteInscricao,
+                                numeroInscricao_estudanteInscricao,
+                                sexo_estudanteInscricao, 
+                                periodo_estudanteInscricao, 
+                                idcurso, 
+                                documento_estudanteInscricao, 
+                                foto_estudanteInscricao, 
+                                senha_estudanteInscricao
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        `;
+
+                        const valores = [
+                            nomeEstudante,
+                            contactoEstudante,
+                            emailEstudante,
+                            biEstudante,
+                            numEstudante, // ← Número gerado aqui
+                            sexoEstudante,
+                            periodoEstudante,
+                            idcurso,
+                            nomeDocumento,
+                            nomeFoto,
+                            senhaCriptografada
+                        ];
+
+                        conexao.query(inserirSQL, valores, (erro, resultados) => {
+                            if (erro) {
+                                console.error("Erro ao inserir estudante:", erro);
+                                
+                                // Limpar arquivos se houver erro
+                                if (nomeDocumento && fs.existsSync(path.join(pastaDocumentos, nomeDocumento))) {
+                                    fs.unlinkSync(path.join(pastaDocumentos, nomeDocumento));
+                                }
+                                if (nomeFoto && fs.existsSync(path.join(pastaEstudantes, nomeFoto))) {
+                                    fs.unlinkSync(path.join(pastaEstudantes, nomeFoto));
+                                }
+                                
+                                return res.status(500).json({
+                                    sucesso: false,
+                                    tipo: "erro",
+                                    titulo: "Erro no cadastro",
+                                    mensagem: "Erro ao registrar estudante: " + erro.message
+                                });
+                            }
+
+                            res.status(201).json({
+                                sucesso: true,
+                                tipo: "sucesso",
+                                titulo: "Inscrição Realizada!",
+                                mensagem: `Estudante registrado com sucesso! Nº de Inscrição: ${numEstudante}`,
+                                redirect: "/",
+                                dados: {
+                                    id: resultados.insertId,
+                                    nome: nomeEstudante,
+                                    numEstudante: numEstudante,
+                                    bi: biEstudante
+                                }
+                            });
+                        });
+
+                    } catch (erro) {
+                        console.error("Erro ao processar arquivos:", erro);
+                        return res.status(500).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Erro no processamento",
+                            mensagem: "Erro ao processar arquivos: " + erro.message
+                        });
+                    }
                 });
-            }
+            });
         });
 
     } catch (erro) {
         console.error("Erro no endpoint de registro:", erro);
-        res.status(500).json({
+        return res.status(500).json({
             sucesso: false,
             tipo: "erro",
             titulo: "Erro interno",
-            mensagem: "Erro interno do servidor"
-        });
-    }
-});
-
-router.get('/obterImagem/:nomeArquivo', (req, res) => {
-    const { nomeArquivo } = req.params;
-    const caminhoImagem = path.join(__dirname, '../../client/src/img/estudantes', nomeArquivo);
-    
-    if (fs.existsSync(caminhoImagem)) {
-        res.sendFile(caminhoImagem);
-    } else {
-        res.status(404).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Imagem não encontrada",
-            mensagem: "Imagem não encontrada"
+            mensagem: "Erro interno do servidor: " + erro.message
         });
     }
 });
@@ -474,7 +1046,6 @@ router.post('/registrarAnoCurricular', (req, res) => {
     });
 });
 
-
 router.post('/registrardisciplina', async (req, res) => {
     const { disciplina, idAdm } = req.body;
     
@@ -686,7 +1257,7 @@ router.post('/registrarDisciplinaCurso', (req, res) => {
                                         sucesso: false,
                                         tipo: "erro",
                                         titulo: "Chave estrangeira inválida",
-                                        mensagem: "Uma das referências (disciplina, curso, categoria ou ano) não existe no sistema"
+                                        mensagem: "Uma das referências não existe no sistema"
                                     });
                                 }
 
@@ -718,11 +1289,7 @@ router.post('/registrarDisciplinaCurso', (req, res) => {
                                     idanocurricular: idanocurricular,
                                     idcurso: idcurso,
                                     idcategoriacurso: idcategoriacurso,
-                                    semestre: semestre,
-                                    disciplina_nome: resultadosDisciplina[0].disciplina,
-                                    ano_nome: resultadosAno[0].anocurricular,
-                                    curso_nome: resultadosCurso[0].curso,
-                                    categoria_nome: resultadosCategoria[0].categoriacurso
+                                    semestre: semestre
                                 }
                             });
                         });
@@ -761,13 +1328,6 @@ router.post('/registrarprofessor', async (req, res) => {
         const idAdm = body.idAdm || "";
 
         if (!nomeprofessore || !genero || !biprofessor || !idAdm) {
-            console.error("Campos obrigatórios faltando:", {
-                nomeprofessore: !!nomeprofessore,
-                genero: !!genero,
-                biprofessor: !!biprofessor,
-                idAdm: !!idAdm
-            });
-            
             return res.status(400).json({
                 sucesso: false,
                 tipo: "erro",
@@ -858,7 +1418,6 @@ router.post('/registrarprofessor', async (req, res) => {
                 const pastaProfessores = path.join(__dirname, '../../client/src/img/professores');
                 if (!fs.existsSync(pastaProfessores)) {
                     fs.mkdirSync(pastaProfessores, { recursive: true });
-                    console.log("✅ Pasta criada:", pastaProfessores);
                 }
 
                 if (files.fotoprofessor) {
@@ -870,12 +1429,8 @@ router.post('/registrarprofessor', async (req, res) => {
                     foto.mv(caminhoFoto, (err) => {
                         if (err) {
                             console.error("Erro ao salvar foto:", err);
-                        } else {
-                            console.log("Foto salva:", nomeFoto);
                         }
                     });
-                } else {
-                    console.log("Nenhuma foto enviada");
                 }
 
                 if (files.bipdfprofessor) {
@@ -887,12 +1442,8 @@ router.post('/registrarprofessor', async (req, res) => {
                     pdf.mv(caminhoPDF, (err) => {
                         if (err) {
                             console.error("Erro ao salvar PDF:", err);
-                        } else {
-                            console.log("PDF do BI salvo:", nomeBIPDF);
                         }
                     });
-                } else {
-                    console.log("Nenhum PDF do BI enviado");
                 }
 
                 const inserirProfessorSQL = `
@@ -941,15 +1492,12 @@ router.post('/registrarprofessor', async (req, res) => {
                 conexao.query(inserirProfessorSQL, valores, (erro, resultados) => {
                     if (erro) {
                         console.error("Erro ao inserir professor:", erro);
-                        console.error("SQL Message:", erro.sqlMessage);
                         
                         if (nomeFoto && fs.existsSync(path.join(pastaProfessores, nomeFoto))) {
                             fs.unlinkSync(path.join(pastaProfessores, nomeFoto));
-                            console.log("Foto removida devido ao erro:", nomeFoto);
                         }
                         if (nomeBIPDF && fs.existsSync(path.join(pastaProfessores, nomeBIPDF))) {
                             fs.unlinkSync(path.join(pastaProfessores, nomeBIPDF));
-                            console.log("PDF removido devido ao erro:", nomeBIPDF);
                         }
                         
                         return res.status(500).json({
@@ -960,27 +1508,19 @@ router.post('/registrarprofessor', async (req, res) => {
                         });
                     }
 
-                    console.log("Professor inserido com ID:", resultados.insertId);
-                    console.log("Código do professor:", codigoProfessor);
-                    console.log("Código de acesso (senha):", codigoAcesso);
-
-                    setTimeout(() => {
-                        res.status(201).json({
-                            sucesso: true,
-                            tipo: "sucesso",
-                            titulo: "Professor Registrado!",
-                            mensagem: "Professor registrado com sucesso!",
-                            dados: {
-                                idprofessor: resultados.insertId,
-                                nomeprofessore: nomeprofessore,
-                                codigoProfessor: codigoProfessor,
-                                codigoAcesso: codigoAcesso, 
-                                biprofessor: biprofessor,
-                                foto: nomeFoto,
-                                bi_pdf: nomeBIPDF
-                            }
-                        });
-                    }, 1000);
+                    res.status(201).json({
+                        sucesso: true,
+                        tipo: "sucesso",
+                        titulo: "Professor Registrado!",
+                        mensagem: "Professor registrado com sucesso!",
+                        dados: {
+                            idprofessor: resultados.insertId,
+                            nomeprofessore: nomeprofessore,
+                            codigoProfessor: codigoProfessor,
+                            codigoAcesso: codigoAcesso, 
+                            biprofessor: biprofessor
+                        }
+                    });
 
                 });
 
@@ -997,8 +1537,6 @@ router.post('/registrarprofessor', async (req, res) => {
 
     } catch (erro) {
         console.error("Erro no endpoint de registro de professor:", erro);
-        console.error("Stack trace:", erro.stack);
-        
         return res.status(500).json({
             sucesso: false,
             tipo: "erro",
@@ -1133,9 +1671,7 @@ router.post('/registrerDisciplinaProfessor', (req, res) => {
                         dados: {
                             id: resultados.insertId,
                             idprofessor: idprofessor,
-                            iddisciplina: iddisciplina,
-                            professor_nome: resultadosProfessor[0].nomeprofessor,
-                            disciplina_nome: resultadosDisciplina[0].disciplina
+                            iddisciplina: iddisciplina
                         }
                     });
                 });
@@ -1235,7 +1771,7 @@ router.post('/registrarPeriodo', (req, res) => {
             sucesso: false,
             tipo: "erro",
             titulo: "Dados incompletos",
-            mensagem: "Por favor, preencha todos os campos obrigatórios (ano curricular, curso, categoria, turma, período e ano letivo)"
+            mensagem: "Por favor, preencha todos os campos obrigatórios"
         });
     }
 
@@ -1354,7 +1890,7 @@ router.post('/registrarPeriodo', (req, res) => {
                                     sucesso: false,
                                     tipo: "erro",
                                     titulo: "Chave estrangeira inválida",
-                                    mensagem: "Uma das referências (ano curricular, curso ou categoria) não existe no sistema"
+                                    mensagem: "Uma das referências não existe no sistema"
                                 });
                             }
 
@@ -1387,10 +1923,7 @@ router.post('/registrarPeriodo', (req, res) => {
                                 anoletivo: anoletivo,
                                 idcategoriacurso: idcategoriacurso,
                                 turma: turma,
-                                periodo: periodo,
-                                ano_nome: resultadosAno[0].anocurricular,
-                                curso_nome: resultadosCurso[0].curso,
-                                categoria_nome: resultadosCategoria[0].categoriacurso
+                                periodo: periodo
                             }
                         });
                     });
@@ -1637,6 +2170,5 @@ router.post('/registrarfuncionario', (req, res) => {
         }
     });
 });
-
 
 module.exports = router;

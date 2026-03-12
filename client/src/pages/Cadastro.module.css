@@ -45,3 +45,12 @@
     opacity: 0.9;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
+.LinkHome{
+    color: var(--dourado);
+    text-decoration: none;
+}
+.inputHome{
+  background-color: var(--cinza-claro);
+  color: var(--dourado);
+  padding: 10px;
+}

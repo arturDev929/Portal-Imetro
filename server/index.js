@@ -32,6 +32,7 @@ const LOCAL_IP = getLocalIP();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://portal-imetro.vercel.app',
   `http://${LOCAL_IP}:3000`, // Adiciona automaticamente o IP atual
   /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:3000$/,
   /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/ // Para redes 10.x.x.x
