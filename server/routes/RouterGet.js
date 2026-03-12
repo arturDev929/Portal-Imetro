@@ -315,9 +315,10 @@ router.get('/ProfessoresDesativados', (req, res) => {
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -333,9 +334,10 @@ router.get('/Professores', (req, res) => {
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -467,9 +469,10 @@ router.get('/professorVinculado/:id', async (req,res)=>{
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(result);
         }
@@ -501,9 +504,10 @@ router.get('/professorDisponivel/:id', async (req,res)=>{
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -637,9 +641,10 @@ router.get('/professoresMaisAtivos', (req, res) => {
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(a =>({
                 ...a,
-                fotoUrl: a.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}` : null
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
@@ -765,14 +770,15 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
             }
             
             let curriculoUrl = null;
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             if (professor.bipdfprofessor) {
-                curriculoUrl = `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.bipdfprofessor}`;
+                curriculoUrl = `${baseUrl}/api/img/professores/${professor.bipdfprofessor}`;
             }
             
             const professorCompleto = {
                 ...professor,
                 fotoUrl: professor.fotoprofessor ? 
-                    `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : 
+                    `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : 
                     '/default-avatar.png',
                 curriculoUrl: curriculoUrl,
                 datanascimentoFormatada: professor.datanascimentoprofessor ? 
@@ -835,9 +841,10 @@ router.get('/professoresDesativados', (req, res) => {
                 details: error.message 
             });
         }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const professoresComFoto = result.map(professor =>({
                 ...professor,
-                fotoUrl: professor.fotoprofessor ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}` : null
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
             }))
             res.status(200).json(professoresComFoto);
         }
