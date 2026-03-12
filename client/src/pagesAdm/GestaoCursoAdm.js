@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../service/api";
 import SidebarAdm from "../components/SidebarAdm";
 import NavbarAdm from "../components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
@@ -38,7 +38,7 @@ function HomeAdm() {
 
     useEffect(() => {
         const fetchDepartamento = () => {
-            axios.get(`${API_URL}/get/totalcategoriacurso`)
+            api.get(`/get/totalcategoriacurso`)
                 .then(response => {
                     setDepartamento(response.data[0]?.total_categorias || 0);
                     setUltimaAtualizacao(new Date());
@@ -67,7 +67,7 @@ function HomeAdm() {
 
     useEffect(()=>{
         const fetchDataLicenciatura = () =>{
-            axios.get(`${API_URL}/get/totallicenciaturas`)
+            api.get(`/get/totallicenciaturas`)
                 .then(response => {
                     setLicenciatura(response.data[0]?.total_licenciaturas || 0);
                 })
@@ -84,7 +84,7 @@ function HomeAdm() {
 
     useEffect(()=>{
         const fetchDataDisciplina = () =>{
-            axios.get(`${API_URL}/get/totaldisciplina`)
+            api.get(`/get/totaldisciplina`)
                 .then(response => {
                     setDisciplina(response.data[0]?.total_disciplinas || 0);
                 })
@@ -101,7 +101,7 @@ function HomeAdm() {
 
     useEffect(() => {
         const fetchDataGraficos = () => {
-            axios.get(`${API_URL}/get/dadosGraficosCategoria`)
+            api.get(`/get/dadosGraficosCategoria`)
                 .then(response => {
                     const dadosFormatados = response.data.map((item) => ({
                         cursos: item.total_cursos,
@@ -135,7 +135,7 @@ function HomeAdm() {
 
     useEffect(() => {
         const fetchDisciplinasPorCurso = () => {
-            axios.get(`${API_URL}/get/totalDisciplinasPorCurso`)
+            api.get(`/get/totalDisciplinasPorCurso`)
                 .then(response => {
                     setDadosDisciplinasPorCurso(response.data);
                 })
