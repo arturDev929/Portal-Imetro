@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
+import axios from "axios";
 import { showSuccessToast, showErrorToast } from "../components/CustomToast";
 import { api } from "../service/api";
 function Home() {
