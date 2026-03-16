@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api,{baseURL} from "../service/api";
 import { FaBook } from "react-icons/fa";
 import { MdEdit, MdDeleteForever, MdSearch, MdRefresh, MdAdd } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
@@ -7,9 +7,8 @@ import { showErrorToast, showSuccessToast, useConfirmToast} from "./CustomToast"
 import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_URL = process.env.REACT_APP_API_URL;
 
-function DisciplinaEdit() {
+function DisciplinasEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
     const [listaFiltrada, setListaFiltrada] = useState([]);
     const [termoPesquisa, setTermoPesquisa] = useState('');
@@ -48,7 +47,7 @@ function DisciplinaEdit() {
     const fetchDisciplinas = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/Disciplinas`);
+            const response = await api.get(`/get/Disciplinas`);
             setListaDisciplina(response.data);
             setListaFiltrada(response.data);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -129,7 +128,7 @@ function DisciplinaEdit() {
 
     const AtualizarDisciplina = () => {
         setSalvando(true);
-        axios.put(`${API_URL}/put/disciplina/${Editar.iddisciplina}`, {
+        api.put(`/put/disciplina/${Editar.iddisciplina}`, {
             disciplina: Editar.disciplina,
             iddisciplina: Editar.iddisciplina
         }).then(() => {
@@ -154,7 +153,7 @@ function DisciplinaEdit() {
             `Ao deletar esta disciplina irá desvincular a todos os cursos. Tem a certeza que pretendes deletar "${disciplina.disciplina}"?`,
             async () =>{
                 try{
-                    await axios.delete(`${API_URL}/delete/disciplina/${disciplina.iddisciplina}`);
+                    await api.delete(`/delete/disciplina/${disciplina.iddisciplina}`);
                     const updatedList = listaDisciplina.filter(
                         item => item.iddisciplina !== disciplina.iddisciplina
                     );
@@ -190,7 +189,7 @@ function DisciplinaEdit() {
         setProfessor(disciplina);
         setIsModalOpenProfessor(true);
         
-        axios.get(`${API_URL}/get/professorVinculado/${disciplina.iddisciplina}`)
+        api.get(`/get/professorVinculado/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresVinculados(response.data)
             })
@@ -199,7 +198,7 @@ function DisciplinaEdit() {
                 showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
             })
         
-        axios.get(`${API_URL}/get/professorDisponivel/${disciplina.iddisciplina}`)
+        api.get(`/get/professorDisponivel/${disciplina.iddisciplina}`)
             .then((response)=>{
                 setProfessoresDisponiveis(response.data)
             })
@@ -210,7 +209,7 @@ function DisciplinaEdit() {
     }
 
     const vincularProfessor = (professorId) => {
-        axios.post(`${API_URL}/post/vincularProfessor`, {
+        api.post(`/post/vincularProfessor`, {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
         })
@@ -237,17 +236,17 @@ function DisciplinaEdit() {
             return professor.fotoUrl
         }
         if (professor.fotoprofessor) {
-            return `${API_URL}/api/img/professores/${professor.fotoprofessor}`;
+            return `${baseURL}/api/img/professores/${professor.fotoprofessor}`;
         }
         return '/default-avatar.png';
     }
 
     const desvincularProfessor = (prof) => {
         showConfirmToast(
-            `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da discplina de ${prof.disciplina}?`,
+            `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da disciplina de ${prof.disciplina}?`,
             async () =>{
                 try{
-                    await axios.delete(`${API_URL}/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
+                    await api.delete(`/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
                     const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
                     setProfessoresVinculados(updateLista);
                     showSuccessToast(
@@ -255,7 +254,8 @@ function DisciplinaEdit() {
                         `Professor ${prof.nomeprofessor} foi desvinculado da disciplina de ${prof.disciplina}`
                     )
                 }catch(error){
-
+                    console.error("Erro ao desvincular professor:", error);
+                    showErrorToast("Erro", "Não foi possível desvincular o professor");
                 }
             }
         )
@@ -308,7 +308,7 @@ function DisciplinaEdit() {
         setSalvando(true);
         
         try {
-            await axios.post(`${API_URL}/post/registrardisciplina`, {
+            await api.post(`/post/registrardisciplina`, {
                 disciplina: nome,
                 idAdm: user.id
             });
@@ -770,4 +770,4 @@ function DisciplinaEdit() {
     );
 }
 
-export default DisciplinaEdit;
+export default DisciplinasEdit;

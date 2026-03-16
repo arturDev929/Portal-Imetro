@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL;
+import api from "../service/api";
+import Style from "../pages/Cadastro.module.css";
+import { IoMdFolder, IoMdSchool, IoMdCalendar } from "react-icons/io";
 
 function CategoriaCursoAno({ onChange }) {
     const [formData, setFormData] = useState({
@@ -62,7 +62,8 @@ function CategoriaCursoAno({ onChange }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get(`${API_URL}/get/CategoriaCursosAno`);
+                setLoading(true);
+                const response = await api.get(`/get/CategoriaCursosAno`);
                 setAllData(response.data);
                 setError(null);
             } catch (error) {
@@ -74,66 +75,82 @@ function CategoriaCursoAno({ onChange }) {
         };
 
         fetchData();
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
     }, []);
 
+    if (loading) {
+        return (
+            <div className="d-flex mb-3">
+                <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
+                <select className={`${Style.inputHome} form-control`} disabled>
+                    <option>Carregando dados...</option>
+                </select>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="d-flex mb-3">
+                <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
+                <select className={`${Style.inputHome} form-control`} disabled>
+                    <option>{error}</option>
+                </select>
+            </div>
+        );
+    }
+
     return (
-        <div>
-            {loading && <div className="alert alert-info">Carregando dados...</div>}
-            {error && <div className="alert alert-danger">{error}</div>}
-            
-            {!loading && !error && (
-                <div className="row">
-                    <div className="col-md-12 mb-3">
-                        <select 
-                            className="form-control form-control-sm"
-                            value={formData.idcategoriacurso}
-                            onChange={(e) => handleChange('idcategoriacurso', e.target.value)}
-                        >
-                            <option value="">Selecione a área de departamento</option>
-                            {uniqueCategorias.map((item) => (
-                                <option key={item.idcategoriacurso} value={item.idcategoriacurso}>
-                                    {item.categoriacurso}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+        <>
+            <div className="d-flex mb-3">
+                <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
+                <select 
+                    className={`${Style.inputHome} form-control`}
+                    value={formData.idcategoriacurso}
+                    onChange={(e) => handleChange('idcategoriacurso', e.target.value)}
+                >
+                    <option value="">Selecione a área de departamento</option>
+                    {uniqueCategorias.map((item) => (
+                        <option key={item.idcategoriacurso} value={item.idcategoriacurso}>
+                            {item.categoriacurso}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-                    <div className="col-md-12 mb-3">
-                        <select 
-                            className="form-control form-control-sm"
-                            value={formData.idcurso}
-                            onChange={(e) => handleChange('idcurso', e.target.value)}
-                            disabled={!formData.idcategoriacurso}
-                        >
-                            <option value="">Selecione a licenciatura</option>
-                            {uniqueCursos.map((item) => (
-                                <option key={item.idcurso} value={item.idcurso}>
-                                    {item.curso}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+            <div className="d-flex mb-3">
+                <span className={`${Style.span} input-group-text`}><IoMdSchool /></span>
+                <select 
+                    className={`${Style.inputHome} form-control`}
+                    value={formData.idcurso}
+                    onChange={(e) => handleChange('idcurso', e.target.value)}
+                    disabled={!formData.idcategoriacurso}
+                >
+                    <option value="">Selecione a licenciatura</option>
+                    {uniqueCursos.map((item) => (
+                        <option key={item.idcurso} value={item.idcurso}>
+                            {item.curso}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-                    <div className="col-md-12 mb-3">
-                        <select 
-                            className="form-control form-control-sm"
-                            value={formData.idanocurricular}
-                            onChange={(e) => handleChange('idanocurricular', e.target.value)}
-                            disabled={!formData.idcurso}
-                        >
-                            <option value="">Selecione o ano curricular</option>
-                            {uniqueAnos.map((item) => (
-                                <option key={item.idanocurricular} value={item.idanocurricular}>
-                                    {item.anocurricular}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            )}
-        </div>
+            <div className="d-flex mb-3">
+                <span className={`${Style.span} input-group-text`}><IoMdCalendar /></span>
+                <select 
+                    className={`${Style.inputHome} form-control`}
+                    value={formData.idanocurricular}
+                    onChange={(e) => handleChange('idanocurricular', e.target.value)}
+                    disabled={!formData.idcurso}
+                >
+                    <option value="">Selecione o ano curricular</option>
+                    {uniqueAnos.map((item) => (
+                        <option key={item.idanocurricular} value={item.idanocurricular}>
+                            {item.anocurricular}
+                        </option>
+                    ))}
+                </select>
+            </div>
+        </>
     );
 }
 

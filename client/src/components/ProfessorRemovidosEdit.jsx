@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../service/api';
 import { 
     MdRefresh, 
     MdSearch,
@@ -43,7 +43,7 @@ function ProfessorRemovidosEdit() {
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/ProfessoresDesativados`, {
+            const response = await api.get(`/get/ProfessoresDesativados`, {
                 timeout: API_TIMEOUT
             });
             setLista(response.data || []);
@@ -103,7 +103,7 @@ function ProfessorRemovidosEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
             
-            const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+            const response = await api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
             setDisciplinasProfessor(response.data || []);
@@ -119,7 +119,7 @@ function ProfessorRemovidosEdit() {
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             setProfessorSelecionadoInfo({
@@ -140,7 +140,7 @@ function ProfessorRemovidosEdit() {
             `Tens a certeza que pretendes Ativar o professor ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`${API_URL}/put/professor/ativar/${id}`, {}, {
+                    const response = await api.put(`/put/professor/ativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
                     

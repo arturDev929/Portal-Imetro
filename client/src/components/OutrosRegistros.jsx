@@ -1,14 +1,14 @@
 import { useState} from "react";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
+import api from "../service/api";
 import SelectCurso from "./selectCursos";
 import CategoriaCursoAno from "./CategoriaCursoAno";
 import SelectDisciplina from "./SelectDisciplina";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { showSuccessToast, showErrorToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
-
-const API_URL = process.env.REACT_APP_API_URL;
+import { Fa0 } from "react-icons/fa6";
+import style from "../pages/Cadastro.module.css"
 
 function OutrosRegistros() {
     const [anoCurricular, setAnoCurricular] = useState("");
@@ -26,8 +26,6 @@ function OutrosRegistros() {
     });
     const [semestre, setSemestre] = useState("");
     
-    
-
     const handleSubmitAnoCurricular = async (e) => {
         e.preventDefault();
         
@@ -44,7 +42,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await axios.post(`${API_URL}/post/registrarAnoCurricular`, {
+            const response = await api.post(`/post/registrarAnoCurricular`, {
                 anocurricular: anoCurricular,
                 idcurso: idCurso
             }, {
@@ -58,6 +56,7 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Ano curricular registrado com sucesso"
                 );
+                setAnoCurricular("");
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -102,7 +101,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await axios.post(`${API_URL}/post/registrarDisciplinaCurso`, {
+            const response = await api.post(`/post/registrarDisciplinaCurso`, {
                 iddisciplina: formDataDisciplinaCurso.iddisciplina,
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
@@ -119,6 +118,7 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Disciplina atribuída ao curso com sucesso"
                 );
+                setSemestre("");
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -166,7 +166,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await axios.post(`${API_URL}/post/registrarPeriodo`, {
+            const response = await api.post(`/post/registrarPeriodo`, {
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
                 idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,
@@ -184,6 +184,9 @@ function OutrosRegistros() {
                     response.data.titulo || "Sucesso",
                     response.data.mensagem || "Turma registrada com sucesso"
                 );
+                setTurma("");
+                setAnoLetivo("");
+                setPeriodo("");
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -201,32 +204,31 @@ function OutrosRegistros() {
     };
 
     return (
-        <div className="row mb-4" style={{backgroundColor:'var(--cinza-claro)'}}>
+        <div className="row mb-4">
             <div className="col-12">
-                 <div className="row">
-                    <div className="col-12 col-lg-4 mb-3" >
-                        <div className="shadow-sm rounded-3 p-4 border" style={{backgroundColor:'var(--cinza-claro)'}}>
-                            <h5 className="mb-3"style={{color:'var(--azul-escuro)'}} >
+                <div className="row">
+                    <div className="col-12 col-lg-4 mb-3">
+                        <div className="shadow-sm rounded-3 p-4 border">
+                            <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Anos Curriculares
                             </h5>
-                            <form className="row g-2" onSubmit={handleSubmitAnoCurricular}>
-                                <div className="col-12 mb-2">
-                                    <SelectCurso 
-                                        onChange={(e) => setIdCurso(e.target.value)} 
-                                        value={idCurso}
-                                        name="idcurso"
-                                        style={{backgroundColor:'var(--cinza-claro)'}}
-                                    />
-                                </div>
-                                <div className="col-12">
+                            <form onSubmit={handleSubmitAnoCurricular}>
+                                <SelectCurso 
+                                    onChange={(value) => setIdCurso(value)} 
+                                    value={idCurso}
+                                    disabled={loading}
+                                />
+                                
+                                <div className="d-flex mb-3">
+                                    <span className={`${style.span} input-group-text`}><Fa0 /></span>
                                     <select 
-                                        className="form-control form-control-sm"
-                                        style={{backgroundColor:'var(--cinza-claro)'}}
+                                        className={`${style.inputHome} form-control`}
                                         value={anoCurricular}
                                         onChange={(e) => setAnoCurricular(e.target.value)}
                                         disabled={loading}
                                         name="anocurricular"
+                                        required
                                     >
                                         <option value="">Selecione o Ano Curricular</option>
                                         <option value="1">1º Ano</option>
@@ -236,101 +238,123 @@ function OutrosRegistros() {
                                         <option value="5">5º Ano</option>
                                     </select>
                                 </div>
-                                <div className="col-12 mt-2">
-                                    <button 
-                                        type="submit" 
-                                        className={`btn btn-sm w-100 ${Style.btnSubmit}`}
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Processando...
-                                            </>
-                                        ) : (
-                                            "Adicionar"
-                                        )}
-                                    </button>
-                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    className={`btn btn-sm w-100 ${Style.btnSubmit}`}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Processando...
+                                        </>
+                                    ) : (
+                                        "Adicionar"
+                                    )}
+                                </button>
                             </form>
                         </div>
                     </div>
+                    
                     <div className="col-12 col-lg-4 mb-3">
-                        <div className="shadow-sm rounded-3 p-4 border" style={{backgroundColor:'var(--cinza-claro)'}}>
-                            <h5 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                        <div className="shadow-sm rounded-3 p-4 border">
+                            <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Adicionar Disciplina ao Curso
                             </h5>
-                            <form className="row g-2" onSubmit={handleSubmitDisciplinaCurso}>
-                                <CategoriaCursoAno 
-                                    style={{backgroundColor:'var(--cinza-claro)'}}
-                                    onChange={handleFormDataChange}
-                                />
+                            <form onSubmit={handleSubmitDisciplinaCurso}>
+                                <CategoriaCursoAno onChange={handleFormDataChange} />
+                                
                                 <SelectDisciplina 
-                                    style={{backgroundColor:'var(--cinza-claro)'}}
-                                    onChange={(e) => setFormDataDisciplinaCurso(prev => ({
+                                    onChange={(value) => setFormDataDisciplinaCurso(prev => ({
                                         ...prev,
-                                        iddisciplina: e.target.value
+                                        iddisciplina: value
                                     }))}
                                     value={formDataDisciplinaCurso.iddisciplina}
+                                    disabled={loading}
                                 />
-                                <div className="col-12">
-                                <select 
-                                        style={{backgroundColor:'var(--cinza-claro)'}}
-                                        className="form-control form-control-sm"
+                                
+                                <div className="d-flex mb-3">
+                                    <span className={`${style.span} input-group-text`}><Fa0 /></span>
+                                    <select 
+                                        className={`${style.inputHome} form-control`}
                                         value={semestre}
                                         onChange={(e) => setSemestre(e.target.value)}
                                         disabled={loading}
                                         name="semestre"
+                                        required
                                     >
                                         <option value="">Selecione o semestre</option>
                                         <option value="1">1º Semestre</option>
                                         <option value="2">2º Semestre</option>
                                     </select>
                                 </div>
-                                <div className="col-12">
-                                    <button 
-                                        type="submit" 
-                                        className={`btn btn-sm w-100 ${Style.btnSubmit}`}
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Processando...
-                                            </>
-                                        ) : (
-                                            "Adicionar Disciplina"
-                                        )}
-                                    </button>
-                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    className={`btn btn-sm w-100 ${Style.btnSubmit}`}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Processando...
+                                        </>
+                                    ) : (
+                                        "Adicionar Disciplina"
+                                    )}
+                                </button>
                             </form>
                         </div>
                     </div>
+                    
                     <div className="col-12 col-lg-4 mb-3">
-                        <div className="shadow-sm rounded-3 p-4 border" style={{backgroundColor:'var(--cinza-claro)'}}>
-                            <h5 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                        <div className="shadow-sm rounded-3 p-4 border">
+                            <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Adicionar Novas Turmas
                             </h5>
-                            <form className="row g-2" onSubmit={handleSubmitPeriodo}>
-                                <CategoriaCursoAno 
-                                    onChange={handleFormDataChange}
-                                />
-                                <div className="col-12 mb-2" style={{backgroundColor:'var(--cinza-claro)'}}>
-                                    <input type="text" name="turma" className="form-control form-control-sm" value={turma} placeholder="Turma..." onChange={(e)=>setTurma(e.target.value)}/>
+                            <form onSubmit={handleSubmitPeriodo}>
+                                <CategoriaCursoAno onChange={handleFormDataChange} />
+                                
+                                <div className="d-flex mb-3">
+                                    <span className={`${style.span} input-group-text`}><Fa0 /></span>
+                                    <input 
+                                        type="text" 
+                                        name="turma" 
+                                        className={`${style.inputHome} form-control`}
+                                        value={turma} 
+                                        placeholder="Turma..." 
+                                        onChange={(e)=>setTurma(e.target.value)}
+                                        disabled={loading}
+                                        required
+                                    />
                                 </div>
-                                <div className="col-12 mb-2" style={{backgroundColor:'var(--cinza-claro)'}}>
-                                    <input type="text" name="anoletivo" className="form-control form-control-sm" value={anoletivo} placeholder="Ano Lectivo..." onChange={(e)=>setAnoLetivo(e.target.value)}/>
+                                
+                                <div className="d-flex mb-3">
+                                    <span className={`${style.span} input-group-text`}><Fa0 /></span>
+                                    <input 
+                                        type="text" 
+                                        name="anoletivo" 
+                                        className={`${style.inputHome} form-control`}
+                                        value={anoletivo} 
+                                        placeholder="Ano Lectivo..." 
+                                        onChange={(e)=>setAnoLetivo(e.target.value)}
+                                        disabled={loading}
+                                        required
+                                    />
                                 </div>
-                                <div className="col-12">
+                                
+                                <div className="d-flex mb-3">
+                                    <span className={`${style.span} input-group-text`}><Fa0 /></span>
                                     <select 
-                                        className="form-control form-control-sm"
+                                        className={`${style.inputHome} form-control`}
                                         value={periodo}
                                         onChange={(e) => setPeriodo(e.target.value)}
                                         disabled={loading}
-                                        style={{backgroundColor:'var(--cinza-claro)'}}
                                         name="periodo"
+                                        required
                                     >
                                         <option value="">Selecione o periodo</option>
                                         <option value="Manhã">Manhã</option>
@@ -338,22 +362,21 @@ function OutrosRegistros() {
                                         <option value="Noite">Noite</option>
                                     </select>
                                 </div>
-                                <div className="col-12">
-                                    <button 
-                                        type="submit" 
-                                        className={`btn btn-sm w-100 ${Style.btnSubmit}`}
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Processando...
-                                            </>
-                                        ) : (
-                                            "Adicionar Turma"
-                                        )}
-                                    </button>
-                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    className={`btn btn-sm w-100 ${Style.btnSubmit}`}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Processando...
+                                        </>
+                                    ) : (
+                                        "Adicionar Turma"
+                                    )}
+                                </button>
                             </form>
                         </div>
                     </div>

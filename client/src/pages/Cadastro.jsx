@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/navbar";
 import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
-import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
@@ -12,7 +12,8 @@ import SelectCurso from "../components/selectCursos";
 import Api from "../service/api"
 
 function Cadastro() {
-    const [etapa, setEtapa] = useState(1); // 1: formulário, 2: verificação
+    const [etapa, setEtapa] = useState(1); // 1: dados pessoais, 2: documento e bi, 3: curso e período, 4: senha e arquivos, 5: verificação
+    const [etapaVerificacao, setEtapaVerificacao] = useState(false); // true: tela de verificação
     const [valores, setValores] = useState({
         nomeEstudante: '',
         contactoEstudante: '',
@@ -101,11 +102,33 @@ function Cadastro() {
         }
     };
 
-    const validarFormulario = () => {
-        if (!valores.nomeEstudante || !valores.contactoEstudante || !valores.emailEstudante || 
-            !valores.biEstudante || !valores.sexoEstudante || !valores.periodoEstudante || 
-            !valores.idcurso || !valores.senhaEstudante) {
-            showErrorToast("Erro", "Todos os campos são obrigatórios!");
+    const validarEtapa1 = () => {
+        if (!valores.nomeEstudante || !valores.contactoEstudante || !valores.emailEstudante) {
+            showErrorToast("Erro", "Preencha todos os campos obrigatórios!");
+            return false;
+        }
+        return true;
+    };
+
+    const validarEtapa2 = () => {
+        if (!valores.biEstudante || !valores.sexoEstudante) {
+            showErrorToast("Erro", "Preencha todos os campos obrigatórios!");
+            return false;
+        }
+        return true;
+    };
+
+    const validarEtapa3 = () => {
+        if (!valores.periodoEstudante || !valores.idcurso) {
+            showErrorToast("Erro", "Selecione o período e o curso!");
+            return false;
+        }
+        return true;
+    };
+
+    const validarEtapa4 = () => {
+        if (!valores.senhaEstudante || !valores.confirmarSenha) {
+            showErrorToast("Erro", "Preencha todos os campos de senha!");
             return false;
         }
 
@@ -127,9 +150,25 @@ function Cadastro() {
         return true;
     };
 
-    const handleEnviarCodigo = async () => {
-        if (!validarFormulario()) return;
+    const avancarEtapa = () => {
+        if (etapa === 1 && validarEtapa1()) {
+            setEtapa(2);
+        } else if (etapa === 2 && validarEtapa2()) {
+            setEtapa(3);
+        } else if (etapa === 3 && validarEtapa3()) {
+            setEtapa(4);
+        } else if (etapa === 4 && validarEtapa4()) {
+            handleEnviarCodigo();
+        }
+    };
 
+    const voltarEtapa = () => {
+        if (etapa > 1) {
+            setEtapa(etapa - 1);
+        }
+    };
+
+    const handleEnviarCodigo = async () => {
         setLoading(true);
         try {
             const response = await Api.post(`/post/enviarCodigoVerificacao`, {
@@ -139,7 +178,7 @@ function Cadastro() {
 
             if (response.data.sucesso) {
                 showSuccessToast("Código enviado!", response.data.mensagem);
-                setEtapa(2);
+                setEtapaVerificacao(true);
                 setTimerAtivo(true);
                 setTempoRestante(600);
                 setTentativas(0);
@@ -281,13 +320,193 @@ function Cadastro() {
     };
 
     const voltarParaFormulario = () => {
-        setEtapa(1);
+        setEtapaVerificacao(false);
         setTimerAtivo(false);
     };
 
+    const renderEtapa1 = () => (
+        <>
+            <h3 className="mb-4 text-white">Passo 1 de 4: Dados Pessoais</h3>
+            <div className="row">
+                <div className="d-flex col-md-12 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaUser /></span>
+                    <input 
+                        type="text" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="nomeEstudante"
+                        placeholder="Nome Completo"
+                        value={valores.nomeEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    />
+                </div>
+                
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaPhone /></span>
+                    <input 
+                        type="text" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="contactoEstudante"
+                        placeholder="+244 000-000-000"
+                        value={valores.contactoEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    />
+                </div>
+                
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaEnvelope /></span>
+                    <input 
+                        type="email" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="emailEstudante"
+                        placeholder="exemplo@mail.com"
+                        value={valores.emailEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    />
+                </div>
+            </div>
+        </>
+    );
+
+    const renderEtapa2 = () => (
+        <>
+            <h3 className="mb-4 text-white">Passo 2 de 4: Documento de Identidade</h3>
+            <div className="row">
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaIdCard /></span>
+                    <input 
+                        type="text" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="biEstudante"
+                        placeholder="Nº do Bilhete de Identidade"
+                        value={valores.biEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    />
+                </div>
+                
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><PiGenderIntersexBold /></span>
+                    <select 
+                        className={`${Style.inputHome} form-control`} 
+                        name="sexoEstudante"
+                        value={valores.sexoEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    >
+                        <option value="">Selecione seu Sexo</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                    </select>
+                </div>
+            </div>
+        </>
+    );
+
+    const renderEtapa3 = () => (
+        <>
+            <h3 className="mb-4 text-white">Passo 3 de 4: Curso e Período</h3>
+            <div className="row">
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><IoPartlySunny /></span>
+                    <select 
+                        className={`${Style.inputHome} form-control`} 
+                        name="periodoEstudante"
+                        value={valores.periodoEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    >
+                        <option value="">Selecione o Período</option>
+                        <option value="Manhã">Manhã</option>
+                        <option value="Tarde">Tarde</option>
+                        <option value="Noite">Noite</option> 
+                    </select>
+                </div>
+                
+                <div className="col-md-6 mb-3">
+                    <SelectCurso 
+                        value={valores.idcurso}
+                        onChange={handleCursoChange}
+                        disabled={loading}
+                    />
+                </div>
+            </div>
+        </>
+    );
+
+    const renderEtapa4 = () => (
+        <>
+            <h3 className="mb-4 text-white">Passo 4 de 4: Senha e Documentos</h3>
+            <div className="row">
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaLock /></span>
+                    <input 
+                        type="password" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="senhaEstudante"
+                        placeholder="Insira a sua senha"
+                        value={valores.senhaEstudante}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                        minLength="6"
+                    />
+                </div>
+                
+                <div className="d-flex col-md-6 mb-3">
+                    <span className={`${Style.span} input-group-text`}><FaLock /></span>
+                    <input 
+                        type="password" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="confirmarSenha"
+                        placeholder="Confirme a senha"
+                        value={valores.confirmarSenha}
+                        onChange={handleChangeInput}
+                        required
+                        disabled={loading}
+                    />
+                </div>
+
+                <div className="d-flex mb-3">
+                    <span className={`${Style.span} input-group-text`}>B.I e Certificado</span>
+                    <input 
+                        type="file" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="documentoEstudante"
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        required
+                        disabled={loading}
+                    />
+                </div>
+                
+                <div className="d-flex mb-3">
+                    <span className={`${Style.span} input-group-text`}>Foto tipo passe</span>
+                    <input 
+                        type="file" 
+                        className={`${Style.inputHome} form-control`} 
+                        name="fotoEstudante"
+                        onChange={handleFileChange}
+                        accept=".jpg,.jpeg,.png"
+                        required
+                        disabled={loading}
+                    />
+                </div>
+            </div>
+        </>
+    );
+
     return (
         <div>
-            <Navbar />
+            <Navbar className="d-none d-sm-block"/>
             <div className={Style.loginContainer}>
                 <div className="container-sm">
                     <div className="justify-content-center">
@@ -300,189 +519,70 @@ function Cadastro() {
                                         className={`${Style.logoImetro} mb-4`}
                                     />
                                     
-                                    {etapa === 1 ? (
+                                    {!etapaVerificacao ? (
                                         <>
-                                            <h3 className="mb-4 text-white">Formulário de Inscrição</h3>
-                                            <form onSubmit={(e) => e.preventDefault()}>
-                                                <div className="row">
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaUser /></span>
-                                                        <input 
-                                                            type="text" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="nomeEstudante"
-                                                            placeholder="Nome Completo"
-                                                            value={valores.nomeEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaPhone /></span>
-                                                        <input 
-                                                            type="text" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="contactoEstudante"
-                                                            placeholder="+244 000-000-000"
-                                                            value={valores.contactoEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaEnvelope /></span>
-                                                        <input 
-                                                            type="email" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="emailEstudante"
-                                                            placeholder="exemplo@mail.com"
-                                                            value={valores.emailEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
+                                            {/* Indicador de progresso */}
+                                            <div className="mb-4">
+                                                <div className="progress" style={{ height: '5px' }}>
+                                                    <div 
+                                                        className="progress-bar bg-warning" 
+                                                        role="progressbar" 
+                                                        style={{ width: `${(etapa / 4) * 100}%` }}
+                                                        aria-valuenow={(etapa / 4) * 100} 
+                                                        aria-valuemin="0" 
+                                                        aria-valuemax="100"
+                                                    ></div>
+                                                </div>
+                                            </div>
 
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaIdCard /></span>
-                                                        <input 
-                                                            type="text" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="biEstudante"
-                                                            placeholder="Nº do Bilhete de Identidade"
-                                                            value={valores.biEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-3 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><PiGenderIntersexBold /></span>
-                                                        <select 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="sexoEstudante"
-                                                            value={valores.sexoEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        >
-                                                            <option value="">Selecione seu Sexo</option>
-                                                            <option value="Masculino">Masculino</option>
-                                                            <option value="Feminino">Feminino</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-3 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><IoPartlySunny /></span>
-                                                        <select 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="periodoEstudante"
-                                                            value={valores.periodoEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        >
-                                                            <option value="">Selecione o Período</option>
-                                                            <option value="Manhã">Manhã</option>
-                                                            <option value="Tarde">Tarde</option>
-                                                            <option value="Noite">Noite</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <SelectCurso 
-                                                        value={valores.idcurso}
-                                                        onChange={handleCursoChange}
-                                                        disabled={loading}
-                                                    />
-                                                    
-                                                    <div className="d-flex mb-3">
-                                                        <span className={`${Style.span} input-group-text`}>B.I e Certificado</span>
-                                                        <input 
-                                                            type="file" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="documentoEstudante"
-                                                            onChange={handleFileChange}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex mb-3">
-                                                        <span className={`${Style.span} input-group-text`}>Foto tipo passe</span>
-                                                        <input 
-                                                            type="file" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="fotoEstudante"
-                                                            onChange={handleFileChange}
-                                                            accept=".jpg,.jpeg,.png"
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaLock /></span>
-                                                        <input 
-                                                            type="password" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="senhaEstudante"
-                                                            placeholder="Insira a sua senha"
-                                                            value={valores.senhaEstudante}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                            minLength="6"
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className="d-flex col-md-6 mb-3">
-                                                        <span className={`${Style.span} input-group-text`}><FaLock /></span>
-                                                        <input 
-                                                            type="password" 
-                                                            className={`${Style.inputHome} form-control`} 
-                                                            name="confirmarSenha"
-                                                            placeholder="Confirme a senha"
-                                                            value={valores.confirmarSenha}
-                                                            onChange={handleChangeInput}
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div>
+                                            <form onSubmit={(e) => e.preventDefault()}>
+                                                {etapa === 1 && renderEtapa1()}
+                                                {etapa === 2 && renderEtapa2()}
+                                                {etapa === 3 && renderEtapa3()}
+                                                {etapa === 4 && renderEtapa4()}
+                                                
+                                                <div className="d-flex justify-content-between mt-4">
+                                                    {etapa > 1 && (
                                                         <button 
                                                             type="button"
-                                                            onClick={handleEnviarCodigo}
-                                                            className={`${Style.ButtonHome} btn w-100 py-2`} 
+                                                            onClick={voltarEtapa}
+                                                            className={`btn btn-outline-warning px-4`}
                                                             disabled={loading}
                                                         >
-                                                            {loading ? (
-                                                                <>
-                                                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                                    Enviando...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    Continuar <FiMail className="ms-2" />
-                                                                </>
-                                                            )}
+                                                            <FaArrowLeft className="me-2" />
+                                                            Voltar
                                                         </button>
-                                                    </div>
+                                                    )}
                                                     
-                                                    <p className="mt-3 text-white">
-                                                        Já tens uma conta? <Link to="/" className={`${Style.LinkHome}`}>Fazer o Login</Link>
-                                                    </p>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={avancarEtapa}
+                                                        className={`${Style.ButtonHome} btn px-4 ${etapa === 1 ? 'w-100' : ''}`}
+                                                        disabled={loading}
+                                                        style={etapa === 1 ? {} : { marginLeft: 'auto' }}
+                                                    >
+                                                        {loading ? (
+                                                            <>
+                                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                                Processando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {etapa === 4 ? 'Enviar Código' : 'Seguinte'}
+                                                                {etapa !== 4 && <FaArrowRight className="ms-2" />}
+                                                                {etapa === 4 && <FiMail className="ms-2" />}
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 </div>
+                                                
+                                                <p className="mt-3 text-white">
+                                                    Já tens uma conta? <Link to="/" className={`${Style.LinkHome}`}>Fazer o Login</Link>
+                                                </p>
                                             </form>
                                         </>
                                     ) : (
-                                        // Etapa 2: Verificação de código
+                                        // Tela de verificação de código
                                         <div className="text-white">
                                             <button 
                                                 onClick={voltarParaFormulario}

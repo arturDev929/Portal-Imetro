@@ -1,6 +1,7 @@
 import Sidebar from "./components/Sidebar";
 import Navbar from "../components/NavbarAdm";
 import { useEffect,useState } from "react";
+import Inscricoes from "./components/Inscricoes";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
@@ -21,6 +22,9 @@ function HomeAdm() {
                                 <h2>Estudantes Inscritos</h2>
                                 {user && <p className="text-muted">Bem-vindo  {user.nome}</p>}
                             </div>
+                        </div>
+                        <div>
+                            <Inscricoes/>
                         </div>
                     </main>
             </div>

@@ -230,7 +230,7 @@ function GestaoFuncionariosAdm() {
                 onClick={() => setSecaoAtiva("funcionarios")}
               >
                 <FaUserTie className="me-2 mb-1" />
-                Gestão de Funcionários
+                G. Funcionários
               </button>
             </div>
             <div className="col-md-2">
@@ -239,7 +239,7 @@ function GestaoFuncionariosAdm() {
                 onClick={() => setSecaoAtiva("funcionariosRemovidos")}
               >
                 <FaUserSlash className="me-2 mb-1" />
-                Funcionários Removidos
+                Ex-funcionários
               </button>
             </div>
           </div>
@@ -270,7 +270,7 @@ function GestaoFuncionariosAdm() {
                           </h2>
                         </div>
                         <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                          <IoMdPeople size={28} color="white" />
+                          <IoMdPeople size={28} />
                         </div>
                       </div>
                       <p className="text-white-50 small mb-0">
@@ -303,7 +303,7 @@ function GestaoFuncionariosAdm() {
                           </h2>
                         </div>
                         <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                          <FaUserSlash size={28} color="white" />
+                          <FaUserSlash size={28} />
                         </div>
                       </div>
                       <p className="text-white-50 small mb-0">
@@ -545,10 +545,9 @@ function GestaoFuncionariosAdm() {
                         <table className="table table-hover">
                           <thead>
                             <tr>
-                              <th>ID</th>
-                              <th>Nome</th>
-                              <th>Contacto</th>
-                              <th>Cargo</th>
+                              <th className="col-md-4">Nome</th>
+                              <th className="col-md-4">Contacto</th>
+                              <th className="col-md-4">Cargo</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -556,16 +555,11 @@ function GestaoFuncionariosAdm() {
                               funcionariosRecentes.map((func, index) => (
                                 <tr key={func.id_funcionario || index}>
                                   <td>
-                                    <span className="badge bg-secondary">
-                                      #{func.id_funcionario}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    <FaUserTie className="me-2" />
+                                    <FaUserTie className="me-2 mb-2" />
                                     {func.nome_funcionario || "N/A"}
                                   </td>
                                   <td>
-                                    <FaPhone className="me-2" />
+                                    <FaPhone className="me-2 mb-2" />
                                     {func.contacto_funcionario || "N/A"}
                                   </td>
                                   <td>
@@ -623,7 +617,6 @@ function GestaoFuncionariosAdm() {
                           <table className="table table-hover">
                             <thead>
                               <tr>
-                                <th>ID</th>
                                 <th>Nome</th>
                                 <th>Contacto</th>
                                 <th>BI</th>
@@ -635,7 +628,6 @@ function GestaoFuncionariosAdm() {
                               {funcionariosDesativados.length > 0 ? (
                                 funcionariosDesativados.map((func) => (
                                   <tr key={func.id_funcionario}>
-                                    <td>#{func.id_funcionario}</td>
                                     <td>{func.nome_funcionario}</td>
                                     <td>{func.contacto_funcionario}</td>
                                     <td>{func.bi_funcionario}</td>

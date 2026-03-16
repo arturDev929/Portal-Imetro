@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons/md";
 import { IoMdBusiness } from "react-icons/io";
-import axios from "axios";
+import api from "../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 5000;
 
 function Departamento() {
@@ -37,8 +36,7 @@ function Departamento() {
     }, []);
 
     const apiClient = useMemo(() => {
-        const client = axios.create({
-            baseURL: API_URL,
+        const client = api.create({
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });

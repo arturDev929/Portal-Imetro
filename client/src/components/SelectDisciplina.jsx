@@ -1,59 +1,73 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../service/api";
+import Style from "../pages/Cadastro.module.css";
+import { IoMdBook } from "react-icons/io";
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-function SelectCurso({onChange}){
-    const [cursos, setCursos] = useState([]); 
+function SelectDisciplina({ value, onChange, disabled }) {
+    const [disciplinas, setDisciplinas] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchData = () => {
-            axios.get(`${API_URL}/get/Disciplinas`)
-                .then((response) => {
-                    setCursos(response.data);
-                    setError(null);
-                })
-                .catch((error) => {
-                    console.error('Erro ao buscar dados:', error);
-                    setError("Erro ao carregar cursos");
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get(`/get/Disciplinas`);
+                setDisciplinas(response.data);
+                setError(null);
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                setError("Erro ao carregar disciplinas");
+            } finally {
+                setLoading(false);
+            }
         };
         
         fetchData();
-        
-        const interval = setInterval(fetchData, 2000);
-
-        return () => {
-            clearInterval(interval);
-        };
     }, []);
 
-    return(
-        <div className="col-md-12 mb-2">
-            <select className="form-control form-control-sm" id="idCursos" name="idCursos" onChange={onChange}>
+    const handleChange = (e) => {
+        if (onChange) {
+            onChange(e.target.value);
+        }
+    };
+
+    return (
+        <div className="d-flex mb-3">
+            <span className={`${Style.span} input-group-text`}><IoMdBook /></span>
+            <select 
+                className={`${Style.inputHome} form-control`} 
+                id="iddisciplina" 
+                name="iddisciplina"
+                value={value || ''}
+                onChange={handleChange}
+                disabled={disabled || loading}
+                required
+            >
                 <option value="">Selecione uma disciplina</option>
+                
                 {loading && (
-                    <option value="" disabled>Carregando disciplina...</option>
+                    <option value="" disabled>Carregando disciplinas...</option>
                 )}
+                
                 {error && (
                     <option value="" disabled>{error}</option>
                 )}
-                {!loading && !error && cursos.map((curso) => (
-                    <option key={curso.iddisciplina} value={curso.iddisciplina}>
-                        {curso.disciplina}
-                    </option>
-                ))}
-                {!loading && !error && cursos.length === 0 && (
-                    <option value="" disabled>Nenhum curso disponível</option>
+                
+                {!loading && !error && disciplinas.length > 0 && 
+                    disciplinas.map((disciplina) => (
+                        <option key={disciplina.iddisciplina} value={disciplina.iddisciplina}>
+                            {disciplina.disciplina}
+                        </option>
+                    ))
+                }
+                
+                {!loading && !error && disciplinas.length === 0 && (
+                    <option value="" disabled>Nenhuma disciplina disponível</option>
                 )}
             </select>
         </div>
-    )
+    );
 }
 
-export default SelectCurso;
+export default SelectDisciplina;

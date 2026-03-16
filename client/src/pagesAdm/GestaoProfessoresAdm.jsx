@@ -46,8 +46,6 @@ function GestaoProfessoresAdm() {
 
     const COLORS = ['#003366', '#B8860B', '#4A90E2', '#50C878', '#DC143C', '#FF8C00', '#9370DB', '#20B2AA', '#FF69B4', '#CD5C5C'];
 
-    const API_URL = process.env.REACT_APP_API_URL;
-
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -234,8 +232,8 @@ function GestaoProfessoresAdm() {
                                 className={`btn w-100 ${secaoAtiva === "ProfessorRemovidosEdit" ? `${Style.botoesGestaoCurso}`  : `${Style.botoesGestaoCursoD}`}`}
                                 onClick={() => setSecaoAtiva("ProfessorRemovidosEdit")}
                             >
-                                <FaUserGraduate className="me-2 mb-1" />
-                                Prof. Removidos
+                                <FaUserSlash className="me-2 mb-1" />
+                                Ex-Professores
                             </button>
                         </div>
                     </div>
@@ -257,7 +255,7 @@ function GestaoProfessoresAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <IoMdPeople size={28} color="white" />
+                                                    <IoMdPeople size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Corpo docente ativo</p>
@@ -277,7 +275,7 @@ function GestaoProfessoresAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <FaGraduationCap size={28} color="white" />
+                                                    <FaGraduationCap size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Pós-graduados e especialistas</p>
@@ -297,7 +295,7 @@ function GestaoProfessoresAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <FaBook size={28} color="white" />
+                                                    <FaBook size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Ministrando disciplinas</p>
@@ -306,7 +304,7 @@ function GestaoProfessoresAdm() {
                                 </div>
 
                                 {/* Card Com Foto */}
-                                <div className="col-md-3">
+                                {/* <div className="col-md-3">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #50C878 0%, #6AD88C 100%)' }}>
                                         <div className="card-body">
                                             <div className="d-flex justify-content-between align-items-start mb-3">
@@ -317,13 +315,13 @@ function GestaoProfessoresAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <IoMdPerson size={28} color="white" />
+                                                    <IoMdPerson size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Perfil completo</p>
                                         </div>
                                     </div>
-                                </div>
+                                </div> */}
                             </div>
 
                             {/* GRÁFICO 1 - Pizza (Distribuição por Titulação) */}
@@ -684,7 +682,7 @@ function GestaoProfessoresAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <IoMdPeople size={32} color="white" />
+                                                    <IoMdPeople size={32} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-2">Com titulação: {desativadosComTitulacao}</p>
@@ -844,7 +842,6 @@ function GestaoProfessoresAdm() {
                                                 <table className="table table-hover">
                                                     <thead>
                                                         <tr>
-                                                            <th>#</th>
                                                             <th>Nome</th>
                                                             <th>Titulação</th>
                                                             <th>Status</th>
@@ -854,11 +851,6 @@ function GestaoProfessoresAdm() {
                                                         {professoresSemDisciplina.length > 0 ? (
                                                             professoresSemDisciplina.slice(0, 8).map((prof, index) => (
                                                                 <tr key={prof.idprofessor || index}>
-                                                                    <td>
-                                                                        <span className={`badge bg-${index < 3 ? 'warning' : 'secondary'} text-dark`}>
-                                                                            {index + 1}
-                                                                        </span>
-                                                                    </td>
                                                                     <td style={{ color: COLORS[index % COLORS.length], fontWeight: '500' }}>
                                                                         {prof.nomeprofessor || 'N/A'}
                                                                     </td>

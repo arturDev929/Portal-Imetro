@@ -51,9 +51,9 @@ const enviarEmailConfirmacao = async (email, nome, codigo) => {
                 
                 <p>Olá <strong>${nome}</strong>,</p>
                 
-                <p>Recebemos uma solicitação de cadastro no Sistema de Gestão Acadêmica do <strong>IPS Metropolitano</strong>.</p>
+                <p>Recebemos uma solicitação de nova Inscrição no Sistema de Gestão Acadêmica do <strong>IPS Metropolitano</strong>.</p>
                 
-                <p>Para confirmar seu email e completar seu cadastro, utilize o seguinte código de verificação:</p>
+                <p>Para confirmar seu email e completar a sua inscrição, utilize o seguinte código de verificação:</p>
                 
                 <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0; color: #333; border: 2px solid #FFD700;">
                     ${codigo}
@@ -62,7 +62,7 @@ const enviarEmailConfirmacao = async (email, nome, codigo) => {
                 <p><strong>Prazo de validade:</strong> 10 minutos</p>
                 <p><strong>Tentativas permitidas:</strong> 3</p>
                 
-                <p style="color: #666; font-size: 14px;">Se você não solicitou este cadastro, ignore este email.</p>
+                <p style="color: #666; font-size: 14px;">Se você não solicitou esta inscrição, ignore este email.</p>
                 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                 
@@ -90,11 +90,11 @@ const enviarCredenciais = async (email, nome, numEstudante, senha) => {
                     <p style="color: #666; font-size: 14px;">Instituto Politécnico Superior Metropolitano de Angola</p>
                 </div>
                 
-                <h2 style="color: #333; text-align: center;">Cadastro Confirmado com Sucesso!</h2>
+                <h2 style="color: #333; text-align: center;">Inscrição Confirmado com Sucesso!</h2>
                 
                 <p>Olá <strong>${nome}</strong>,</p>
                 
-                <p>Seu cadastro no <strong>Sistema de Gestão Acadêmica do IPS Metropolitano</strong> foi realizado com sucesso!</p>
+                <p>A sua inscrição no <strong>Sistema de Gestão Acadêmica do IPS Metropolitano</strong> foi realizado com sucesso!</p>
                 
                 <p>Abaixo estão suas credenciais de acesso. Guarde-as em local seguro:</p>
                 
@@ -106,11 +106,11 @@ const enviarCredenciais = async (email, nome, numEstudante, senha) => {
                     <p style="font-size: 18px; background-color: #fff; padding: 10px; border-radius: 3px; font-family: monospace;">${senha}</p>
                 </div>
                 
-                <p style="color: #666; font-size: 14px;">Para acessar o sistema, utilize seu número de inscrição e a senha fornecida acima.</p>
+                // <p style="color: #666; font-size: 14px;">Para acessar o sistema, utilize seu número de inscrição e a senha fornecida acima.</p>
                 
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL}" style="background-color: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Acessar o Sistema</a>
-                </div>
+                // <div style="text-align: center; margin: 30px 0;">
+                //     <a href="${process.env.FRONTEND_URL}" style="background-color: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Acessar o Sistema</a>
+                // </div>
                 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                 

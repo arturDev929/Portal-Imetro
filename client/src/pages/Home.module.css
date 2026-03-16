@@ -20,17 +20,12 @@
     text-decoration: none;
 }
 .inputHome{
-  background-color: var(--cinza-claro);
-  color: var(--dourado);
   padding: 10px;
 }
-.inputHome::placeholder{
+/* .inputHome::placeholder{
   color: var(--dourado);
-}
+} */
 .inputHome:focus{
-  background-color: var(--cinza-claro);
-  color: var(--dourado);
-  border: 2px solid var(--dourado);
   outline: none;
 }
 .ButtonHome{

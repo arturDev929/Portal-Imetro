@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import imetro from "../img/logoFundo.png";
 import Style from "./SiderbarAdm.module.css";
-import { Link } from "react-router-dom";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { FaUserTie } from "react-icons/fa";
 import { LiaChalkboardTeacherSolid } from "react-icons/lia";
@@ -12,12 +12,39 @@ import { PiStudentDuotone } from "react-icons/pi";
 import { FaRegNewspaper } from "react-icons/fa";
 function SidebarAdm(){
     const [user, setUser] = useState(null);
+    const location = useLocation();
+
+    const closeMobileSidebar = () => {
+        const offcanvasEl = document.getElementById('sidebarMobile');
+        if (!offcanvasEl) return;
+
+        // Prefer using Bootstrap's API when available (bundle is loaded via CDN)
+        const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance(offcanvasEl);
+        if (bsOffcanvas) {
+            bsOffcanvas.hide();
+            return;
+        }
+
+        // Fallback: manually remove classes/overlay that prevent scrolling
+        offcanvasEl.classList.remove('show');
+        offcanvasEl.style.visibility = 'hidden';
+        offcanvasEl.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('offcanvas-open');
+
+        const backdrop = document.querySelector('.offcanvas-backdrop');
+        if (backdrop) backdrop.remove();
+    };
+
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
             setUser(JSON.parse(usuarioSalvo));
         }
     }, []);
+
+    useEffect(() => {
+        closeMobileSidebar();
+    }, [location.pathname]);
     return(
         <div className="container-fluid p-0 m-0">
             <div className="row">
@@ -84,16 +111,16 @@ function SidebarAdm(){
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6>
-                            <Link to="/gestaoFuncionarioAdm" className={`nav-link active ${Style.Link}`}>
+                            <Link to="/gestaoFuncionarioAdm" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
                                 <FaUserTie className="mb-2 me-2"/> Funcionários
                             </Link>
-                            <Link to="/gestaoProfessorAdm" className={`nav-link ${Style.Link}`}>
+                            <Link to="/gestaoProfessorAdm" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <LiaChalkboardTeacherSolid className="mb-2 me-2"/>Professores
                             </Link>
-                            <Link to="/gestaoCursoAdm" className={`nav-link ${Style.Link}`}>
+                            <Link to="/gestaoCursoAdm" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <FaDiscourse className="mb-2 me-2"/>Cursos
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2"/>Estudantes
                             </Link>
                         </div>
@@ -101,10 +128,10 @@ function SidebarAdm(){
                         {/* Menu Configurações */}
                         <div className="p-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Configurações</h6>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <IoSettingsOutline className="me-2"/>Configurações
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <GrSecure className="me-2"/>Segurança
                             </Link>
                         </div>

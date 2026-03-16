@@ -1,49 +1,44 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../service/api";
 import Style from "../pages/Cadastro.module.css";
-import { IoMdSchool } from "react-icons/io";
+import { IoMdFolder } from "react-icons/io";
 
-const API_URL = "http://localhost:8080";
-
-function SelectCurso({ value, onChange, disabled }) {
-    const [cursos, setCursos] = useState([]);
+function SelectCategoriaCurso({ value, onChange, disabled }) {  
+    const [categorias, setCategorias] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchCursos = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`${API_URL}/get/Cursos`);
-                
-                const cursosData = Array.isArray(response.data) ? response.data : [];
-                setCursos(cursosData);
+                const response = await api.get(`/get/Cursos`);
+                setCategorias(response.data);
                 setError(null);
             } catch (error) {
-                console.error('Erro ao buscar cursos:', error);
-                setError("Erro ao carregar cursos");
-                setCursos([]);
+                console.error('Erro ao buscar dados:', error);
+                setError("Erro ao carregar categorias");
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchCursos();
+        
+        fetchData();
     }, []);
 
     const handleChange = (e) => {
         if (onChange) {
             onChange(e.target.value);
         }
-    };
+    }; 
 
     return (
-        <div className="d-flex mb-3">
-            <span className={`${Style.span} input-group-text`}><IoMdSchool /></span>
+        <div className="d-flex">
+            <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="idcurso" 
-                name="idcurso"
+                id="idcategoriacurso" 
+                name="idcategoriacurso"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
@@ -59,20 +54,20 @@ function SelectCurso({ value, onChange, disabled }) {
                     <option value="" disabled>{error}</option>
                 )}
                 
-                {!loading && !error && cursos.length > 0 && 
-                    cursos.map((curso) => (
-                        <option key={curso.idcurso} value={curso.idcurso}>
-                            {curso.curso}
+                {!loading && !error && categorias.length > 0 && 
+                    categorias.map((categoria) => (
+                        <option key={categoria.idcurso} value={categoria.idcurso}>
+                            {categoria.curso}
                         </option>
                     ))
                 }
                 
-                {!loading && !error && cursos.length === 0 && (
-                    <option value="" disabled>Nenhum curso disponível</option>
+                {!loading && !error && categorias.length === 0 && (
+                    <option value="" disabled>Nenhuma categoria disponível</option>
                 )}
             </select>
         </div>
     );
 }
 
-export default SelectCurso;
+export default SelectCategoriaCurso;

@@ -16,21 +16,16 @@
     height: 100px;
 }
 .inputHome{
-  background-color: var(--cinza-claro);
-  color: var(--dourado);
   padding: 10px;
   border-radius:0px 5px 5px 0px ;
 }
 .span{
     border-radius:5px 0px 0px 5px ;
 }
-.inputHome::placeholder{
+/* .inputHome::placeholder{
   color: var(--dourado);
-}
+} */
 .inputHome:focus{
-  background-color: var(--cinza-claro);
-  color: var(--dourado);
-  border: 2px solid var(--dourado);
   outline: none;
 }
 .ButtonHome{
@@ -50,7 +45,5 @@
     text-decoration: none;
 }
 .inputHome{
-  background-color: var(--cinza-claro);
-  color: var(--dourado);
   padding: 10px;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import Api from "../service/api"
 import { 
     MdEdit, 
     MdDeleteForever, 
@@ -122,7 +122,7 @@ function ProfessorEdit() {
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/Professores`, {
+            const response = await Api.get(`/get/Professores`, {
                 timeout: API_TIMEOUT
             });
             setLista(response.data || []);
@@ -193,7 +193,7 @@ function ProfessorEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
             
-            const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+            const response = await Api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
             setDisciplinasProfessor(response.data || []);
@@ -209,7 +209,7 @@ function ProfessorEdit() {
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             setProfessorSelecionadoInfo({
@@ -324,7 +324,7 @@ function ProfessorEdit() {
             
             formData.append('idAdm', user.id);
 
-            const response = await axios.post(`${API_URL}/post/registrarprofessor`, formData, {
+            const response = await Api.post(`/post/registrarprofessor`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -358,7 +358,7 @@ function ProfessorEdit() {
     const abrirModalEditar = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             const infoCompletas = response.data;
@@ -436,7 +436,7 @@ function ProfessorEdit() {
 
         setSalvando(true);
         try {
-            await axios.put(`${API_URL}/put/atulizarprofessor/${dadosEdicao.idprofessor}`, {
+            await Api.put(`/put/atulizarprofessor/${dadosEdicao.idprofessor}`, {
                 codigoprofessor: dadosEdicao.codigoprofessor,
                 nomeprofessor: dadosEdicao.nomeprofessor,
                 generoprofessor: dadosEdicao.generoprofessor,
@@ -502,7 +502,7 @@ function ProfessorEdit() {
         setSalvando(true);
         
         try {
-            const response = await axios.post(`${API_URL}/post/registrerDisciplinaProfessor`, {
+            const response = await Api.post(`/post/registrerDisciplinaProfessor`, {
                 iddisciplina,
                 idprofessor
             }, {
@@ -542,7 +542,7 @@ function ProfessorEdit() {
                     setRemovendoDisciplina(iddisciplina);
                     showInfoToast("Processando", `Removendo disciplina...`);
 
-                    await axios.delete(`${API_URL}/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
+                    await Api.delete(`/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
                         timeout: API_TIMEOUT
                     });
                     
@@ -552,7 +552,7 @@ function ProfessorEdit() {
                         { "Disciplina": disciplinaNome }
                     );
 
-                    const response = await axios.get(`${API_URL}/get/professorVinculadoDisciplinas/${idProfessor}`, {
+                    const response = await Api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
                         timeout: API_TIMEOUT
                     });
                     setDisciplinasProfessor(response.data || []);
@@ -574,7 +574,7 @@ function ProfessorEdit() {
             `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`${API_URL}/put/professor/desativar/${id}`, {}, {
+                    const response = await Api.put(`/put/professor/desativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
                     

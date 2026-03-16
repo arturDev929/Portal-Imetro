@@ -13,8 +13,7 @@ import {
 import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
-
-const API_URL = process.env.REACT_APP_API_URL;
+import Api from '../service/api';
 const API_TIMEOUT = 30000;
 
 function FuncionarioRemovidosEdit() {
@@ -25,8 +24,7 @@ function FuncionarioRemovidosEdit() {
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
     const apiClient = useMemo(() => {
-        const client = axios.create({
-            baseURL: API_URL,
+        const client = Api.create({
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });
@@ -100,7 +98,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes ativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await axios.put(`${API_URL}/put/funcionario/ativar/${id}`);
+                    const response = await Api.put(`/put/funcionario/ativar/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
@@ -127,7 +125,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes EXCLUIR PERMANENTEMENTE o funcionário ${nome}? Esta ação não pode ser desfeita.`,
             async () => {
                 try {
-                    const response = await axios.delete(`${API_URL}/delete/funcionario/permanent/${id}`);
+                    const response = await Api.delete(`/delete/funcionario/permanent/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);

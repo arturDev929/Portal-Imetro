@@ -11,11 +11,10 @@ import {
 } from "react-icons/md";
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
-import axios from "axios";
+import api from "../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
-const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 5000;
 
 function CursosEdit() {
@@ -49,8 +48,7 @@ function CursosEdit() {
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
     const apiClient = useMemo(() => {
-        const client = axios.create({
-            baseURL: API_URL,
+        const client = api.create({
             timeout: API_TIMEOUT,
             headers: { 'Content-Type': 'application/json' }
         });

@@ -1,59 +1,73 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../service/api";
+import Style from "../pages/Cadastro.module.css";
+import { IoMdPerson } from "react-icons/io";
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-function SelectCurso({onChange}){
-    const [professor, setProfessor] = useState([]); 
+function SelectProfessor({ value, onChange, disabled }) {
+    const [professores, setProfessores] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchData = () => {
-            axios.get(`${API_URL}/get/Professores`)
-                .then((response) => {
-                    setProfessor(response.data);
-                    setError(null);
-                })
-                .catch((error) => {
-                    console.error('Erro ao buscar dados:', error);
-                    setError("Erro ao carregar cursos");
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get(`/get/Professores`);
+                setProfessores(response.data);
+                setError(null);
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                setError("Erro ao carregar professores");
+            } finally {
+                setLoading(false);
+            }
         };
         
         fetchData();
-        
-        const interval = setInterval(fetchData, 2000);
-
-        return () => {
-            clearInterval(interval);
-        };
     }, []);
 
-    return(
-        <div className="col-md-12 mb-2">
-            <select className="form-control form-control-sm" id="idprofessor" name="idprofessor" onChange={onChange}>
-                <option value="">Selecione Professor</option>
+    const handleChange = (e) => {
+        if (onChange) {
+            onChange(e.target.value);
+        }
+    };
+
+    return (
+        <div className="d-flex mb-3">
+            <span className={`${Style.span} input-group-text`}><IoMdPerson /></span>
+            <select 
+                className={`${Style.inputHome} form-control`} 
+                id="idprofessor" 
+                name="idprofessor"
+                value={value || ''}
+                onChange={handleChange}
+                disabled={disabled || loading}
+                required
+            >
+                <option value="">Selecione um professor</option>
+                
                 {loading && (
-                    <option value="" disabled>Carregando professor...</option>
+                    <option value="" disabled>Carregando professores...</option>
                 )}
+                
                 {error && (
                     <option value="" disabled>{error}</option>
                 )}
-                {!loading && !error && professor.map((professor) => (
-                    <option key={professor.idprofessor} value={professor.idprofessor}>
-                        {professor.nomeprofessor}
-                    </option>
-                ))}
-                {!loading && !error && professor.length === 0 && (
+                
+                {!loading && !error && professores.length > 0 && 
+                    professores.map((professor) => (
+                        <option key={professor.idprofessor} value={professor.idprofessor}>
+                            {professor.nomeprofessor}
+                        </option>
+                    ))
+                }
+                
+                {!loading && !error && professores.length === 0 && (
                     <option value="" disabled>Nenhum professor disponível</option>
                 )}
             </select>
         </div>
-    )
+    );
 }
 
-export default SelectCurso;
+export default SelectProfessor;
