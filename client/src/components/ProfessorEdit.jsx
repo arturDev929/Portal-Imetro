@@ -31,7 +31,6 @@ import SelectProfessor from "./SelectProfessor";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
-const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function ProfessorEdit() {

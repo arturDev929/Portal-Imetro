@@ -19,8 +19,6 @@ import { MdAdd, MdFlightClass } from "react-icons/md";
 import OutrosRegistros from "../components/OutrosRegistros";
 import TurmasAdm from "../components/TurmasAdm";
 
-const API_URL = process.env.REACT_APP_API_URL;
-
 function HomeAdm() {
     const [user, setUser] = useState(null);
     const [departamento, setDepartamento] = useState(0);
@@ -224,7 +222,7 @@ function HomeAdm() {
                                 onClick={() => setSecaoAtiva("cursos")}
                             >
                                 <FaGraduationCap className="me-2 mb-1" />
-                                Licenciaturas/Cursos
+                                Licenciaturas
                             </button>
                         </div>
                         <div className="col-md-2">
@@ -273,7 +271,7 @@ function HomeAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <FaLayerGroup size={28} color="white" />
+                                                    <FaLayerGroup size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Unidades acadêmicas ativas</p>
@@ -292,7 +290,7 @@ function HomeAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <FaGraduationCap size={28} color="white" />
+                                                    <FaGraduationCap size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Cursos oferecidos pela instituição</p>
@@ -311,7 +309,7 @@ function HomeAdm() {
                                                     </h2>
                                                 </div>
                                                 <div className="bg-white bg-opacity-25 p-3 rounded-circle">
-                                                    <FaBook size={28} color="white" />
+                                                    <FaBook size={28} />
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Componentes curriculares ofertados</p>

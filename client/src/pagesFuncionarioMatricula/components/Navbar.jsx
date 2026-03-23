@@ -21,7 +21,7 @@ function NavbarAdm(){
         navigate("/");
     };
     return(
-        <nav className={`${Style.navbar} navbar navbar-expand-lg border-bottom z-1 sticky-top p-2 m-0`}>
+        <nav className={`${Style.navbar} navbar navbar-expand-lg border-bottom z-1 sticky-top`}>
             <div className="container-fluid">
                 <button className="btn d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMobile">
                     <BsListNested className="text-white"/>

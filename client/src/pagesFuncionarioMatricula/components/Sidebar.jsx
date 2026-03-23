@@ -5,7 +5,6 @@ import Style from "./Sidebar.module.css";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { IoSettingsOutline } from "react-icons/io5";
 import { MdTopic } from "react-icons/md";
-import { CiChat2 } from "react-icons/ci";
 import { PiStudentDuotone,PiNotePencilLight  } from "react-icons/pi";
 import { GrSecure } from "react-icons/gr";
 function Sidebar(){
@@ -43,7 +42,7 @@ function Sidebar(){
     }, [location.pathname]);
 
     return(
-        <div className="container-fluid p-0 m-0">
+        <div className="container-fluid">
             <div className="row">
                 <div className={`${Style.containerFluid} col-md-3 col-lg-2 d-none d-md-block vh-100 position-fixed`}>
                     <div className="text-center py-3">
@@ -57,9 +56,6 @@ function Sidebar(){
                             {/* <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6> */}
                             <Link to="#" className={`nav-link active ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
-                            </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <CiChat2 className="mb-2 me-2"/>Mensagens
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
@@ -107,9 +103,6 @@ function Sidebar(){
                         <div className="p-3 border-bottom">
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
-                            </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <CiChat2 className="mb-2 me-2"/>Mensagens
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas

@@ -104,6 +104,20 @@ router.get('/categoriaCurso', (req, res) => {
     });
 });
 
+router.get('/getcursos', (req, res) => {
+    const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar cursos:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            res.status(200).json(result);
+        }
+    });
+});
 router.get('/Cursos', (req, res) => {
     const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
     conexao.query(sql, (error, result) => {
@@ -1032,6 +1046,26 @@ router.get('/cargosDisponiveis', (req, res) => {
             res.status(500).json({ error: "Erro interno do servidor" });
         } else {
             res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/EstudantesInscritos', (req, res) => {
+    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL ORDER BY ei.nome_estudanteInscricao ASC";
+    conexao.query(sql, (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudanteFoto = result.map(estudante =>({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null
+            }))
+            res.status(200).json(estudanteFoto);
         }
     });
 });

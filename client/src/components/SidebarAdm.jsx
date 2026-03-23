@@ -46,7 +46,7 @@ function SidebarAdm(){
         closeMobileSidebar();
     }, [location.pathname]);
     return(
-        <div className="container-fluid p-0 m-0">
+        <div className="container-fluid">
             <div className="row">
                 <div className={`${Style.containerFluid} col-md-3 col-lg-2 d-none d-md-block vh-100 position-fixed`}>
                     <div className="text-center py-3">
