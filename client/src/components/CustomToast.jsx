@@ -7,7 +7,7 @@ export const showSuccessToast = (titulo, mensagem, dadosAdicionais = null) => {
         <div className="text-white">
             <div className="d-flex align-items-center mb-3">
                 <div>
-                    <h5 className="mb-0 fw-bold">{titulo}</h5>
+                    <h5 className={`mb-0 fw-bold ${Style.titulo}`}>{titulo}</h5>
                     <p className="mb-1">{mensagem}</p>
                     {dadosAdicionais && (
                         <div className="mt-2 small opacity-75">
@@ -23,7 +23,7 @@ export const showSuccessToast = (titulo, mensagem, dadosAdicionais = null) => {
         </div>,
         {
             position: "top-right",
-            autoClose: 5000,
+            autoClose: 4000,
             closeOnClick: false,
             draggable: true,
             pauseOnHover: true,
@@ -44,7 +44,7 @@ export const showErrorToast = (titulo, mensagem) => {
         <div className="text-white">
             <div className="d-flex align-items-center mb-1">
                 <div>
-                    <h5 className="mb-0 fw-bold">{titulo}</h5>
+                    <h5 className={`mb-0 fw-bold ${Style.titulo}`}>{titulo}</h5>
                     <p className="mb-0">{mensagem}</p>
                 </div>
             </div>
@@ -72,7 +72,7 @@ export const showInfoToast = (titulo, mensagem) => {
         <div className="text-white">
             <div className="d-flex align-items-center mb-3">
                 <div>
-                    <h5 className="mb-0 fw-bold">{titulo}</h5>
+                    <h5 className={`mb-0 fw-bold ${Style.titulo}`}>{titulo}</h5>
                     <p className="mb-0">{mensagem}</p>
                 </div>
             </div>
@@ -101,7 +101,7 @@ export const useConfirmToast = () => {
         const toastId = toast(
             <div className="text-dark">
                 <div className="mb-3">
-                    <h5 className="mb-2 fw-bold" style={{color:'var(--azul-escuro)'}}>{titulo}</h5>
+                    <h5 className={`mb-0 fw-bold ${Style.titulo}`} style={{color:'var(--azul-escuro)'}}>{titulo}</h5>
                     <p className="mb-0">{message}</p>
                 </div>
                 <div className="d-flex gap-2 justify-content-end">

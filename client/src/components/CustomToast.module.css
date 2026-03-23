@@ -16,3 +16,6 @@
     background-color: var(--danger);
     color: var(--azul-escuro);
 }
+.titulo{
+    font-size: 15px;
+}

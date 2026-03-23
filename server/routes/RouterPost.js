@@ -475,8 +475,6 @@ async function completarCadastroEstudante(req, res, body, files) {
     }
 }
 
-// ============ OUTRAS ROTAS EXISTENTES ============
-
 router.post('/registrarEstudanteInscricao', async (req, res) => {
     try {
         console.log("Body recebido:", req.body);

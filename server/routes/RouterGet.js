@@ -118,6 +118,7 @@ router.get('/getcursos', (req, res) => {
         }
     });
 });
+
 router.get('/Cursos', (req, res) => {
     const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
     conexao.query(sql, (error, result) => {
@@ -338,6 +339,7 @@ router.get('/ProfessoresDesativados', (req, res) => {
         }
     });
 });
+
 router.get('/Professores', (req, res) => {
     const sql = "SELECT * FROM professor WHERE estado = 'Ativo' ORDER BY nomeprofessor ASC";
     conexao.query(sql, (error, result) => {
@@ -1051,7 +1053,7 @@ router.get('/cargosDisponiveis', (req, res) => {
 });
 
 router.get('/EstudantesInscritos', (req, res) => {
-    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL ORDER BY ei.nome_estudanteInscricao ASC";
+    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL AND estado_estdanteInscrito = 'Pendente' ORDER BY ei.nome_estudanteInscricao ASC";
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores:", error);
@@ -1063,7 +1065,10 @@ router.get('/EstudantesInscritos', (req, res) => {
             const baseUrl = `${req.protocol}://${req.get('host')}`;
             const estudanteFoto = result.map(estudante =>({
                 ...estudante,
-                fotoUrl: estudante.foto_estudanteInscricao ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null
+                fotoUrl: estudante.foto_estudanteInscricao ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null,
+                docInscricao: estudante.pdf_InscricaoRupe ? `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}` : null,
+
             }))
             res.status(200).json(estudanteFoto);
         }
