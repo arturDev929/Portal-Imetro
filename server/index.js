@@ -3,7 +3,7 @@ const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const path = require("path");
 const os = require("os"); // ← ADICIONE ESTA LINHA
-require('dotenv').config();
+require('dotenv').config({quiet: true});
 const RouterGet = require("./routes/RouterGet");
 const RouterPost = require("./routes/RouterPost");
 const RouterLogin = require("./routes/RouteLogin");
@@ -90,10 +90,10 @@ app.listen(port, '0.0.0.0', (e) => {
     if (e) {
         console.log("Erro ao iniciar servidor:", e);
     } else {
-        console.log(`Servidor conectado com sucesso na porta ${port}!`);
-        console.log(`Acesse localmente: http://localhost:${port}`);
-        console.log(`Acesse na rede: http://${LOCAL_IP}:${port}`);
-        console.log(`Imagens disponíveis em: http://${LOCAL_IP}:${port}/api/img/professores/`);
-        console.log(`Teste o servidor: http://${LOCAL_IP}:${port}/health`);
+        // console.log(`Servidor conectado com sucesso na porta ${port}!`);
+        // console.log(`Acesse localmente: http://localhost:${port}`);
+        // console.log(`Acesse na rede: http://${LOCAL_IP}:${port}`);
+        // console.log(`Imagens disponíveis em: http://${LOCAL_IP}:${port}/api/img/professores/`);
+        // console.log(`Teste o servidor: http://${LOCAL_IP}:${port}/health`);
     }
 });

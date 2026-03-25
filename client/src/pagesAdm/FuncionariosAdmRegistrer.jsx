@@ -1,10 +1,10 @@
-import NavbarAdm from "../components/NavbarAdm";
-import SidebarAdm from "../components/SidebarAdm";
+import NavbarAdm from "./components/NavbarAdm";
+import SidebarAdm from "./components/SidebarAdm";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
-import { showErrorToast } from "../components/CustomToast";
+import { showErrorToast } from "./components/CustomToast";
 import { api } from "../service/api";
-import { showSuccessToast } from "../components/CustomToast"; // Missing import
+import { showSuccessToast } from "./components/CustomToast"; // Missing import
 
 function FuncionáriosAdmRegistrer() {
   const [user, setUser] = useState(null);

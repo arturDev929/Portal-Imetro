@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import api,{baseURL} from "../service/api";
+import api,{baseURL} from "../../service/api";
 import { FaBook } from "react-icons/fa";
 import { MdEdit, MdDeleteForever, MdSearch, MdRefresh, MdAdd } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";

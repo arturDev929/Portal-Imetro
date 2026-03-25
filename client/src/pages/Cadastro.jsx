@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Navbar from "../components/navbar";
+import Navbar from "../pagesAdm/components/navbar";
 import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
 import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
-import { showSuccessToast, showErrorToast } from "../components/CustomToast";
-import SelectCurso from "../components/selectCursos";
+import { showSuccessToast, showErrorToast } from "../pagesAdm/components/CustomToast";
+import SelectCurso from "../pagesAdm/components/selectCursos";
 import Api from "../service/api"
 
 function Cadastro() {

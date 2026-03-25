@@ -1,4 +1,4 @@
-import imetro from "../img/logoFundo.png";
+import imetro from "../../img/logoFundo.png";
 import Style from "./navbar.module.css";
 
 function Navbar() {

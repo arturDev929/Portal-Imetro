@@ -11,7 +11,7 @@ import {
 } from "react-icons/md";
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
-import api from "../service/api";
+import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 

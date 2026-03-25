@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../service/api';
+import api from '../../service/api';
 import { 
     MdRefresh, 
     MdSearch,
@@ -23,8 +23,6 @@ import {
 import { RiContactsBook3Line } from "react-icons/ri";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
-
-const API_URL = process.env.REACT_APP_API_URL;
 const API_TIMEOUT = 30000;
 
 function ProfessorRemovidosEdit() {

@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
-require("dotenv").config();
+require("dotenv").config({quiet: true});
 
 // Configuração do email
 const transporter = nodemailer.createTransport({

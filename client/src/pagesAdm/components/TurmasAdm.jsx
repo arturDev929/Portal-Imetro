@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons/md";
 import { MdFlightClass } from "react-icons/md";
-import api from "../service/api";
+import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
 import CategoriaCursoAno from "./CategoriaCursoAno";
 import Style from "./DepartamentosEdit.module.css"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import api from "../service/api";
-import Style from "../pages/Cadastro.module.css";
+import api from "../../service/api";
+import Style from "../../pages/Cadastro.module.css";
 import { IoMdFolder, IoMdSchool, IoMdCalendar } from "react-icons/io";
 
 function CategoriaCursoAno({ onChange }) {

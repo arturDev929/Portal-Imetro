@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "../components/SidebarAdm";
-import NavbarAdm from "../components/NavbarAdm";
+import SidebarAdm from "./components/SidebarAdm";
+import NavbarAdm from "./components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
 import {
   XAxis,
@@ -27,8 +27,8 @@ import {
   FaUserTie,
 } from "react-icons/fa";
 import { IoMdPeople } from "react-icons/io";
-import FuncionarioEdit from "../components/FuncionarioEdit";
-import FuncionarioRemovidosEdit from "../components/FuncionarioRemovidosEdit";
+import FuncionarioEdit from "./components/FuncionarioEdit";
+import FuncionarioRemovidosEdit from "./components/FuncionarioRemovidosEdit";
 
 function GestaoFuncionariosAdm() {
   const [user, setUser] = useState(null);

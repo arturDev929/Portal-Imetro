@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import imetro from "../img/logoFundo.png";
+import imetro from "../../img/logoFundo.png";
 import Style from "./SiderbarAdm.module.css";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { FaUserTie } from "react-icons/fa";

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import api from "../service/api";
-import Style from "../pages/Cadastro.module.css";
-import { IoMdPerson } from "react-icons/io";
+import api from "../../service/api";
+import Style from "../../pages/Cadastro.module.css";
+import { IoMdBook } from "react-icons/io";
 
-function SelectProfessor({ value, onChange, disabled }) {
-    const [professores, setProfessores] = useState([]); 
+function SelectDisciplina({ value, onChange, disabled }) {
+    const [disciplinas, setDisciplinas] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -12,12 +12,12 @@ function SelectProfessor({ value, onChange, disabled }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/Professores`);
-                setProfessores(response.data);
+                const response = await api.get(`/get/Disciplinas`);
+                setDisciplinas(response.data);
                 setError(null);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
-                setError("Erro ao carregar professores");
+                setError("Erro ao carregar disciplinas");
             } finally {
                 setLoading(false);
             }
@@ -34,40 +34,40 @@ function SelectProfessor({ value, onChange, disabled }) {
 
     return (
         <div className="d-flex mb-3">
-            <span className={`${Style.span} input-group-text`}><IoMdPerson /></span>
+            <span className={`${Style.span} input-group-text`}><IoMdBook /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="idprofessor" 
-                name="idprofessor"
+                id="iddisciplina" 
+                name="iddisciplina"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
                 required
             >
-                <option value="">Selecione um professor</option>
+                <option value="">Selecione uma disciplina</option>
                 
                 {loading && (
-                    <option value="" disabled>Carregando professores...</option>
+                    <option value="" disabled>Carregando disciplinas...</option>
                 )}
                 
                 {error && (
                     <option value="" disabled>{error}</option>
                 )}
                 
-                {!loading && !error && professores.length > 0 && 
-                    professores.map((professor) => (
-                        <option key={professor.idprofessor} value={professor.idprofessor}>
-                            {professor.nomeprofessor}
+                {!loading && !error && disciplinas.length > 0 && 
+                    disciplinas.map((disciplina) => (
+                        <option key={disciplina.iddisciplina} value={disciplina.iddisciplina}>
+                            {disciplina.disciplina}
                         </option>
                     ))
                 }
                 
-                {!loading && !error && professores.length === 0 && (
-                    <option value="" disabled>Nenhum professor disponível</option>
+                {!loading && !error && disciplinas.length === 0 && (
+                    <option value="" disabled>Nenhuma disciplina disponível</option>
                 )}
             </select>
         </div>
     );
 }
 
-export default SelectProfessor;
+export default SelectDisciplina;

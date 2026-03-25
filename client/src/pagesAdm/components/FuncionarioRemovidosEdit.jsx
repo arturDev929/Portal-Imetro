@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
 import { 
     MdRefresh, 
     MdSearch,
@@ -13,7 +12,7 @@ import {
 import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
-import Api from '../service/api';
+import Api from '../../service/api';
 const API_TIMEOUT = 30000;
 
 function FuncionarioRemovidosEdit() {
