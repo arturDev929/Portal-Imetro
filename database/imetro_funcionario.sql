@@ -44,7 +44,7 @@ CREATE TABLE `funcionario` (
 
 LOCK TABLES `funcionario` WRITE;
 /*!40000 ALTER TABLE `funcionario` DISABLE KEYS */;
-INSERT INTO `funcionario` VALUES (6,'Artur Macumba Paulo','+244 929-277-043','008555379LA047','Ativo','$2b$10$62uglWrhvtVX5NWZmqQ2euS9fWrcVx0ovsCPD.IehIHbM9M9aYVve',2),(7,'Nsimba Paula Maniongo Suami','937250607','008649051la049','Ativo','$2b$10$5n.Q.8.F/6DIER62pkBiN.2Nf/V68haj.OYDVt1Jr/x/WSSVSJXE2',2);
+INSERT INTO `funcionario` VALUES (6,'Artur Paulo M','+244 929-277-043','008555739LA047','Ativo','$2b$10$0lItKWEFSokqU6vrUOYxUu.wTb28kkGMO.ghww.P4tfukNTYs6uzG',2),(7,'Nsimba Paula Maniongo Suami','+244 937-250-607','008649051LA049','Desativado','$2b$10$5n.Q.8.F/6DIER62pkBiN.2Nf/V68haj.OYDVt1Jr/x/WSSVSJXE2',2);
 /*!40000 ALTER TABLE `funcionario` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -57,4 +57,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-11 20:53:29
+-- Dump completed on 2026-03-25 22:52:25

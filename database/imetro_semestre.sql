@@ -38,7 +38,7 @@ CREATE TABLE `semestre` (
   CONSTRAINT `semestre_ibfk_2` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`),
   CONSTRAINT `semestre_ibfk_3` FOREIGN KEY (`iddisciplina`) REFERENCES `disciplina` (`iddisciplina`),
   CONSTRAINT `semestre_ibfk_4` FOREIGN KEY (`idanocurricular`) REFERENCES `anocurricular` (`idanocurricular`)
-) ENGINE=InnoDB AUTO_INCREMENT=288 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=289 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,4 +60,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-11 20:53:28
+-- Dump completed on 2026-03-25 22:52:25

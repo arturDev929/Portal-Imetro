@@ -29,7 +29,7 @@ CREATE TABLE `anocurricular` (
   PRIMARY KEY (`idanocurricular`),
   KEY `idcurso` (`idcurso`),
   CONSTRAINT `anocurricular_ibfk_1` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=134 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -51,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-11 20:53:29
+-- Dump completed on 2026-03-25 22:52:25

@@ -40,7 +40,7 @@ CREATE TABLE `cargo_funcionario_relation` (
 
 LOCK TABLES `cargo_funcionario_relation` WRITE;
 /*!40000 ALTER TABLE `cargo_funcionario_relation` DISABLE KEYS */;
-INSERT INTO `cargo_funcionario_relation` VALUES (6,1,6),(7,1,7);
+INSERT INTO `cargo_funcionario_relation` VALUES (6,1,6),(7,4,7);
 /*!40000 ALTER TABLE `cargo_funcionario_relation` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-11 20:53:27
+-- Dump completed on 2026-03-25 22:52:24
