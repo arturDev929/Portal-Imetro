@@ -54,7 +54,34 @@ router.put("/funcionario/senha/:id", alterarSenhaFuncionario);
 
 router.put("/funcionario/desativar/:id", desativarFuncionario);
 
-router.put("/funcionario/ativar/:id", ativarFuncionario);
+router.put('/Curso/:id', (req, res) => {
+    const { id } = req.params;
+    const { curso, idcategoriacurso } = req.body;
+
+    console.log("ID do curso recebido:", id);
+    console.log("Dados recebidos:", { curso, idcategoriacurso });
+
+    if (!id || id.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do curso é obrigatório'
+        });
+    }
+
+    if (isNaN(id) || parseInt(id) <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do curso inválido'
+        });
+    }
+
+    if (!curso || curso.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome do curso é obrigatório'
+        });
+    }
+
     if (curso.trim().length < 2) {
         return res.status(400).json({
             success: false,
@@ -159,6 +186,7 @@ router.put("/funcionario/ativar/:id", ativarFuncionario);
             });
         });
     });
+});
 
 
 router.put('/disciplina/:id', (req, res) => {
