@@ -55,8 +55,6 @@ router.put("/funcionario/senha/:id", alterarSenhaFuncionario);
 router.put("/funcionario/desativar/:id", desativarFuncionario);
 
 router.put("/funcionario/ativar/:id", ativarFuncionario);
-
-<<<<<<< HEAD
     if (curso.trim().length < 2) {
         return res.status(400).json({
             success: false,
@@ -161,7 +159,7 @@ router.put("/funcionario/ativar/:id", ativarFuncionario);
             });
         });
     });
-});
+
 
 router.put('/disciplina/:id', (req, res) => {
     const { id } = req.params;
@@ -1388,7 +1386,6 @@ router.put('/estudanteInscritoRecusar/:id', (req, res) => {
     });
 });
 
+
 module.exports = router;
-=======
-module.exports = router;
->>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
+
