@@ -30,6 +30,7 @@ function getLocalIP() {
 const LOCAL_IP = getLocalIP();
 
 const allowedOrigins = [
+  'https://portal-imetro.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
   'https://portal-imetro.vercel.app',

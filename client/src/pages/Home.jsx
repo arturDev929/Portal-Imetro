@@ -2,11 +2,10 @@ import { useState } from "react";
 import { FaIdCard } from "react-icons/fa";
 import { MdLock } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/navbar";
+import Navbar from "../pagesAdm/components/navbar";
 import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
-import axios from "axios";
-import { showSuccessToast, showErrorToast } from "../components/CustomToast";
+import { showSuccessToast, showErrorToast } from "../pagesAdm/components/CustomToast";
 import { api } from "../service/api";
 function Home() {
   const navigate = useNavigate();

@@ -1,8 +1,8 @@
 // GestaoProfessoresAdm.js
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "../components/SidebarAdm";
-import NavbarAdm from "../components/NavbarAdm";
+import SidebarAdm from "./components/SidebarAdm";
+import NavbarAdm from "./components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -16,8 +16,8 @@ import {
 } from 'react-icons/fa';
 import { IoMdPerson, IoMdPeople } from "react-icons/io"
 import { FaGraduationCap } from "react-icons/fa"
-import ProfessorEdit from "../components/ProfessorEdit";
-import ProfessorRemovidosEdit from "../components/ProfessorRemovidosEdit";
+import ProfessorEdit from "./components/ProfessorEdit";
+import ProfessorRemovidosEdit from "./components/ProfessorRemovidosEdit";
 
 function GestaoProfessoresAdm() {
     const [user, setUser] = useState(null);

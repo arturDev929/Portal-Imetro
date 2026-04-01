@@ -1,14 +1,23 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
 import Navbar from "../components/navbar";
+=======
+import Navbar from "../pagesAdm/components/navbar";
+>>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
 import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
 import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
+<<<<<<< HEAD
 import { showSuccessToast, showErrorToast } from "../components/CustomToast";
 import SelectCurso from "../components/selectCursos";
+=======
+import { showSuccessToast, showErrorToast } from "../pagesAdm/components/CustomToast";
+import SelectCurso from "../pagesAdm/components/selectCursos";
+>>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
 import Api from "../service/api"
 
 function Cadastro() {

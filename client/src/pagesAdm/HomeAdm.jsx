@@ -1,5 +1,5 @@
-import SidebarAdm from "../components/SidebarAdm";
-import NavbarAdm from "../components/NavbarAdm";
+import SidebarAdm from "./components/SidebarAdm";
+import NavbarAdm from "./components/NavbarAdm";
 import Style from "./HomeAdm.module.css";
 
 function HomeAdm() {

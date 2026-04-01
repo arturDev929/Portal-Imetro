@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "../components/SidebarAdm";
-import NavbarAdm from "../components/NavbarAdm";
+import SidebarAdm from "./components/SidebarAdm";
+import NavbarAdm from "./components/NavbarAdm";
 import Style from "./GestaoCursoAdm.module.css";
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -12,12 +12,17 @@ import {
   FaUniversity, FaBook, FaLayerGroup, FaGraduationCap,
   FaClock, FaChartBar, FaChartPie, FaChartLine
 } from 'react-icons/fa';
-import CursoEdit from "../components/CursosEdit"
-import DepartamentoEdit from "../components/DepartamentosEdit"
-import DisciplinasEdit from "../components/DisciplinasEdit"
+import CursoEdit from "./components/CursosEdit"
+import DepartamentoEdit from "./components/DepartamentosEdit"
+import DisciplinasEdit from "./components/DisciplinasEdit"
 import { MdAdd, MdFlightClass } from "react-icons/md";
+<<<<<<< HEAD
 import OutrosRegistros from "../components/OutrosRegistros";
 import TurmasAdm from "../components/TurmasAdm";
+=======
+import OutrosRegistros from "./components/OutrosRegistros";
+import TurmasAdm from "./components/TurmasAdm";
+>>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
 
 function HomeAdm() {
     const [user, setUser] = useState(null);

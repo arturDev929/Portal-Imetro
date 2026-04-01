@@ -1,147 +1,62 @@
 const { Router } = require("express");
 const router = Router();
 const conexao = require("../infra/conexao");
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 const bcrypt = require("bcryptjs");
+const {
+  ativarFuncionario,
+  desativarFuncionario,
+  alterarSenhaFuncionario,
+  actualizardadosFuncionario,
+} = require("../controllers/funcionario.controller");
+const {
+  ativarProfessor,
+  desativarProfessor,
+  atualizarProfessor,
+} = require("../controllers/professor.controller");
+const { atualizarDisciplina } = require("../controllers/disciplina.controller");
+const {
+  atualizarCategoriaCurso,
+} = require("../controllers/categoriaCurso.controller");
+const { atualizarCurso } = require("../controllers/curso.controller");
+const { atualizarTurma } = require("../controllers/turma.controller");
 
-router.put('/categoriaCurso/:id', (req, res) => {
-    const { id } = req.params;
-    const { categoriacurso } = req.body;
+//Rotas Categoria-Curso
 
-    console.log("ID recebido:", id);
-    console.log("Dados recebidos:", { categoriacurso });
+router.put("/categoriaCurso/:id", atualizarCategoriaCurso);
 
-    if (!id || id.trim() === '') {
-        return res.status(400).json({
-            success: false,
-            error: 'ID da categoria é obrigatório'
-        });
-    }
+//Rotas Cursos
 
-    if (isNaN(id) || parseInt(id) <= 0) {
-        return res.status(400).json({
-            success: false,
-            error: 'ID da categoria inválido'
-        });
-    }
+router.put("/Curso/:id", atualizarCurso);
 
-    if (!categoriacurso || categoriacurso.trim() === '') {
-        return res.status(400).json({
-            success: false,
-            error: 'O nome da categoria é obrigatório'
-        });
-    }
+//Rotas Disciplina
 
-    if (categoriacurso.trim().length < 2) {
-        return res.status(400).json({
-            success: false,
-            error: 'O nome da categoria deve ter pelo menos 2 caracteres'
-        });
-    }
+router.put("/disciplina/:id", atualizarDisciplina);
 
-    if (categoriacurso.trim().length > 100) {
-        return res.status(400).json({
-            success: false,
-            error: 'O nome da categoria não pode exceder 100 caracteres'
-        });
-    }
+//Rotas Turma
 
-    const checkSql = 'SELECT * FROM categoriacurso WHERE idcategoriacurso = ?';
-    
-    conexao.query(checkSql, [id], (checkError, checkResults) => {
-        if (checkError) {
-            console.error('Erro ao verificar categoria:', checkError);
-            return res.status(500).json({
-                success: false,
-                error: 'Erro ao verificar categoria no banco de dados'
-            });
-        }
+router.put("/turma/:id", atualizarTurma);
 
-        if (checkResults.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'Categoria não encontrada'
-            });
-        }
+//Rotas Professore
 
-        const duplicateSql = 'SELECT * FROM categoriacurso WHERE categoriacurso = ? AND idcategoriacurso != ?';
-        
-        conexao.query(duplicateSql, [categoriacurso.trim(), id], (duplicateError, duplicateResults) => {
-            if (duplicateError) {
-                console.error('Erro ao verificar duplicidade:', duplicateError);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Erro ao verificar se categoria já existe'
-                });
-            }
+router.put("/atulizarprofessor/:id", atualizarProfessor);
 
-            if (duplicateResults.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Já existe uma categoria com este nome'
-                });
-            }
+router.put("/professor/desativar/:id", desativarProfessor);
 
-            const updateSql = 'UPDATE categoriacurso SET categoriacurso = ? WHERE idcategoriacurso = ?';
-            const values = [categoriacurso.trim(), id];
-            
-            conexao.query(updateSql, values, (error, results) => {
-                if (error) {
-                    console.error('Erro ao atualizar categoria:', error);
-                    return res.status(500).json({ 
-                        success: false,
-                        error: 'Erro ao atualizar categoria no banco de dados'
-                    });
-                }
-                
-                if (results.affectedRows === 0) {
-                    return res.status(404).json({
-                        success: false,
-                        error: 'Categoria não encontrada para atualização'
-                    });
-                }
-                
-                res.status(200).json({
-                    success: true,
-                    message: 'Categoria atualizada com sucesso',
-                    id: id,
-                    categoriacurso: categoriacurso.trim(),
-                    affectedRows: results.affectedRows
-                });
-            });
-        });
-    });
-});
+router.put("/professor/ativar/:id", ativarProfessor);
 
-router.put('/Curso/:id', (req, res) => {
-    const { id } = req.params;
-    const { curso, idcategoriacurso } = req.body;
+//Rotas Funcionário
 
-    console.log("ID do curso recebido:", id);
-    console.log("Dados recebidos:", { curso, idcategoriacurso });
+router.put("/funcionario/:id", actualizardadosFuncionario);
 
-    if (!id || id.trim() === '') {
-        return res.status(400).json({
-            success: false,
-            error: 'ID do curso é obrigatório'
-        });
-    }
+router.put("/funcionario/senha/:id", alterarSenhaFuncionario);
 
-    if (isNaN(id) || parseInt(id) <= 0) {
-        return res.status(400).json({
-            success: false,
-            error: 'ID do curso inválido'
-        });
-    }
+router.put("/funcionario/desativar/:id", desativarFuncionario);
 
-    if (!curso || curso.trim() === '') {
-        return res.status(400).json({
-            success: false,
-            error: 'O nome do curso é obrigatório'
-        });
-    }
+router.put("/funcionario/ativar/:id", ativarFuncionario);
 
+<<<<<<< HEAD
     if (curso.trim().length < 2) {
         return res.status(400).json({
             success: false,
@@ -1474,3 +1389,6 @@ router.put('/estudanteInscritoRecusar/:id', (req, res) => {
 });
 
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
