@@ -1,214 +1,156 @@
 const bcrypt = require("bcryptjs");
 const conexao = require("../infra/conexao");
+const Funcionario = require("../Models/funcionarioModel");
+const CargoFuncionarioRelation = require("../Models/cargoFuncionarioRelationModel");
+
+
 const ativarFuncionario = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  if (!id || isNaN(id) || id <= 0) {
-    return res.status(400).json({ error: "ID do funcionário inválido" });
-  }
-
-  const checkSql =
-    "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Desativado'";
-
-  conexao.query(checkSql, [id], (checkError, checkResults) => {
-    if (checkError) {
-      console.error("Erro ao verificar funcionário:", checkError);
-      return res.status(500).json({
-        error: "Erro interno do servidor",
-        details: checkError.message,
-      });
+    if (!id || isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: "ID do funcionário inválido" });
     }
 
-    if (checkResults.length === 0) {
+    const funcionario = await Funcionario.findOne({
+      where: {
+        id_funcionario: id,
+        estado_funcionario: "Desativado",
+      },
+    });
+
+    if (!funcionario) {
       return res.status(404).json({
         error: "Funcionário não encontrado ou já está ativo",
       });
     }
 
-    const nome = checkResults[0].nome_funcionario;
-
-    const sql =
-      "UPDATE funcionario SET estado_funcionario = 'Ativo' WHERE id_funcionario = ?";
-
-    conexao.query(sql, [id], (error, result) => {
-      if (error) {
-        console.error("Erro ao ativar funcionário:", error);
-        res.status(500).json({
-          error: "Erro interno do servidor",
-          details: error.message,
-        });
-      } else {
-        res.status(200).json({
-          success: true,
-          message: `Funcionário ${nome} ativado com sucesso`,
-          funcionario: nome,
-          affectedRows: result.affectedRows,
-        });
-      }
+    const nome = funcionario.nome_funcionario;
+    await funcionario.update({
+      estado_funcionario: "Ativo",
     });
-  });
+
+    return res.status(200).json({
+      success: true,
+      message: `Funcionário ${nome} ativado com sucesso`,
+      funcionario: nome,
+    });
+
+  } catch (error) {
+    console.error("Erro ao ativar funcionário:", error);
+    return res.status(500).json({
+      error: "Erro interno do servidor",
+    });
+  }
 };
 
 const desativarFuncionario = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  if (!id || isNaN(id) || id <= 0) {
-    return res.status(400).json({ error: "ID do funcionário inválido" });
-  }
-
-  const checkSql =
-    "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Ativo'";
-
-  conexao.query(checkSql, [id], (checkError, checkResults) => {
-    if (checkError) {
-      console.error("Erro ao verificar funcionário:", checkError);
-      return res.status(500).json({
-        error: "Erro interno do servidor",
-        details: checkError.message,
-      });
+    if (!id || isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: "ID do funcionário inválido" });
     }
 
-    if (checkResults.length === 0) {
+    
+    const funcionario = await Funcionario.findOne({
+      where: {
+        id_funcionario: id,
+        estado_funcionario: "Ativo",
+      },
+    });
+
+    if (!funcionario) {
       return res.status(404).json({
         error: "Funcionário não encontrado ou já está desativado",
       });
     }
 
-    const nome = checkResults[0].nome_funcionario;
+    const nome = funcionario.nome_funcionario;
 
-    const sql =
-      "UPDATE funcionario SET estado_funcionario = 'Desativado' WHERE id_funcionario = ?";
-
-    conexao.query(sql, [id], (error, result) => {
-      if (error) {
-        console.error("Erro ao desativar funcionário:", error);
-        res.status(500).json({
-          error: "Erro interno do servidor",
-          details: error.message,
-        });
-      } else {
-        res.status(200).json({
-          success: true,
-          message: `Funcionário ${nome} desativado com sucesso`,
-          funcionario: nome,
-          affectedRows: result.affectedRows,
-        });
-      }
+  
+    await funcionario.update({
+      estado_funcionario: "Desativado",
     });
-  });
+
+    return res.status(200).json({
+      success: true,
+      message: `Funcionário ${nome} desativado com sucesso`,
+      funcionario: nome,
+    });
+
+  } catch (error) {
+    console.error("Erro ao desativar funcionário:", error);
+    return res.status(500).json({
+      error: "Erro interno do servidor",
+    });
+  }
 };
 
 const alterarSenhaFuncionario = async (req, res) => {
-  const { id } = req.params;
-  const { senha_funcionario } = req.body;
+  try {
+    const { id } = req.params;
+    const { senha_funcionario } = req.body;
 
-  // Validações
-  if (!id || id.trim() === "") {
-    return res.status(400).json({
-      success: false,
-      error: "ID do funcionário é obrigatório",
-    });
-  }
-
-  if (isNaN(id) || parseInt(id) <= 0) {
-    return res.status(400).json({
-      success: false,
-      error: "ID do funcionário inválido",
-    });
-  }
-
-  if (!senha_funcionario || senha_funcionario.trim() === "") {
-    return res.status(400).json({
-      success: false,
-      error: "A nova senha é obrigatória",
-    });
-  }
-
-  if (senha_funcionario.trim().length < 4) {
-    return res.status(400).json({
-      success: false,
-      error: "A senha deve ter pelo menos 4 caracteres",
-    });
-  }
-
-  // Verificar se o funcionário existe
-  const checkSql =
-    "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ?";
-
-  conexao.query(checkSql, [id], (checkError, checkResults) => {
-    if (checkError) {
-      console.error("Erro ao verificar funcionário:", checkError);
-      return res.status(500).json({
+    if (!id || id.trim() === "") {
+      return res.status(400).json({
         success: false,
-        error: "Erro ao verificar funcionário no banco de dados",
+        error: "ID do funcionário é obrigatório",
       });
     }
 
-    if (checkResults.length === 0) {
+    if (isNaN(id) || parseInt(id) <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: "ID do funcionário inválido",
+      });
+    }
+
+    if (!senha_funcionario || senha_funcionario.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: "A nova senha é obrigatória",
+      });
+    }
+
+    if (senha_funcionario.trim().length < 4) {
+      return res.status(400).json({
+        success: false,
+        error: "A senha deve ter pelo menos 4 caracteres",
+      });
+    }
+
+    const funcionario = await Funcionario.findByPk(id);
+
+    if (!funcionario) {
       return res.status(404).json({
         success: false,
         error: "Funcionário não encontrado",
       });
     }
 
-    const nome_funcionario = checkResults[0].nome_funcionario;
+    const senhaCriptografada = await bcrypt.hash(senha_funcionario, 10);
 
-    // Criptografar a nova senha
-    bcrypt.genSalt(10, (saltError, salt) => {
-      if (saltError) {
-        console.error("Erro ao gerar salt:", saltError);
-        return res.status(500).json({
-          success: false,
-          error: "Erro interno de segurança",
-        });
-      }
-
-      bcrypt.hash(senha_funcionario, salt, (hashError, senhaCriptografada) => {
-        if (hashError) {
-          console.error("Erro ao criptografar senha:", hashError);
-          return res.status(500).json({
-            success: false,
-            error: "Erro interno de segurança",
-          });
-        }
-
-        // Atualizar apenas a senha
-        const updateSql =
-          "UPDATE funcionario SET senha_funcionario = ? WHERE id_funcionario = ?";
-
-        conexao.query(
-          updateSql,
-          [senhaCriptografada, id],
-          (updateError, updateResults) => {
-            if (updateError) {
-              console.error("Erro ao atualizar senha:", updateError);
-              return res.status(500).json({
-                success: false,
-                error: "Erro ao atualizar senha no banco de dados",
-              });
-            }
-
-            if (updateResults.affectedRows === 0) {
-              return res.status(404).json({
-                success: false,
-                error: "Funcionário não encontrado para atualização",
-              });
-            }
-
-            res.status(200).json({
-              success: true,
-              message: "Senha alterada com sucesso",
-              dados: {
-                id: id,
-                nome_funcionario: nome_funcionario,
-                senha_alterada: true,
-              },
-            });
-          },
-        );
-      });
+    await funcionario.update({
+      senha_funcionario: senhaCriptografada,
     });
-  });
+
+    return res.status(200).json({
+      success: true,
+      message: "Senha alterada com sucesso",
+      dados: {
+        id: funcionario.id_funcionario,
+        nome_funcionario: funcionario.nome_funcionario,
+        senha_alterada: true,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao alterar senha:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Erro interno do servidor",
+    });
+  }
 };
 
 const actualizardadosFuncionario = async (req, res) => {
@@ -480,78 +422,74 @@ const actualizardadosFuncionario = async (req, res) => {
   });
 };
 
-const excluirPermanentementeFuncionario = (req, res) => {
+const excluirPermanentementeFuncionario = async (req, res) => {
   const { id } = req.params;
+
 
   if (!id || isNaN(id) || id <= 0) {
     return res.status(400).json({ error: "ID do funcionário inválido" });
   }
 
-  const checkSql =
-    "SELECT nome_funcionario FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Desativado'";
+  const t = await conexao.transaction();
 
-  conexao.query(checkSql, [id], (checkError, checkResults) => {
-    if (checkError) {
-      console.error("Erro ao verificar funcionário:", checkError);
-      return res.status(500).json({
-        error: "Erro interno do servidor",
-        details: checkError.message,
-      });
-    }
+  try {
 
-    if (checkResults.length === 0) {
+    const funcionario = await Funcionario.findOne({
+      where: {
+        id_funcionario: id,
+        estado_funcionario: "Desativado",
+      },
+      transaction: t,
+    });
+
+    if (!funcionario) {
+      await t.rollback();
       return res.status(400).json({
         error:
           "Funcionário não encontrado ou não está desativado. Apenas funcionários desativados podem ser excluídos permanentemente.",
       });
     }
 
-    const nome = checkResults[0].nome_funcionario;
+    const nome = funcionario.nome_funcionario;
 
-    const deleteRelacaoSql =
-      "DELETE FROM cargo_funcionario_relation WHERE id_funcionario = ?";
-    conexao.query(deleteRelacaoSql, [id], (deleteRelacaoError) => {
-      if (deleteRelacaoError) {
-        console.error(
-          "Erro ao excluir relação do funcionário:",
-          deleteRelacaoError,
-        );
-        return res.status(500).json({
-          error: "Erro interno do servidor",
-          details: deleteRelacaoError.message,
-        });
-      }
 
-      const deleteSql =
-        "DELETE FROM funcionario WHERE id_funcionario = ? AND estado_funcionario = 'Desativado'";
-
-      conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
-        if (deleteError) {
-          console.error(
-            "Erro ao excluir funcionário permanentemente:",
-            deleteError,
-          );
-          return res.status(500).json({
-            error: "Erro interno do servidor",
-            details: deleteError.message,
-          });
-        }
-
-        if (deleteResults.affectedRows === 0) {
-          return res.status(404).json({
-            error: "Funcionário não encontrado para exclusão",
-          });
-        }
-
-        res.status(200).json({
-          success: true,
-          message: `Funcionário ${nome} excluído permanentemente com sucesso`,
-          nomeExcluido: nome,
-          affectedRows: deleteResults.affectedRows,
-        });
-      });
+    await CargoFuncionarioRelation.destroy({
+      where: { id_funcionario: id },
+      transaction: t,
     });
-  });
+
+    const deleted = await Funcionario.destroy({
+      where: {
+        id_funcionario: id,
+        estado_funcionario: "Desativado",
+      },
+      transaction: t,
+    });
+
+    if (deleted === 0) {
+      await t.rollback();
+      return res.status(404).json({
+        error: "Funcionário não encontrado para exclusão",
+      });
+    }
+
+  
+    await t.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: `Funcionário ${nome} excluído permanentemente com sucesso`,
+      nomeExcluido: nome,
+    });
+
+  } catch (error) {
+    await t.rollback();
+    console.error("Erro ao excluir funcionário:", error);
+
+    return res.status(500).json({
+      error: "Erro interno do servidor",
+    });
+  }
 };
 
 module.exports = {

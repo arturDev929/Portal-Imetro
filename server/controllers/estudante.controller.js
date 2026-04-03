@@ -1,5 +1,9 @@
 const conexao = require("../infra/conexao");
 const bcrypt = require("bcrypt");
+const Estudante = require("../Models/EstudanteInscricaoModel");
+const fs = require("fs");
+const path = require("path");
+//const { gerarImagemIniciais } = require("../utils/gerarimagem");;
 
 const registarEstudante = async (req, res) => {
   try {
@@ -36,119 +40,83 @@ const registarEstudante = async (req, res) => {
       });
     }
 
-    const verificarMatricula =
-      "SELECT idEstudante FROM estudantes WHERE numEstudante = ?";
-    conexao.query(
-      verificarMatricula,
-      [numEstudante],
-      async (erro, resultados) => {
-        if (erro) {
-          console.error("Erro ao verificar matrícula:", erro);
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro no servidor",
-            mensagem: "Erro interno do servidor",
-          });
-        }
+    const estudanteExistente = await Estudante.findOne({
+      where: { numEstudante },
+    });
 
-        if (resultados.length > 0) {
-          return res.status(400).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Matrícula existente",
-            mensagem: "Número de matrícula já está em uso!",
-          });
-        }
+    if (estudanteExistente) {
+      return res.status(400).json({
+        sucesso: false,
+        tipo: "erro",
+        titulo: "Matrícula existente",
+        mensagem: "Número de matrícula já está em uso!",
+      });
+    }
 
-        try {
-          const salt = await bcrypt.genSalt(10);
-          const senhaCriptografada = await bcrypt.hash(senhaEstudante, salt);
-          let nomeFoto = gerarImagemIniciais(nomeEstudante);
+    const curso = await Curso.findByPk(idCursos);
+    if (!curso) {
+      return res.status(404).json({
+        sucesso: false,
+        tipo: "erro",
+        titulo: "Curso não encontrado",
+        mensagem: "O curso selecionado não existe",
+      });
+    }
 
-          if (!nomeFoto) {
-            console.log("Não foi possível gerar a imagem, usando padrão");
-            nomeFoto = `estudante_default_${Date.now()}.png`;
-          }
+    const salt = await bcrypt.genSalt(10);
+    const senhaCriptografada = await bcrypt.hash(senhaEstudante, salt);
 
-          const sql = `
-                    INSERT INTO estudantes 
-                    (nomeEstudante, fotoEstudante, contactoEstudante, numEstudante, senhaEstudante, idCursos) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                `;
+    let nomeFoto = gerarImagemIniciais(nomeEstudante);
+    if (!nomeFoto) {
+      nomeFoto = `estudante_default_${Date.now()}.png`;
+    }
 
-          const valores = [
-            nomeEstudante,
-            nomeFoto,
-            contactoEstudante,
-            numEstudante,
-            senhaCriptografada,
-            idCursos,
-          ];
+    const novoEstudante = await Estudante.create({
+      nomeEstudante,
+      fotoEstudante: nomeFoto,
+      contactoEstudante,
+      numEstudante,
+      senhaEstudante: senhaCriptografada,
+      idCursos,
+    });
 
-          conexao.query(sql, valores, (erro, resultado) => {
-            if (erro) {
-              console.error("Erro ao inserir estudante:", erro);
-              console.error("SQL Message:", erro.sqlMessage);
-
-              if (
-                nomeFoto &&
-                fs.existsSync(
-                  path.join(
-                    __dirname,
-                    "../../client/src/img/estudantes",
-                    nomeFoto,
-                  ),
-                )
-              ) {
-                fs.unlinkSync(
-                  path.join(
-                    __dirname,
-                    "../../client/src/img/estudantes",
-                    nomeFoto,
-                  ),
-                );
-                console.log("Imagem removida devido ao erro");
-              }
-
-              return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no cadastro",
-                mensagem: "Erro ao registrar estudante: " + erro.message,
-              });
-            }
-
-            console.log("Estudante inserido com ID:", resultado.insertId);
-
-            res.status(201).json({
-              sucesso: true,
-              tipo: "sucesso",
-              titulo: "Cadastro realizado!",
-              mensagem: "Estudante registrado com sucesso!",
-              redirect: "/",
-              dados: {
-                idEstudante: resultado.insertId,
-                nomeEstudante,
-                numEstudante,
-                foto: nomeFoto,
-              },
-            });
-          });
-        } catch (erroHash) {
-          console.error("Erro ao criptografar senha:", erroHash);
-          res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro de segurança",
-            mensagem: "Erro interno do servidor",
-          });
-        }
+    return res.status(201).json({
+      sucesso: true,
+      tipo: "sucesso",
+      titulo: "Cadastro realizado!",
+      mensagem: "Estudante registrado com sucesso!",
+      redirect: "/",
+      dados: {
+        idEstudante: novoEstudante.idEstudante,
+        nomeEstudante: novoEstudante.nomeEstudante,
+        numEstudante: novoEstudante.numEstudante,
+        foto: novoEstudante.fotoEstudante,
       },
-    );
+    });
   } catch (erro) {
     console.error("Erro no endpoint de registro:", erro);
-    res.status(500).json({
+
+    if (
+      req.body.nomeFoto &&
+      fs.existsSync(
+        path.join(
+          __dirname,
+          "../../client/src/img/estudantes",
+          req.body.nomeFoto,
+        ),
+      )
+    ) {
+      fs.unlinkSync(
+        path.join(
+          __dirname,
+          "../../client/src/img/estudantes",
+          req.body.nomeFoto,
+        ),
+      );
+      console.log("Imagem removida devido ao erro");
+    }
+
+    return res.status(500).json({
       sucesso: false,
       tipo: "erro",
       titulo: "Erro interno",

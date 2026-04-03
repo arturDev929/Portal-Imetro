@@ -1,5 +1,9 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
+const CategoriaCurso = require("./categoriacursoModel");
+const Curso = require("./cursoModel");
+const Disciplina = require("./disciplinaModel");
+const AnoCurricular = require("./anoCurricularModel");
 
 const Semestre = conexao.define(
   "semestre",
@@ -25,5 +29,7 @@ const Semestre = conexao.define(
     timestamps: false,
   },
 );
+
+
 
 module.exports = Semestre;

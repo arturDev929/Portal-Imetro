@@ -1,5 +1,10 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
+const CategoriaCurso = require("./categoriacursoModel");
+const Funcionario = require("./funcionarioModel");
+const Professor = require("./professorModel");
+const Disciplina = require("./disciplinaModel");
+const CargoFuncionario = require("./cargoFuncionarioModel");
 
 const Admimetro = conexao.define(
   "admimetro",
@@ -29,6 +34,9 @@ const Admimetro = conexao.define(
     freezeTableName: true,
   },
 );
+
+
+
 
 conexao.sync();
 

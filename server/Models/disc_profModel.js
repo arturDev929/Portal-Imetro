@@ -17,4 +17,5 @@ const DiscProf = conexao.define(
     timestamps: false,
   },
 );
+
 module.exports = DiscProf;

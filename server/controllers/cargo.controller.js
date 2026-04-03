@@ -1,4 +1,4 @@
-const { CargoFuncionario } = require("../Models/cargoFuncionarioModel");
+const CargoFuncionario = require("../Models/cargoFuncionarioModel");
 
 const cargosDisponiveis = async (req, res) => {
   try {

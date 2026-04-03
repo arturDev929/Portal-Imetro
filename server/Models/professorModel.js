@@ -1,5 +1,7 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
+const Disciplina = require("./disciplinaModel");
+const DiscProf = require("./disc_profModel");
 const Professor = conexao.define(
   "professor",
   {
@@ -29,4 +31,6 @@ const Professor = conexao.define(
     timestamps: false,
   },
 );
+
 module.exports = Professor;
+ 

@@ -1,7 +1,10 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
+const CategoriaCurso = require("./categoriacursoModel");
+const AnoCurricular = require("./anoCurricularModel");
+const EstudanteInscricao = require("./EstudanteInscricaoModel");
 
-const Curso = sequelize.define(
+const Curso = conexao.define(
   "curso",
   {
     idcurso: {
@@ -24,5 +27,6 @@ const Curso = sequelize.define(
     freezeTableName: true,
   },
 );
+
 
 module.exports = Curso;

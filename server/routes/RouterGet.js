@@ -2,487 +2,539 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../infra/conexao");
 const { cargosDisponiveis } = require("../controllers/cargo.controller");
+const CategoriaCurso = require("../Models/categoriacursoModel");
+const Curso = require("../Models/cursoModel");
+const Disciplina = require("../Models/disciplinaModel");
+const { Sequelize } = require("sequelize");
+const Semestre = require("../Models/semestreModel");
+const EstudanteInscricao = require("../Models/EstudanteInscricaoModel");
+const { Op, fn, col, literal } = Sequelize;
+const CargoFuncionario = require("../Models/cargoFuncionarioModel");
+const CargoFuncionarioRelation = require("../Models/cargoFuncionarioRelationModel");
+const Funcionario = require("../Models/funcionarioModel");
+const Professor = require("../Models/professorModel");
+const AnoCurricular = require("../Models/anoCurricularModel");
+const Periodo = require("../Models/periodoModel");
+const DiscProf = require("../Models/disc_profModel");
 
-router.get("/totalcategoriacurso", (req, res) => {
-  const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
-  conexao.query(sql, (error, results) => {
-    if (error) {
-      console.log("Erro ao buscar categorias: ", error);
-      res.status(500).json({
-        erroe: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.json(results);
-    }
-  });
+router.get("/totalcategoriacurso", async (req, res) => {
+  try {
+    const total = await CategoriaCurso.count();
+
+    res.json({
+      total_categorias: total,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar categorias:", error);
+    res.status(500).json({
+      erro: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
 router.get("/obterImagem/:nomeArquivo", (req, res) => {
-  const { nomeArquivo } = req.params;
-  const caminhoImagem = path.join(
-    __dirname,
-    "../../client/src/img/estudantes",
-    nomeArquivo,
-  );
+  try {
+    const { nomeArquivo } = req.params;
 
-  if (fs.existsSync(caminhoImagem)) {
-    res.sendFile(caminhoImagem);
-  } else {
-    res.status(404).json({
+    const caminhoImagem = path.join(
+      __dirname,
+      "../../client/src/img/estudantes",
+      nomeArquivo,
+    );
+
+    if (fs.existsSync(caminhoImagem)) {
+      return res.sendFile(caminhoImagem);
+    }
+
+    return res.status(404).json({
       sucesso: false,
       tipo: "erro",
       titulo: "Imagem não encontrada",
       mensagem: "Imagem não encontrada",
     });
+  } catch (erro) {
+    return res.status(500).json({ error: erro });
   }
 });
 
-router.get("/totallicenciaturas", (req, res) => {
-  const sql = "SELECT COUNT(*) as total_licenciaturas FROM curso;";
-  conexao.query(sql, (error, results) => {
-    if (error) {
-      console.log("Erro ao buscar licenciaturas: ", error);
-      res.status(500).json({
-        erroe: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.json(results);
-    }
-  });
+router.get("/totallicenciaturas", async (req, res) => {
+  try {
+    const total = await Curso.count();
+
+    res.json({
+      total_licenciaturas: total,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar licenciaturas:", error);
+    res.status(500).json({
+      erro: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/totaldisciplina", (req, res) => {
-  const sql = "SELECT COUNT(*) as total_disciplinas FROM disciplina";
-  conexao.query(sql, (error, results) => {
-    if (error) {
-      console.log("Erro ao buscar disciplinas: ", error);
-      res.status(500).json({
-        erroe: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.json(results);
-    }
-  });
+router.get("/totaldisciplina", async (req, res) => {
+  try {
+    const total = await Disciplina.count();
+
+    res.json({
+      total_disciplinas: total,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas:", error);
+    res.status(500).json({
+      erro: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/dadosGraficosCategoria", (req, res) => {
-  const sql =
-    "SELECT categoriacurso.categoriacurso, COUNT(curso.idcurso) as total_cursos FROM categoriacurso LEFT JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso GROUP BY categoriacurso.idcategoriacurso, categoriacurso.categoriacurso ORDER BY total_cursos DESC LIMIT 100";
+router.get("/dadosGraficosCategoria", async (req, res) => {
+  try {
+    const dados = await CategoriaCurso.findAll({
+      attributes: [
+        "categoriacurso",
+        [
+          Sequelize.fn("COUNT", Sequelize.col("Cursos.idcurso")),
+          "total_cursos",
+        ],
+      ],
+      include: [
+        {
+          model: Curso,
+          attributes: [],
+          required: false,
+        },
+      ],
+      group: [
+        "CategoriaCurso.idcategoriacurso",
+        "CategoriaCurso.categoriacurso",
+      ],
+      order: [[Sequelize.literal("total_cursos"), "DESC"]],
+      limit: 100,
+    });
 
-  conexao.query(sql, (error, results) => {
-    if (error) {
-      console.log("Erro ao buscar dados para gráfico: ", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.json(results);
-    }
-  });
+    res.json(dados);
+  } catch (error) {
+    console.error("Erro ao buscar dados para gráfico:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/totalDisciplinasPorCurso", (req, res) => {
-  const sql = `
-        SELECT 
-            c.curso,
-            c.idcurso,
-            COUNT(s.idsemestre) as total_disciplinas
-        FROM curso c
-        INNER JOIN semestre s ON c.idcurso = s.idcurso
-        GROUP BY c.idcurso, c.curso
-        ORDER BY total_disciplinas DESC
-        LIMIT 100
-    `;
+router.get("/totalDisciplinasPorCurso", async (req, res) => {
+  try {
+    const dados = await Curso.findAll({
+      attributes: [
+        "idcurso",
+        "curso",
+        [
+          Sequelize.fn("COUNT", Sequelize.col("Semestres.idsemestre")),
+          "total_disciplinas",
+        ],
+      ],
+      include: [
+        {
+          model: Semestre,
+          attributes: [],
+          required: true,
+        },
+      ],
+      group: ["Curso.idcurso", "Curso.curso"],
+      order: [[Sequelize.literal("total_disciplinas"), "DESC"]],
+      limit: 100,
+    });
 
-  conexao.query(sql, (error, results) => {
-    if (error) {
-      console.log("Erro ao buscar total de disciplinas por curso: ", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.json(results);
-    }
-  });
+    res.json(dados);
+  } catch (error) {
+    console.error("Erro ao buscar total de disciplinas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/categoriaCurso", (req, res) => {
-  const sql =
-    "SELECT idcategoriacurso, categoriacurso FROM categoriacurso ORDER BY categoriacurso ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar categorias:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+router.get("/categoriaCurso", async (req, res) => {
+  try {
+    const categorias = await CategoriaCurso.findAll({
+      attributes: ["idcategoriacurso", "categoriacurso"],
+      order: [["categoriacurso", "ASC"]],
+    });
+
+    res.status(200).json(categorias);
+  } catch (error) {
+    console.error("Erro ao buscar categorias:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/Cursos", (req, res) => {
-  const sql =
-    "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar cursos:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-
+router.get("/anosCurriculares", async (req, res) => {
+  try {
+    const anos = await AnoCurricular.findAll({
+      attributes: ["idanocurricular", "anocurricular", "idcurso"],
+      order: [["anocurricular", "ASC"]],
+    });
+    res.status(200).json(anos);
+  } catch (error) {
+    console.error("Erro ao buscar anos curriculares:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
+});
+router.get("/Cursos", async (req, res) => {
+  try {
+    const cursos = await Curso.findAll({
+      include: [{ model: CategoriaCurso, attributes: ["categoriacurso"] }],
+      order: [[CategoriaCurso, "categoriacurso", "ASC"]],
+      limit: 100,
+    });
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error("Erro ao buscar cursos:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/anosCurriculares", (req, res) => {
-  const sql =
-    "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular ORDER BY anocurricular ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar anos curriculares:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+router.get("/semestres", async (req, res) => {
+  try {
+    const semestres = await Semestre.findAll({
+      attributes: [
+        "idsemestre",
+        "idcategoriacurso",
+        "idcurso",
+        "iddisciplina",
+        "semestre",
+        "idanocurricular",
+      ],
+      order: [["semestre", "ASC"]],
+    });
+    res.status(200).json(semestres);
+  } catch (error) {
+    console.error("Erro ao buscar semestres:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/Disciplinas", (req, res) => {
-  const sql =
-    "SELECT iddisciplina, disciplina FROM disciplina ORDER BY disciplina ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar disciplinas:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+router.get("/Disciplinas", async (req, res) => {
+  try {
+    const disciplinas = await Disciplina.findAll({
+      attributes: ["iddisciplina", "disciplina"],
+      order: [["disciplina", "ASC"]],
+    });
+    res.status(200).json(disciplinas);
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/semestres", (req, res) => {
-  const sql =
-    "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre ORDER BY semestre ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar semestres:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/periodos", (req, res) => {
-  const sql =
-    "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma FROM periodo ORDER BY turma ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar períodos:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/categoriaCurso/:id", (req, res) => {
+router.get("/categoriaCurso/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+  try {
+    const categoria = await CategoriaCurso.findByPk(id, {
+      attributes: ["idcategoriacurso", "categoriacurso"],
+    });
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar categoria:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Categoria não encontrada" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+    if (!categoria) {
+      return res.status(404).json({ error: "Categoria não encontrada" });
     }
-  });
+
+    res.status(200).json(categoria);
+  } catch (error) {
+    console.error("Erro ao buscar categoria:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/curso/:id", (req, res) => {
+router.get("/curso/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
+  try {
+    const curso = await Curso.findByPk(id, {
+      attributes: ["idcurso", "curso", "idcategoriacurso"],
+    });
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar curso:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Curso não encontrado" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+    if (!curso) {
+      return res.status(404).json({ error: "Curso não encontrado" });
     }
-  });
-});
 
-router.get("/disciplina/:id", (req, res) => {
+    res.status(200).json(curso);
+  } catch (error) {
+    console.error("Erro ao buscar curso:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
+});
+router.get("/disciplina/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar disciplina:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Disciplina não encontrada" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+  try {
+    const disciplina = await Disciplina.findByPk(id, {
+      attributes: ["iddisciplina", "disciplina"],
+    });
+
+    if (!disciplina) {
+      return res.status(404).json({ error: "Disciplina não encontrada" });
     }
-  });
+
+    res.status(200).json(disciplina);
+  } catch (error) {
+    console.error("Erro ao buscar disciplina:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
+});
+router.get("/periodos", async (req, res) => {
+  try {
+    const periodos = await Periodo.findAll({
+      attributes: [
+        "idperiodo",
+        "idanocurricular",
+        "idcategoriacurso",
+        "idcurso",
+        "periodo",
+        "turma",
+      ],
+      order: [["turma", "ASC"]],
+    });
+    res.status(200).json(periodos);
+  } catch (error) {
+    console.error("Erro ao buscar períodos:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/anoCurricular/:id", (req, res) => {
+router.get("/anoCurricular/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular WHERE idcurso = ? ORDER BY anocurricular DESC LIMIT 100";
+  try {
+    const anoCurricular = await AnoCurricular.findOne({
+      where: { idcurso: id },
+      order: [["anocurricular", "DESC"]],
+      limit: 1,
+    });
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar ano curricular:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Ano curricular não encontrado" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+    if (!anoCurricular) {
+      return res.status(404).json({ error: "Ano curricular não encontrado" });
     }
-  });
+
+    res.status(200).json(anoCurricular);
+  } catch (error) {
+    console.error("Erro ao buscar ano curricular:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/semestre/:id", (req, res) => {
+router.get("/semestre/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre WHERE idsemestre = ?";
+  try {
+    const semestre = await Semestre.findByPk(id);
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar semestre:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Semestre não encontrado" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+    if (!semestre) {
+      return res.status(404).json({ error: "Semestre não encontrado" });
     }
-  });
+
+    res.status(200).json(semestre);
+  } catch (error) {
+    console.error("Erro ao buscar semestre:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/periodo/:id", (req, res) => {
+router.get("/periodo/:id", async (req, res) => {
   const { id } = req.params;
-  const sql =
-    "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma FROM periodo WHERE idperiodo = ?";
+  try {
+    const periodo = await Periodo.findByPk(id);
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar período:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Período não encontrado" });
-      } else {
-        res.status(200).json(result[0]);
-      }
+    if (!periodo) {
+      return res.status(404).json({ error: "Período não encontrado" });
     }
-  });
+
+    res.status(200).json(periodo);
+  } catch (error) {
+    console.error("Erro ao buscar período:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/ProfessoresDesativados", (req, res) => {
-  const sql =
-    "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((professor) => ({
-        ...professor,
-        fotoUrl: professor.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
-          : null,
-      }));
-      res.status(200).json(professoresComFoto);
-    }
-  });
-});
-router.get("/Professores", (req, res) => {
-  const sql =
-    "SELECT * FROM professor WHERE estado = 'Ativo' ORDER BY nomeprofessor ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((professor) => ({
-        ...professor,
-        fotoUrl: professor.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
-          : null,
-      }));
-      res.status(200).json(professoresComFoto);
-    }
-  });
+router.get("/ProfessoresDesativados", async (req, res) => {
+  try {
+    const professores = await Professor.findAll({
+      where: { estado: "Desativado" },
+      order: [["nomeprofessor", "ASC"]],
+    });
 
+    const professoresComFoto = professores.map((prof) => ({
+      ...prof.dataValues,
+      fotoUrl: prof.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        : null,
+    }));
+
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores desativados:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/CategoriaCursosAno", (req, res) => {
-  const sql =
-    "SELECT categoriacurso.categoriacurso, categoriacurso.idcategoriacurso, curso.curso, curso.idcurso, anocurricular.anocurricular, anocurricular.idanocurricular FROM categoriacurso INNER JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso INNER JOIN anocurricular ON curso.idcurso = anocurricular.idcurso ORDER BY anocurricular.anocurricular AND curso.curso ASC LIMIT 500";
+router.get("/Professores", async (req, res) => {
+  try {
+    const professores = await Professor.findAll({
+      where: { estado: "Ativo" },
+      order: [["nomeprofessor", "ASC"]],
+    });
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar dados combinados:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+    const professoresComFoto = professores.map((prof) => ({
+      ...prof.dataValues,
+      fotoUrl: prof.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        : null,
+    }));
+
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/disciplinasPorCurso/:idcurso", (req, res) => {
+router.get("/CategoriaCursosAno", async (req, res) => {
+  try {
+    const dados = await CategoriaCurso.findAll({
+      include: [
+        {
+          model: Curso,
+          include: [
+            {
+              model: AnoCurricular,
+            },
+          ],
+        },
+      ],
+      order: [
+        [Curso, AnoCurricular, "anocurricular", "ASC"],
+        [Curso, "curso", "ASC"],
+      ],
+      limit: 500,
+    });
+
+    res.status(200).json(dados);
+  } catch (error) {
+    console.error("Erro ao buscar dados combinados:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
+});
+
+router.get("/disciplinasPorCurso/:idcurso", async (req, res) => {
   const { idcurso } = req.params;
 
-  const sql = `
-        SELECT 
-            d.iddisciplina,
-            d.disciplina,
-            s.idsemestre,
-            s.semestre,
-            a.anocurricular,
-            c.curso,
-            cc.categoriacurso
-        FROM semestre s
-        INNER JOIN disciplina d ON s.iddisciplina = d.iddisciplina
-        INNER JOIN anocurricular a ON s.idanocurricular = a.idanocurricular
-        INNER JOIN curso c ON s.idcurso = c.idcurso
-        INNER JOIN categoriacurso cc ON s.idcategoriacurso = cc.idcategoriacurso
-        WHERE s.idcurso = ?
-        ORDER BY a.anocurricular ASC, s.semestre ASC, d.disciplina ASC
-    `;
+  try {
+    const resultados = await Semestre.findAll({
+      where: { idcurso },
+      attributes: ["idsemestre", "semestre"],
+      include: [
+        { model: Disciplina, attributes: ["iddisciplina", "disciplina"] },
+        { model: AnoCurricular, attributes: ["anocurricular"] },
+        {
+          model: Curso,
+          attributes: ["curso"],
+          include: [{ model: CategoriaCurso, attributes: ["categoriacurso"] }],
+        },
+      ],
+      order: [
+        [AnoCurricular, "anocurricular", "ASC"],
+        ["semestre", "ASC"],
+        [Disciplina, "disciplina", "ASC"],
+      ],
+      raw: true,
+      nest: true,
+    });
 
-  conexao.query(sql, [idcurso], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar disciplinas do curso:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
+    if (resultados.length === 0) {
+      const cursoInfo = await Curso.findOne({
+        where: { idcurso },
+        include: [{ model: CategoriaCurso, attributes: ["categoriacurso"] }],
+        attributes: ["curso"],
+        raw: true,
+        nest: true,
       });
-    } else {
-      if (result.length === 0) {
-        const sqlCurso =
-          "SELECT c.curso, cc.categoriacurso FROM curso c INNER JOIN categoriacurso cc ON c.idcategoriacurso = cc.idcategoriacurso WHERE c.idcurso = ?";
-        conexao.query(sqlCurso, [idcurso], (errorCurso, resultCurso) => {
-          if (errorCurso) {
-            res.status(200).json({
-              curso: "Curso não identificado",
-              categoria: "",
-              totalDisciplinas: 0,
-              disciplinas: {},
-            });
-          } else {
-            res.status(200).json({
-              curso: resultCurso[0]?.curso || "Curso não identificado",
-              categoria: resultCurso[0]?.categoriacurso || "",
-              totalDisciplinas: 0,
-              disciplinas: {},
-            });
-          }
-        });
-        return;
-      }
 
-      const disciplinasAgrupadas = result.reduce((acc, disciplina) => {
-        const anoKey = `Ano ${disciplina.anocurricular}`;
-
-        if (!acc[anoKey]) {
-          acc[anoKey] = {};
-        }
-
-        const semestreKey = `Semestre ${disciplina.semestre}`;
-
-        if (!acc[anoKey][semestreKey]) {
-          acc[anoKey][semestreKey] = [];
-        }
-
-        acc[anoKey][semestreKey].push({
-          id: disciplina.iddisciplina,
-          idsemestre: disciplina.idsemestre,
-          nome: disciplina.disciplina,
-        });
-
-        return acc;
-      }, {});
-
-      res.status(200).json({
-        curso: result[0]?.curso || "Curso não encontrado",
-        categoria: result[0]?.categoriacurso || "",
-        totalDisciplinas: result.length,
-        disciplinas: disciplinasAgrupadas,
+      return res.status(200).json({
+        curso: cursoInfo?.curso || "Curso não identificado",
+        categoria: cursoInfo?.CategoriaCurso?.categoriacurso || "",
+        totalDisciplinas: 0,
+        disciplinas: {},
       });
     }
-  });
+
+    const disciplinasAgrupadas = resultados.reduce((acc, item) => {
+      const anoKey = `Ano ${item.AnoCurricular.anocurricular}`;
+      if (!acc[anoKey]) acc[anoKey] = {};
+
+      const semestreKey = `Semestre ${item.semestre}`;
+      if (!acc[anoKey][semestreKey]) acc[anoKey][semestreKey] = [];
+
+      acc[anoKey][semestreKey].push({
+        id: item.Disciplina.iddisciplina,
+        idsemestre: item.idsemestre,
+        nome: item.Disciplina.disciplina,
+      });
+
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      curso: resultados[0]?.Curso?.curso || "Curso não encontrado",
+      categoria: resultados[0]?.Curso?.CategoriaCurso?.categoriacurso || "",
+      totalDisciplinas: resultados.length,
+      disciplinas: disciplinasAgrupadas,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas do curso:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
 router.get("/professorVinculado/:id", async (req, res) => {
@@ -502,7 +554,6 @@ router.get("/professorVinculado/:id", async (req, res) => {
         WHERE disciplina.iddisciplina = ? AND estado = 'Ativo'
         ORDER BY professor.nomeprofessor ASC
     `;
-
 
   conexao.query(sql, [id], (error, result) => {
     if (error) {
@@ -540,7 +591,6 @@ router.get("/professorDisponivel/:id", async (req, res) => {
         ORDER BY professor.nomeprofessor ASC
     `;
 
-
   conexao.query(sql, [id], (error, result) => {
     if (error) {
       console.error("Erro ao buscar professores disponíveis:", error);
@@ -558,581 +608,724 @@ router.get("/professorDisponivel/:id", async (req, res) => {
       res.status(200).json(professoresComFoto);
     }
   });
-
 });
 
-router.get("/estatisticasProfessores", (req, res) => {
-  const sql = `
-        SELECT 
-            COUNT(*) as totalProfessores,
-            COUNT(CASE WHEN fotoprofessor IS NOT NULL THEN 1 END) as professoresComFoto,
-            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as professoresComTitulacao
-        FROM professor WHERE estado = 'Ativo'
-    `;
+router.get("/estatisticasProfessores", async (req, res) => {
+  try {
+    const stats = await Professor.findOne({
+      attributes: [
+        [
+          Sequelize.fn("COUNT", Sequelize.col("idprofessor")),
+          "totalProfessores",
+        ],
+        [
+          Sequelize.fn(
+            "COUNT",
+            Sequelize.literal("CASE WHEN fotoprofessor IS NOT NULL THEN 1 END"),
+          ),
+          "professoresComFoto",
+        ],
+        [
+          Sequelize.fn(
+            "COUNT",
+            Sequelize.literal(
+              "CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END",
+            ),
+          ),
+          "professoresComTitulacao",
+        ],
+      ],
+      where: { estado: "Ativo" },
+    });
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar estatísticas de professores:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result[0] || {});
-    }
-  });
+    res.status(200).json(stats || {});
+  } catch (error) {
+    console.error("Erro ao buscar estatísticas de professores:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/distribuicaoTitulacao", (req, res) => {
-  const sql = `
-        SELECT 
-            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
-            COUNT(*) as quantidade
-        FROM professor  WHERE estado = 'Ativo'
-        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
-        ORDER BY quantidade DESC
-    `;
+router.get("/distribuicaoTitulacao", async (req, res) => {
+  try {
+    const distribuicao = await Professor.findAll({
+      attributes: [
+        [
+          Sequelize.fn(
+            "COALESCE",
+            Sequelize.col("titulacaoprofessor"),
+            "Não informado",
+          ),
+          "titulacao",
+        ],
+        [Sequelize.fn("COUNT", Sequelize.col("idprofessor")), "quantidade"],
+      ],
+      where: { estado: "Ativo" },
+      group: ["titulacao"],
+      order: [[Sequelize.literal("quantidade"), "DESC"]],
+    });
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar distribuição por titulação:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+    res.status(200).json(distribuicao);
+  } catch (error) {
+    console.error("Erro ao buscar distribuição por titulação:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/professoresPorDisciplina", (req, res) => {
-  const sql = `
-        SELECT 
-            d.disciplina,
-            d.iddisciplina,
-            COUNT(dp.idprofessor) as totalProfessores,
-            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professores
-        FROM disc_prof dp
-        RIGHT JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
-        LEFT JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
-        GROUP BY d.iddisciplina, d.disciplina
-        ORDER BY totalProfessores DESC, d.disciplina ASC
-    `;
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores por disciplina:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+router.get("/professoresPorDisciplina", async (req, res) => {
+  try {
+    const resultados = await Disciplina.findAll({
+      attributes: [
+        "iddisciplina",
+        "disciplina",
+        [
+          Sequelize.fn("COUNT", Sequelize.col("disc_profs.idprofessor")),
+          "totalProfessores",
+        ],
+        [
+          Sequelize.fn(
+            "STRING_AGG",
+            Sequelize.fn("DISTINCT", Sequelize.col("professors.nomeprofessor")),
+            ", ",
+          ),
+          "professores",
+        ],
+      ],
+      include: [
+        {
+          model: DiscProf,
+          as: "disc_profs",
+          required: false,
+          include: [
+            {
+              model: Professor,
+              as: "professors",
+              where: { estado: "Ativo" },
+              required: false,
+            },
+          ],
+        },
+      ],
+      group: ["Disciplina.iddisciplina", "Disciplina.disciplina"],
+      order: [
+        [Sequelize.literal("totalProfessores"), "DESC"],
+        ["disciplina", "ASC"],
+      ],
+    });
+
+    res.status(200).json(resultados);
+  } catch (error) {
+    console.error("Erro ao buscar professores por disciplina:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
-router.get("/disciplinasMaisMinistradas", (req, res) => {
-  const sql = `
-        SELECT 
-            d.disciplina,
-            COUNT(DISTINCT dp.idprofessor) as totalProfessores,
-            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professoresNomes
-        FROM disc_prof dp
-        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
-        INNER JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
-        GROUP BY d.iddisciplina, d.disciplina
-        HAVING totalProfessores > 0
-        ORDER BY totalProfessores DESC
-        LIMIT 10
-    `;
+//const { Professor, DiscProf, Disciplina, Sequelize } = require("../models");
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar disciplinas mais ministradas:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+router.get("/disciplinasMaisMinistradas", async (req, res) => {
+  try {
+    const disciplinas = await DiscProf.findAll({
+      attributes: [
+        [col("Disciplina.disciplina"), "disciplina"],
+        [fn("COUNT", fn("DISTINCT", col("idprofessor"))), "totalProfessores"],
+        [
+          fn(
+            "GROUP_CONCAT",
+            literal("DISTINCT `Professor`.`nomeprofessor` SEPARATOR ', '"),
+          ),
+          "professoresNomes",
+        ],
+      ],
+      include: [
+        {
+          model: Disciplina,
+          attributes: [],
+        },
+        {
+          model: Professor,
+          attributes: [],
+          where: { estado: "Ativo" },
+        },
+      ],
+      group: ["iddisciplina", "Disciplina.disciplina"],
+      having: literal("totalProfessores > 0"),
+      order: [[literal("totalProfessores"), "DESC"]],
+      limit: 10,
+      raw: true,
+    });
+
+    res.status(200).json(disciplinas);
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas mais ministradas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/professoresMaisAtivos", (req, res) => {
-  const sql = `
-        SELECT 
-            p.idprofessor,
-            p.nomeprofessor,
-            p.titulacaoprofessor,
-            p.fotoprofessor,
-            COUNT(DISTINCT dp.iddisciplina) as totalDisciplinas,
-            GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') as disciplinas
-        FROM disc_prof dp
-        INNER JOIN professor p ON dp.idprofessor = p.idprofessor
-        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina 
-        WHERE estado = 'Ativo'
-        GROUP BY p.idprofessor, p.nomeprofessor, p.titulacaoprofessor
-        HAVING totalDisciplinas > 0
-        ORDER BY totalDisciplinas DESC
-        LIMIT 10
-    `;
+router.get("/professoresMaisAtivos", async (req, res) => {
+  try {
+    const professores = await DiscProf.findAll({
+      attributes: [
+        [col("Professor.idprofessor"), "idprofessor"],
+        [col("Professor.nomeprofessor"), "nomeprofessor"],
+        [col("Professor.titulacaoprofessor"), "titulacaoprofessor"],
+        [col("Professor.fotoprofessor"), "fotoprofessor"],
+        [fn("COUNT", fn("DISTINCT", col("iddisciplina"))), "totalDisciplinas"],
+        [
+          fn(
+            "GROUP_CONCAT",
+            literal("DISTINCT `Disciplina`.`disciplina` SEPARATOR ', '"),
+          ),
+          "disciplinas",
+        ],
+      ],
+      include: [
+        {
+          model: Professor,
+          attributes: [],
+          where: { estado: "Ativo" },
+        },
+        {
+          model: Disciplina,
+          attributes: [],
+        },
+      ],
+      group: [
+        "Professor.idprofessor",
+        "Professor.nomeprofessor",
+        "Professor.titulacaoprofessor",
+        "Professor.fotoprofessor",
+      ],
+      having: literal("totalDisciplinas > 0"),
+      order: [[literal("totalDisciplinas"), "DESC"]],
+      limit: 10,
+      raw: true,
+    });
 
+    const professoresComFoto = professores.map((p) => ({
+      ...p,
+      fotoUrl: p.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${p.fotoprofessor}`
+        : null,
+    }));
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores mais ativos:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((a) => ({
-        ...a,
-        fotoUrl: a.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}`
-          : null,
-      }));
-      res.status(200).json(professoresComFoto);
-    }
-  });
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores mais ativos:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/professoresSemDisciplinas", (req, res) => {
-  const sql = `
-        SELECT 
-            p.idprofessor,
-            p.nomeprofessor,
-            p.titulacaoprofessor
-        FROM professor p
-        LEFT JOIN disc_prof dp ON p.idprofessor = dp.idprofessor
-        WHERE dp.idprofessor IS NULL AND estado = 'Ativo'
-        ORDER BY p.nomeprofessor ASC
-    `;
+router.get("/professoresSemDisciplinas", async (req, res) => {
+  try {
+    const professores = await Professor.findAll({
+      where: { estado: "Ativo" },
+      include: [
+        {
+          model: DiscProf,
+          required: false,
+        },
+      ],
+      having: Sequelize.literal("COUNT(disc_prof.idprofessor) = 0"),
+      group: ["Professor.idprofessor"],
+      order: [["nomeprofessor", "ASC"]],
+      attributes: ["idprofessor", "nomeprofessor", "titulacaoprofessor"],
+    });
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores sem disciplinas:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+    res.status(200).json(professores);
+  } catch (error) {
+    console.error("Erro ao buscar professores sem disciplinas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
 router.get("/professorVinculadoDisciplinas/:id", async (req, res) => {
   const { id } = req.params;
 
-  const sql = `
-        SELECT 
-            disc_prof.iddiscprof,
-            disciplina.disciplina,
-            disciplina.iddisciplina
-        FROM disc_prof 
-        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        WHERE disc_prof.idprofessor = ?
-        ORDER BY disciplina.disciplina ASC
-    `;
+  try {
+    const disciplinas = await DiscProf.findAll({
+      where: { idprofessor: id },
+      include: [
+        {
+          model: Disciplina,
+          attributes: ["iddisciplina", "disciplina"],
+        },
+      ],
+      order: [[Disciplina, "disciplina", "ASC"]],
+      attributes: ["iddiscprof"],
+    });
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar disciplinas vinculadas:", error);
-      return res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    }
-
-    res.status(200).json(result);
-  });
+    res.status(200).json(disciplinas);
+  } catch (error) {
+    console.error("Erro ao buscar disciplinas vinculadas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/InformacoesProfessor/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const sqlProfessor = `
-        SELECT 
-            p.idprofessor,
-            p.nomeprofessor,
-            p.fotoprofessor,
-            p.codigoprofessor,
-            p.generoprofessor,
-            p.nacionalidadeprofessor,
-            p.estadocivilprofessor,
-            p.nomepaiprofessor,
-            p.nomemaeprofessor,
-            p.nbiprofessor,
-            p.datanascimentoprofessor,
-            p.bipdfprofessor,
-            p.residenciaprofessor,
-            p.telefoneprofessor,
-            p.whatsappprofessor,
-            p.emailprofessor,
-            p.anoexperienciaprofessor,
-            p.titulacaoprofessor,
-            p.dataadmissaoprofessor,
-            p.tiposanguineoprofessor,
-            p.ibanprofessor,
-            p.condicoesprofessor,
-            contactoemergenciaprofessor
-        FROM professor p
-        WHERE p.idprofessor = ?
-    `;
-
-  const sqlDisciplinas = `
-        SELECT 
-            disciplina.iddisciplina,
-            disciplina.disciplina
-        FROM disc_prof 
-        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        WHERE disc_prof.idprofessor = ?
-        ORDER BY disciplina.disciplina ASC
-    `;
-
-
-  conexao.query(sqlProfessor, [id], (error, professorResult) => {
-    if (error) {
-      console.error("Erro ao buscar dados do professor:", error);
-      return res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    }
-
-    if (professorResult.length === 0) {
-      return res.status(404).json({ error: "Professor não encontrado" });
-    }
-
-    const professor = professorResult[0];
-
-    conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
-      if (error) {
-        console.error("Erro ao buscar disciplinas:", error);
-        return res.status(500).json({
-          error: "Erro interno do servidor",
-          details: error.message,
-
-        });
-      }
-
-      let curriculoUrl = null;
-      if (professor.bipdfprofessor) {
-        curriculoUrl = `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.bipdfprofessor}`;
-      }
-
-      const professorCompleto = {
-        ...professor,
-        fotoUrl: professor.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
-          : "/default-avatar.png",
-        curriculoUrl: curriculoUrl,
-        datanascimentoFormatada: professor.datanascimentoprofessor
-          ? new Date(professor.datanascimentoprofessor)
-              .toISOString()
-              .split("T")[0]
-          : null,
-        dataadmissaoFormatada: professor.dataadmissaoprofessor
-          ? new Date(professor.dataadmissaoprofessor)
-              .toISOString()
-              .split("T")[0]
-          : null,
-        disciplinas: disciplinasResult,
-      };
-
-      res.status(200).json(professorCompleto);
+router.get("/Professores", async (req, res) => {
+  try {
+    const professores = await Professor.findAll({
+      where: { estado: "Ativo" },
+      order: [["nomeprofessor", "ASC"]],
     });
-  });
+
+    const professoresComFoto = professores.map((prof) => ({
+      ...prof.dataValues,
+      fotoUrl: prof.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        : null,
+    }));
+
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
+});
+
+router.get("/CategoriaCursosAno", async (req, res) => {
+  try {
+    const dados = await CategoriaCurso.findAll({
+      include: [
+        {
+          model: Curso,
+          include: [
+            {
+              model: AnoCurricular,
+            },
+          ],
+        },
+      ],
+      order: [
+        [Curso, AnoCurricular, "anocurricular", "ASC"],
+        [Curso, "curso", "ASC"],
+      ],
+      limit: 500,
+    });
+
+    res.status(200).json(dados);
+  } catch (error) {
+    console.error("Erro ao buscar dados combinados:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
 });
 
 router.get("/turmas", async (req, res) => {
-  const sql = `SELECT p.idperiodo, p.periodo, p.turma, p.anoletivo, ct.categoriacurso, c.curso, a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso = ct.idcategoriacurso INNER JOIN curso c ON p.idcurso = c.idcurso INNER JOIN anocurricular a ON p.idanocurricular = a.idanocurricular ORDER BY (p.anoletivo IS NOT NULL AND a.anocurricular IS NOT NULL) DESC,p.anoletivo ASC,a.anocurricular ASC,p.turma ASC LIMIT 10000`;
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores sem disciplinas:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
+  try {
+    const turmas = await Periodo.findAll({
+      include: [
+        { model: CategoriaCurso, attributes: ["categoriacurso"] },
+        { model: Curso, attributes: ["curso"] },
+        { model: AnoCurricular, attributes: ["anocurricular"] },
+      ],
+      order: [
+        ["anoletivo", "ASC"],
+        [AnoCurricular, "anocurricular", "ASC"],
+        ["turma", "ASC"],
+      ],
+      limit: 10000,
+    });
+
+    res.status(200).json(turmas);
+  } catch (error) {
+    console.error("Erro ao buscar turmas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/estatisticasProfessoresDesativados", (req, res) => {
-  const sql = `
-        SELECT 
-            COUNT(*) as totalProfessoresDesativados,
-            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as desativadosComTitulacao
-        FROM professor WHERE estado = 'Desativado'
-    `;
+router.get("/estatisticasProfessoresDesativados", async (req, res) => {
+  try {
+    const total = await Professor.count({ where: { estado: "Desativado" } });
 
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error(
-        "Erro ao buscar estatísticas de professores desativados:",
-        error,
-      );
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result[0] || {});
-    }
-  });
+    const desativadosComTitulacao = await Professor.count({
+      where: {
+        estado: "Desativado",
+        titulacaoprofessor: { [Sequelize.Op.ne]: null },
+      },
+    });
+
+    res.status(200).json({
+      totalProfessoresDesativados: total,
+      desativadosComTitulacao,
+    });
+  } catch (error) {
+    console.error(
+      "Erro ao buscar estatísticas de professores desativados:",
+      error,
+    );
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
+router.get("/professoresDesativados", async (req, res) => {
+  try {
+    const professores = await Professor.findAll({
+      where: { estado: "Desativado" },
+      order: [["nomeprofessor", "ASC"]],
+    });
 
-router.get("/professoresDesativados", (req, res) => {
-  const sql =
-    "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores desativados:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((professor) => ({
-        ...professor,
-        fotoUrl: professor.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
-          : null,
-      }));
-      res.status(200).json(professoresComFoto);
-    }
-  });
+    const professoresComFoto = professores.map((professor) => ({
+      ...professor.toJSON(),
+      fotoUrl: professor.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
+        : null,
+    }));
 
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores desativados:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
-router.get("/distribuicaoTitulacaoDesativados", (req, res) => {
-  const sql = `
-        SELECT 
-            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
-            COUNT(*) as quantidade
-        FROM professor
-        WHERE estado = 'Desativado'
-        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
-        ORDER BY quantidade DESC
-    `;
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error(
-        "Erro ao buscar distribuição por titulação de desativados:",
-        error,
-      );
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/estatisticasFuncionarios", (req, res) => {
-  const sql = `
-        SELECT 
-            COUNT(*) as totalFuncionarios,
-            COUNT(CASE WHEN bi_funcionario IS NOT NULL AND bi_funcionario != '' THEN 1 END) as funcionariosComBI,
-            COUNT(CASE WHEN contacto_funcionario IS NOT NULL AND contacto_funcionario != '' THEN 1 END) as funcionariosComContacto
-        FROM funcionario 
-        WHERE estado_funcionario = 'Ativo'
-    `;
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar estatísticas de funcionários:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result[0] || {});
-    }
-  });
-});
-
-router.get("/estatisticasFuncionariosDesativados", (req, res) => {
-  const sql =
-    "SELECT COUNT(*) as totalFuncionariosDesativados FROM funcionario WHERE estado_funcionario = 'Desativado'";
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error(
-        "Erro ao buscar estatísticas de funcionários desativados:",
-        error,
-      );
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result[0] || {});
-    }
-  });
-});
-
-router.get("/funcionarios", (req, res) => {
-  const sql =
-    "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Ativo' ORDER BY funcionario.nome_funcionario ASC";
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar funcionários:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/funcionariosDesativados", (req, res) => {
-  const sql =
-    "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Desativado' ORDER BY funcionario.nome_funcionario ASC";
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar funcionários desativados:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/funcionario/:id", (req, res) => {
-  const { id } = req.params;
-  const sql =
-    "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.id_funcionario = ?";
-
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar funcionário:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      if (result.length === 0) {
-        res.status(404).json({ error: "Funcionário não encontrado" });
-      } else {
-        res.status(200).json(result[0]);
-      }
-    }
-  });
-});
-
-router.get("/funcionariosPorCargo/:id_cargo", (req, res) => {
-  const { id_cargo } = req.params;
-  const sql =
-    "SELECT f.*, cf.cargo FROM funcionario f INNER JOIN cargo_funcionario_relation cfr ON f.id_funcionario = cfr.id_funcionario INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo WHERE cf.id_cargo = ? AND f.estado_funcionario = 'Ativo' ORDER BY f.nome_funcionario ASC";
-
-  conexao.query(sql, [id_cargo], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar funcionários por cargo:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-router.get("/dashboardFuncionarios", (req, res) => {
-  const sql = `
-        SELECT 
-            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Ativo') as ativos,
-            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Desativado') as desativados,
-            (SELECT COUNT(*) FROM funcionario) as total
-    `;
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar dashboard de funcionários:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      const dados = result[0] || { ativos: 0, desativados: 0, total: 0 };
-      const total = dados.total || 1;
-      const percentAtivos = ((dados.ativos / total) * 100).toFixed(1);
-      const percentDesativados = ((dados.desativados / total) * 100).toFixed(1);
-
-      res.status(200).json({
-        ...dados,
-        percentAtivos,
-        percentDesativados,
-        dadosGrafico: [
-          { nome: "Ativos", valor: dados.ativos, cor: "#003366" },
-          { nome: "Desativados", valor: dados.desativados, cor: "#DC143C" },
+router.get("/distribuicaoTitulacaoDesativados", async (req, res) => {
+  try {
+    const distribuicao = await Professor.findAll({
+      attributes: [
+        [
+          Sequelize.fn(
+            "IFNULL",
+            Sequelize.col("titulacaoprofessor"),
+            "Não informado",
+          ),
+          "titulacao",
         ],
-      });
-    }
-  });
-});
-
-router.get("/cargosFuncionarios", (req, res) => {
-  const sql = `
-        SELECT 
-            cargo_funcionario.cargo as cargo,
-            COUNT(*) as quantidade
-        FROM funcionario 
-        INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario 
-        INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo
-        WHERE estado_funcionario = 'Ativo'
-        GROUP BY cargo_funcionario.cargo
-        ORDER BY quantidade DESC LIMIT 100
-    `;
-
-  conexao.query(sql, (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar cargos de funcionários:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
-    } else {
-      res.status(200).json(result);
-    }
-  });
-});
-
-
-router.get('/cargosDisponiveis', (req, res) => {
-    const sql = "SELECT id_cargo, cargo FROM cargo_funcionario ORDER BY cargo ASC";
-    
-    conexao.query(sql, (error, result) => {
-        if(error) {
-            console.error("Erro ao buscar cargos disponíveis:", error);
-            res.status(500).json({ error: "Erro interno do servidor" });
-        } else {
-            res.status(200).json(result);
-        }
+        [Sequelize.fn("COUNT", Sequelize.col("idprofessor")), "quantidade"],
+      ],
+      where: { estado: "Desativado" },
+      group: [
+        Sequelize.fn(
+          "IFNULL",
+          Sequelize.col("titulacaoprofessor"),
+          "Não informado",
+        ),
+      ],
+      order: [[Sequelize.literal("quantidade"), "DESC"]],
     });
-});
 
-router.get('/EstudantesInscritos', (req, res) => {
-    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL AND estado_estdanteInscrito = 'Pendente' ORDER BY ei.nome_estudanteInscricao ASC";
-    conexao.query(sql, (error, result) => {
-        if(error){
-            console.error("Erro ao buscar professores:", error);
-            res.status(500).json({ 
-                error: "Erro interno do servidor", 
-                details: error.message 
-            });
-        }else{
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            const estudanteFoto = result.map(estudante =>({
-                ...estudante,
-                fotoUrl: estudante.foto_estudanteInscricao ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
-                docUrl: estudante.documento_estudanteInscricao ? `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null,
-                docInscricao: estudante.pdf_InscricaoRupe ? `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}` : null,
-
-            }))
-            res.status(200).json(estudanteFoto);
-        }
+    res.status(200).json(distribuicao);
+  } catch (error) {
+    console.error(
+      "Erro ao buscar distribuição por titulação de desativados:",
+      error,
+    );
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
     });
+  }
 });
-module.exports = router;
 
+router.get("/estatisticasFuncionariosDesativados", async (req, res) => {
+  try {
+    const totalFuncionariosDesativados = await Funcionario.count({
+      where: { estado_funcionario: "Desativado" },
+    });
+
+    res.status(200).json({ totalFuncionariosDesativados });
+  } catch (error) {
+    console.error(
+      "Erro ao buscar estatísticas de funcionários desativados:",
+      error,
+    );
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
+});
+
+router.get("/funcionarios", async (req, res) => {
+  try {
+    const funcionarios = await Funcionario.findAll({
+      where: { estado_funcionario: "Ativo" },
+      include: [
+        {
+          model: CargoFuncionarioRelation,
+          as: "cargo_funcionario_relation",
+          include: [
+            {
+              model: CargoFuncionario,
+              as: "cargo_funcionario",
+              attributes: ["id_cargo", "cargo"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      order: [["nome_funcionario", "ASC"]],
+    });
+
+    res.status(200).json(funcionarios);
+  } catch (error) {
+    console.error("Erro ao buscar funcionários:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
+});
+
+router.get("/funcionariosDesativados", async (req, res) => {
+  try {
+    const funcionarios = await Funcionario.findAll({
+      where: { estado_funcionario: "Desativado" },
+      include: [
+        {
+          model: CargoFuncionarioRelation,
+          as: "cargo_funcionario_relation",
+          include: [
+            {
+              model: CargoFuncionario,
+              as: "cargo_funcionario",
+              attributes: ["id_cargo", "cargo"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      order: [["nome_funcionario", "ASC"]],
+    });
+
+    res.status(200).json(funcionarios);
+  } catch (error) {
+    console.error("Erro ao buscar funcionários desativados:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
+  }
+});
+
+router.get("/funcionario/:id", async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || isNaN(id) || parseInt(id) <= 0) {
+    return res.status(400).json({ error: "ID do funcionário inválido" });
+  }
+
+  try {
+    const funcionario = await Funcionario.findOne({
+      where: { id_funcionario: id },
+      include: [
+        {
+          model: CargoFuncionarioRelation,
+          as: "cargo_funcionario_relation",
+          include: [
+            {
+              model: CargoFuncionario,
+              as: "cargo_funcionario",
+              attributes: ["id_cargo", "cargo"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+    });
+
+    if (!funcionario) {
+      return res.status(404).json({ error: "Funcionário não encontrado" });
+    }
+
+    res.status(200).json(funcionario);
+  } catch (error) {
+    console.error("Erro ao buscar funcionário:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
+});
+
+router.get("/funcionariosPorCargo/:id_cargo", async (req, res) => {
+  const { id_cargo } = req.params;
+
+  if (!id_cargo || isNaN(id_cargo) || parseInt(id_cargo) <= 0) {
+    return res.status(400).json({ error: "ID do cargo inválido" });
+  }
+
+  try {
+    const funcionarios = await Funcionario.findAll({
+      where: { estado_funcionario: "Ativo" },
+      include: [
+        {
+          model: CargoFuncionarioRelation,
+          as: "cargo_funcionario_relation",
+          where: { id_cargo: id_cargo },
+          attributes: [],
+          include: [
+            {
+              model: CargoFuncionario,
+              as: "cargo_funcionario",
+              attributes: ["cargo"],
+            },
+          ],
+        },
+      ],
+      order: [["nome_funcionario", "ASC"]],
+      raw: true,
+      nest: true,
+    });
+
+    res.status(200).json(funcionarios);
+  } catch (error) {
+    console.error("Erro ao buscar funcionários por cargo:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+router.get("/dashboardFuncionarios", async (req, res) => {
+  try {
+    const ativos = await Funcionario.count({
+      where: { estado_funcionario: "Ativo" },
+    });
+    const desativados = await Funcionario.count({
+      where: { estado_funcionario: "Desativado" },
+    });
+    const total = await Funcionario.count();
+
+    const percentAtivos = ((ativos / (total || 1)) * 100).toFixed(1);
+    const percentDesativados = ((desativados / (total || 1)) * 100).toFixed(1);
+
+    res.status(200).json({
+      ativos,
+      desativados,
+      total,
+      percentAtivos,
+      percentDesativados,
+      dadosGrafico: [
+        { nome: "Ativos", valor: ativos, cor: "#003366" },
+        { nome: "Desativados", valor: desativados, cor: "#DC143C" },
+      ],
+    });
+  } catch (error) {
+    console.error("Erro ao buscar dashboard de funcionários:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+router.get("/cargosFuncionarios", async (req, res) => {
+  try {
+    const cargos = await CargoFuncionarioRelation.findAll({
+      attributes: [
+        [Sequelize.col("cargo_funcionario.cargo"), "cargo"],
+        [
+          Sequelize.fn(
+            "COUNT",
+            Sequelize.col("cargo_funcionario_relation.id_funcionario"),
+          ),
+          "quantidade",
+        ],
+      ],
+      include: [
+        {
+          model: Funcionario,
+          as: "funcionario",
+          attributes: [],
+          where: { estado_funcionario: "Ativo" },
+        },
+        {
+          model: CargoFuncionario,
+          as: "cargo_funcionario",
+          attributes: [],
+        },
+      ],
+      group: ["cargo_funcionario.cargo"],
+      order: [[Sequelize.literal("quantidade"), "DESC"]],
+      limit: 100,
+      raw: true,
+    });
+
+    res.status(200).json(cargos);
+  } catch (error) {
+    console.error("Erro ao buscar cargos de funcionários:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+router.get("/cargosDisponiveis", async (req, res) => {
+  try {
+    const cargos = await CargoFuncionario.findAll({
+      attributes: ["id_cargo", "cargo"],
+      order: [["cargo", "ASC"]],
+      raw: true,
+    });
+
+    res.status(200).json(cargos);
+  } catch (error) {
+    console.error("Erro ao buscar cargos disponíveis:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+router.get("/EstudantesInscritos", async (req, res) => {
+  try {
+    const estudantes = await EstudanteInscricao.findAll({
+      where: {
+        pdf_InscricaoRupe: null,
+        estado_estdanteInscrito: "Pendente",
+      },
+      include: [
+        {
+          model: Curso,
+          as: "curso",
+          attributes: ["idcurso", "curso"],
+        },
+      ],
+      order: [["nome_estudanteInscricao", "ASC"]],
+    });
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const estudanteFoto = estudantes.map((estudante) => ({
+      ...estudante.toJSON(),
+      fotoUrl: estudante.foto_estudanteInscricao
+        ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}`
+        : null,
+      docUrl: estudante.documento_estudanteInscricao
+        ? `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}`
+        : null,
+      docInscricao: estudante.pdf_InscricaoRupe
+        ? `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}`
+        : null,
+    }));
+
+    res.status(200).json(estudanteFoto);
+  } catch (error) {
+    console.error("Erro ao buscar estudantes:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
+});
 router.get("/cargosDisponiveis", cargosDisponiveis);
 
-
+module.exports = router;

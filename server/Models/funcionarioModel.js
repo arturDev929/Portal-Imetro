@@ -39,14 +39,6 @@ const Funcionario = conexao.define(
   },
 );
 
-Funcionario.belongsToMany(CargoFuncionario, {
-  through: CargoFuncionarioRelation,
-  foreignKey: "id_funcionario",
-});
 
-CargoFuncionario.belongsToMany(Funcionario, {
-  through: CargoFuncionarioRelation,
-  foreignKey: "id_cargo",
-});
 
 module.exports = Funcionario;
