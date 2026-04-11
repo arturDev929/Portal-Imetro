@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
+const CargoFuncionario = require("./cargoFuncionarioModel");
 const CargoFuncionarioRelation = conexao.define(
   "cargo_funcionario_relation",
   {
@@ -16,4 +17,7 @@ const CargoFuncionarioRelation = conexao.define(
     timestamps: false,
   },
 );
+
+
+
 module.exports = CargoFuncionarioRelation;

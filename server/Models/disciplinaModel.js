@@ -26,4 +26,5 @@ const Disciplina = conexao.define(
 
 
 
+
 module.exports = Disciplina;

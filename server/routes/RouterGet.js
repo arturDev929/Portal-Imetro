@@ -10,12 +10,11 @@ const Semestre = require("../Models/semestreModel");
 const EstudanteInscricao = require("../Models/EstudanteInscricaoModel");
 const { Op, fn, col, literal } = Sequelize;
 const CargoFuncionario = require("../Models/cargoFuncionarioModel");
-const CargoFuncionarioRelation = require("../Models/cargoFuncionarioRelationModel");
-const Funcionario = require("../Models/funcionarioModel");
 const Professor = require("../Models/professorModel");
 const AnoCurricular = require("../Models/anoCurricularModel");
 const Periodo = require("../Models/periodoModel");
 const DiscProf = require("../Models/disc_profModel");
+const { Funcionario, CargoFuncionarioRelation } = require("../Models");
 
 router.get("/totalcategoriacurso", async (req, res) => {
   try {
@@ -94,9 +93,10 @@ router.get("/dadosGraficosCategoria", async (req, res) => {
   try {
     const dados = await CategoriaCurso.findAll({
       attributes: [
+        "idcategoriacurso",
         "categoriacurso",
         [
-          Sequelize.fn("COUNT", Sequelize.col("Cursos.idcurso")),
+          Sequelize.fn("COUNT", Sequelize.col("cursos.idcurso")),
           "total_cursos",
         ],
       ],
@@ -108,11 +108,11 @@ router.get("/dadosGraficosCategoria", async (req, res) => {
         },
       ],
       group: [
-        "CategoriaCurso.idcategoriacurso",
-        "CategoriaCurso.categoriacurso",
+        "categoriacurso.idcategoriacurso",
+        "categoriacurso.categoriacurso",
       ],
       order: [[Sequelize.literal("total_cursos"), "DESC"]],
-      limit: 100,
+      raw: true,
     });
 
     res.json(dados);
@@ -146,6 +146,7 @@ router.get("/totalDisciplinasPorCurso", async (req, res) => {
       group: ["Curso.idcurso", "Curso.curso"],
       order: [[Sequelize.literal("total_disciplinas"), "DESC"]],
       limit: 100,
+      raw: true,
     });
 
     res.json(dados);
@@ -539,77 +540,102 @@ router.get("/disciplinasPorCurso/:idcurso", async (req, res) => {
 
 router.get("/professorVinculado/:id", async (req, res) => {
   const { id } = req.params;
-  const sql = `
-        SELECT 
-            disc_prof.iddiscprof,
-            professor.nomeprofessor,
-            professor.fotoprofessor,
-            professor.idprofessor,
-            professor.titulacaoprofessor,
-            disciplina.disciplina,
-            disciplina.iddisciplina
-        FROM disc_prof 
-        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        INNER JOIN professor ON professor.idprofessor = disc_prof.idprofessor 
-        WHERE disciplina.iddisciplina = ? AND estado = 'Ativo'
-        ORDER BY professor.nomeprofessor ASC
-    `;
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores vinculados:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((a) => ({
-        ...a,
-        fotoUrl: a.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}`
+  try {
+    const result = await DiscProf.findAll({
+      attributes: ["iddiscprof"],
+      include: [
+        {
+          model: Professor,
+          attributes: [
+            "idprofessor",
+            "nomeprofessor",
+            "fotoprofessor",
+            "titulacaoprofessor",
+          ],
+        },
+        {
+          model: Disciplina,
+          attributes: ["iddisciplina", "disciplina"],
+          where: {
+            iddisciplina: id,
+          },
+        },
+      ],
+      where: {
+        estado: "Ativo",
+      },
+      order: [[Professor, "nomeprofessor", "ASC"]],
+    });
+
+    const professoresComFoto = result.map((item) => {
+      const professor = item.Professor;
+
+      return {
+        iddiscprof: item.iddiscprof,
+        idprofessor: professor.idprofessor,
+        nomeprofessor: professor.nomeprofessor,
+        titulacaoprofessor: professor.titulacaoprofessor,
+        disciplina: item.Disciplina.disciplina,
+        iddisciplina: item.Disciplina.iddisciplina,
+        fotoUrl: professor.fotoprofessor
+          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
           : null,
-      }));
-      res.status(200).json(result);
-    }
-  });
+      };
+    });
+
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores vinculados:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
 
 router.get("/professorDisponivel/:id", async (req, res) => {
   const { id } = req.params;
-  const sql = `
-        SELECT 
-            professor.idprofessor,
-            professor.nomeprofessor,
-            professor.titulacaoprofessor,
-            professor.fotoprofessor
-        FROM professor
-        WHERE estado = 'Ativo' AND  professor.idprofessor NOT IN (
-            SELECT disc_prof.idprofessor 
-            FROM disc_prof 
-            WHERE disc_prof.iddisciplina = ? 
-        )
-        ORDER BY professor.nomeprofessor ASC
-    `;
 
-  conexao.query(sql, [id], (error, result) => {
-    if (error) {
-      console.error("Erro ao buscar professores disponíveis:", error);
-      res.status(500).json({
-        error: "Erro interno do servidor",
-        details: error.message,
-      });
-    } else {
-      const professoresComFoto = result.map((a) => ({
-        ...a,
-        fotoUrl: a.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${a.fotoprofessor}`
-          : null,
-      }));
-      res.status(200).json(professoresComFoto);
-    }
-  });
+  try {
+    const result = await Professor.findAll({
+      attributes: [
+        "idprofessor",
+        "nomeprofessor",
+        "titulacaoprofessor",
+        "fotoprofessor",
+      ],
+      where: {
+        estado: "Ativo",
+        idprofessor: {
+          [Op.notIn]: Sequelize.literal(`(
+            SELECT "idprofessor"
+            FROM "disc_prof"
+            WHERE "iddisciplina" = ${id}
+          )`),
+        },
+      },
+      order: [["nomeprofessor", "ASC"]],
+    });
+
+    const professoresComFoto = result.map((professor) => ({
+      idprofessor: professor.idprofessor,
+      nomeprofessor: professor.nomeprofessor,
+      titulacaoprofessor: professor.titulacaoprofessor,
+      fotoUrl: professor.fotoprofessor
+        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
+        : null,
+    }));
+
+    res.status(200).json(professoresComFoto);
+  } catch (error) {
+    console.error("Erro ao buscar professores disponíveis:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
+  }
 });
-
 router.get("/estatisticasProfessores", async (req, res) => {
   try {
     const stats = await Professor.findOne({
@@ -675,7 +701,6 @@ router.get("/distribuicaoTitulacao", async (req, res) => {
   }
 });
 
-
 router.get("/professoresPorDisciplina", async (req, res) => {
   try {
     const resultados = await Disciplina.findAll({
@@ -732,41 +757,34 @@ router.get("/disciplinasMaisMinistradas", async (req, res) => {
   try {
     const disciplinas = await DiscProf.findAll({
       attributes: [
-        [col("Disciplina.disciplina"), "disciplina"],
-        [fn("COUNT", fn("DISTINCT", col("idprofessor"))), "totalProfessores"],
+        [Sequelize.col("disciplina.disciplina"), "disciplina"],
         [
-          fn(
-            "GROUP_CONCAT",
-            literal("DISTINCT `Professor`.`nomeprofessor` SEPARATOR ', '"),
+          Sequelize.fn("COUNT", Sequelize.col("disc_prof.idprofessor")),
+          "totalProfessores",
+        ],
+        [
+          Sequelize.fn(
+            "STRING_AGG",
+            Sequelize.col("professor.nomeprofessor"),
+            ", ",
           ),
           "professoresNomes",
         ],
       ],
       include: [
-        {
-          model: Disciplina,
-          attributes: [],
-        },
-        {
-          model: Professor,
-          attributes: [],
-          where: { estado: "Ativo" },
-        },
+        { model: Disciplina, attributes: [] }, // sem alias
+        { model: Professor, attributes: [], where: { estado: "Ativo" } }, // sem alias
       ],
-      group: ["iddisciplina", "Disciplina.disciplina"],
-      having: literal("totalProfessores > 0"),
-      order: [[literal("totalProfessores"), "DESC"]],
+      group: ["disciplina.disciplina"],
+      order: [[Sequelize.literal('"totalProfessores"'), "DESC"]],
       limit: 10,
       raw: true,
     });
 
-    res.status(200).json(disciplinas);
+    res.json(disciplinas);
   } catch (error) {
-    console.error("Erro ao buscar disciplinas mais ministradas:", error);
-    res.status(500).json({
-      error: "Erro interno do servidor",
-      details: error.message,
-    });
+    console.error("Erro disciplinas:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -830,26 +848,29 @@ router.get("/professoresMaisAtivos", async (req, res) => {
 router.get("/professoresSemDisciplinas", async (req, res) => {
   try {
     const professores = await Professor.findAll({
-      where: { estado: "Ativo" },
-      include: [
-        {
-          model: DiscProf,
-          required: false,
-        },
+      attributes: [
+        "idprofessor",
+        "nomeprofessor",
+        "emailprofessor",
+        "telefoneprofessor",
+        "senhaprofessor",
+        "idadm",
+        "estado",
       ],
-      having: Sequelize.literal("COUNT(disc_prof.idprofessor) = 0"),
-      group: ["Professor.idprofessor"],
+      include: [
+        { model: DiscProf, attributes: [], required: false }, // left join
+      ],
+      where: { estado: "Ativo" },
+      group: ["professor.idprofessor"],
+      having: Sequelize.literal('COUNT("disc_profs"."idprofessor") = 0'),
       order: [["nomeprofessor", "ASC"]],
-      attributes: ["idprofessor", "nomeprofessor", "titulacaoprofessor"],
+      raw: true,
     });
 
-    res.status(200).json(professores);
+    res.json(professores);
   } catch (error) {
-    console.error("Erro ao buscar professores sem disciplinas:", error);
-    res.status(500).json({
-      error: "Erro interno do servidor",
-      details: error.message,
-    });
+    console.error("Erro sem disciplina:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -1014,7 +1035,7 @@ router.get("/distribuicaoTitulacaoDesativados", async (req, res) => {
       attributes: [
         [
           Sequelize.fn(
-            "IFNULL",
+            "COALESCE",
             Sequelize.col("titulacaoprofessor"),
             "Não informado",
           ),
@@ -1025,24 +1046,21 @@ router.get("/distribuicaoTitulacaoDesativados", async (req, res) => {
       where: { estado: "Desativado" },
       group: [
         Sequelize.fn(
-          "IFNULL",
+          "COALESCE",
           Sequelize.col("titulacaoprofessor"),
           "Não informado",
         ),
       ],
       order: [[Sequelize.literal("quantidade"), "DESC"]],
+      raw: true,
     });
 
     res.status(200).json(distribuicao);
   } catch (error) {
-    console.error(
-      "Erro ao buscar distribuição por titulação de desativados:",
-      error,
-    );
-    res.status(500).json({
-      error: "Erro interno do servidor",
-      details: error.message,
-    });
+    console.error("Erro na distribuição desativados:", error);
+    res
+      .status(500)
+      .json({ error: "Erro interno do servidor", details: error.message });
   }
 });
 
@@ -1064,6 +1082,45 @@ router.get("/estatisticasFuncionariosDesativados", async (req, res) => {
   }
 });
 
+router.get("/estatisticasFuncionarios", async (req, res) => {
+  try {
+    const result = await Funcionario.findAll({
+      attributes: [
+        [Sequelize.fn("COUNT", Sequelize.literal("*")), "totalFuncionarios"],
+
+        [
+          Sequelize.fn(
+            "COUNT",
+            Sequelize.literal(`CASE 
+              WHEN bi_funcionario IS NOT NULL AND bi_funcionario != '' 
+              THEN 1 END`),
+          ),
+          "funcionariosComBI",
+        ],
+
+        [
+          Sequelize.fn(
+            "COUNT",
+            Sequelize.literal(`CASE 
+              WHEN contacto_funcionario IS NOT NULL AND contacto_funcionario != '' 
+              THEN 1 END`),
+          ),
+          "funcionariosComContacto",
+        ],
+      ],
+      where: {
+        estado_funcionario: "Ativo",
+      },
+      raw: true,
+    });
+
+    res.status(200).json(result[0] || {});
+  } catch (error) {
+    console.error("Erro ao buscar estatísticas de funcionários:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
 router.get("/funcionarios", async (req, res) => {
   try {
     const funcionarios = await Funcionario.findAll({
@@ -1071,11 +1128,9 @@ router.get("/funcionarios", async (req, res) => {
       include: [
         {
           model: CargoFuncionarioRelation,
-          as: "cargo_funcionario_relation",
           include: [
             {
               model: CargoFuncionario,
-              as: "cargo_funcionario",
               attributes: ["id_cargo", "cargo"],
             },
           ],
@@ -1101,11 +1156,9 @@ router.get("/funcionariosDesativados", async (req, res) => {
       include: [
         {
           model: CargoFuncionarioRelation,
-          as: "cargo_funcionario_relation",
           include: [
             {
               model: CargoFuncionario,
-              as: "cargo_funcionario",
               attributes: ["id_cargo", "cargo"],
             },
           ],

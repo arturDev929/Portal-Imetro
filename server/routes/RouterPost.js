@@ -7,6 +7,15 @@ const fs = require("fs");
 
 const { createCanvas } = require("canvas");
 const { registarEstudante } = require("../controllers/estudante.controller");
+const { Funcionario, CargoFuncionario, CargoFuncionarioRelation } = require("../Models");
+const AnoCurricular = require("../Models/anoCurricularModel");
+const Curso = require("../Models/cursoModel");
+const CategoriaCurso = require("../Models/categoriacursoModel");
+const Periodo = require("../Models/periodoModel");
+const Professor = require("../Models/professorModel");
+const Disciplina = require("../Models/disciplinaModel");
+const DiscProf = require("../Models/disc_profModel");
+const Semestre = require("../Models/semestreModel");
 
 const gerarImagemIniciais = (nome) => {
   try {
@@ -95,286 +104,193 @@ router.post("/registrercategoria", async (req, res) => {
     });
   }
 
-  const verificarCategoriaSQL =
-    "SELECT idcategoriacurso FROM categoriacurso WHERE categoriacurso = ?";
-
-  conexao.query(
-    verificarCategoriaSQL,
-    [categoriacurso],
-    async (erro, resultados) => {
-      if (erro) {
-        console.error("Erro ao verificar Categoria Curso:", erro);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no servidor",
-          mensagem: "Erro interno do servidor",
-        });
+  try {
+   
+    const existe = await CategoriaCurso.findOne({
+      where: {
+        categoriacurso: categoriacurso
       }
+    });
 
+    if (existe) {
+      return res.status(400).json({
+        sucesso: false,
+        tipo: "erro",
+        titulo: "Categoria Existe",
+        mensagem: "Esta categoria já está registrada!",
+      });
+    }
 
-      if (resultados.length > 0) {
+    const novaCategoria = await CategoriaCurso.create({
+      categoriacurso,
+      idAdm
+    });
 
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Categoria Existe",
-          mensagem: "Esta categoria já está registrada!",
-        });
-      }
+    return res.status(201).json({
+      sucesso: true,
+      tipo: "sucesso",
+      titulo: "Categoria Registrada",
+      mensagem: "Categoria registrada com sucesso!",
+      dados: {
+        id: novaCategoria.idcategoriacurso,
+        categoriacurso: novaCategoria.categoriacurso,
+        idAdm: novaCategoria.idAdm
+      },
+    });
 
-      const inserirCategoriaSQL =
-        "INSERT INTO categoriacurso (categoriacurso, idAdm) VALUES (?, ?)";
+  } catch (error) {
+    console.error("Erro ao registrar categoria:", error);
 
-      conexao.query(
-        inserirCategoriaSQL,
-        [categoriacurso, idAdm],
-        (erro, resultados) => {
-          if (erro) {
-            console.error("Erro ao inserir Categoria Curso:", erro);
-            return res.status(500).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Erro no servidor",
-              mensagem: "Erro ao registrar categoria",
-            });
-          }
-
-          return res.status(201).json({
-            sucesso: true,
-            tipo: "sucesso",
-            titulo: "Categoria Registrada",
-            mensagem: "Categoria registrada com sucesso!",
-            dados: {
-              id: resultados.insertId,
-              categoriacurso: categoriacurso,
-              idAdm: idAdm,
-            },
-          });
-        },
-      );
-    },
-  );
+    return res.status(500).json({
+      sucesso: false,
+      tipo: "erro",
+      titulo: "Erro no servidor",
+      mensagem: "Erro interno do servidor",
+    });
+  }
 });
-
 router.post("/registrarcurso", async (req, res) => {
   const { curso, idcategoriacurso } = req.body;
 
   if (!curso || !idcategoriacurso) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "Por favor, preencha todos os campos obrigatórios",
+      mensagem: "Curso e categoria são obrigatórios",
     });
   }
 
-  const verificarCursoSQL = "SELECT idcurso FROM curso WHERE curso = ?";
+  const transaction = await sequelize.transaction();
 
-  conexao.query(verificarCursoSQL, [curso], async (erro, resultados) => {
-    if (erro) {
-      console.error("Erro ao verificar Curso:", erro);
-      return res.status(500).json({
-        sucesso: false,
-        tipo: "erro",
-        titulo: "Erro no servidor",
-        mensagem: "Erro interno do servidor",
-      });
-    }
+  try {
 
-    if (resultados.length > 0) {
+    const existeCurso = await Curso.findOne({
+      where: { curso },
+      transaction,
+    });
+
+    if (existeCurso) {
+      await transaction.rollback();
       return res.status(400).json({
         sucesso: false,
-        tipo: "erro",
-        titulo: "Curso Existente",
-        mensagem: "Este curso já está registrado!",
+        mensagem: "Este curso já está registrado",
       });
     }
 
-    const verificarCategoriaSQL =
-      "SELECT idcategoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+    const categoria = await CategoriaCurso.findByPk(idcategoriacurso, {
+      transaction,
+    });
 
-    conexao.query(
-      verificarCategoriaSQL,
-      [idcategoriacurso],
-      (erroCategoria, resultadosCategoria) => {
-        if (erroCategoria) {
-          console.error("Erro ao verificar categoria:", erroCategoria);
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro no servidor",
-            mensagem: "Erro ao verificar categoria",
-          });
-        }
+    if (!categoria) {
+      await transaction.rollback();
+      return res.status(404).json({
+        sucesso: false,
+        mensagem: "Categoria não encontrada",
+      });
+    }
 
-        if (resultadosCategoria.length === 0) {
-          return res.status(404).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Categoria não encontrada",
-            mensagem: "A categoria selecionada não existe",
-          });
-        }
-
-        const inserirCursoSQL =
-          "INSERT INTO curso (curso, idcategoriacurso) VALUES (?, ?)";
-
-        conexao.query(
-          inserirCursoSQL,
-          [curso, idcategoriacurso],
-          (erro, resultados) => {
-            if (erro) {
-              console.error("Erro ao inserir Curso:", erro);
-
-              if (erro.code === "ER_NO_REFERENCED_ROW_2") {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Categoria inválida",
-                  mensagem: "A categoria selecionada não existe",
-                });
-              }
-
-              return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no servidor",
-                mensagem: "Erro ao registrar curso",
-              });
-            }
-
-            return res.status(201).json({
-              sucesso: true,
-              tipo: "sucesso",
-              titulo: "Curso Registrado",
-              mensagem: "Curso registrado com sucesso!",
-              dados: {
-                id: resultados.insertId,
-                curso: curso,
-                idcategoriacurso: idcategoriacurso,
-              },
-            });
-          },
-        );
+    const novoCurso = await Curso.create(
+      {
+        curso,
+        idcategoriacurso,
       },
+      { transaction }
     );
-  });
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: "Curso registrado com sucesso",
+      dados: {
+        id: novoCurso.idcurso,
+        curso,
+        idcategoriacurso,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    console.error("Erro ao registrar curso:", error);
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
 });
 
-router.post("/registrarAnoCurricular", (req, res) => {
+router.post("/registrarAnoCurricular", async (req, res) => {
   const { anocurricular, idcurso } = req.body;
 
   if (!anocurricular || !idcurso) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "Por favor, preencha ano curricular e curso",
+      mensagem: "Ano curricular e curso são obrigatórios",
     });
   }
 
-  const verificarCursoSQL = "SELECT idcurso FROM curso WHERE idcurso = ?";
+  const transaction = await sequelize.transaction();
 
-  conexao.query(verificarCursoSQL, [idcurso], (erroCurso, resultadosCurso) => {
-    if (erroCurso) {
-      console.error("Erro ao verificar Curso:", erroCurso);
-      return res.status(500).json({
-        sucesso: false,
-        tipo: "erro",
-        titulo: "Erro no servidor",
-        mensagem: "Erro interno do servidor",
-      });
-    }
+  try {
+   
+    const curso = await Curso.findByPk(idcurso, { transaction });
 
-    if (resultadosCurso.length === 0) {
+    if (!curso) {
+      await transaction.rollback();
       return res.status(400).json({
         sucesso: false,
-        tipo: "erro",
-        titulo: "Curso inválido",
-        mensagem: "O curso selecionado não existe",
+        mensagem: "Curso inválido",
       });
     }
 
-    const verificarAnoSQL =
-      "SELECT idanocurricular FROM anocurricular WHERE anocurricular = ? AND idcurso = ?";
-
-    conexao.query(
-      verificarAnoSQL,
-      [anocurricular, idcurso],
-      (erroAno, resultadosAno) => {
-        if (erroAno) {
-          console.error("Erro ao verificar Ano Curricular:", erroAno);
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro no servidor",
-            mensagem: "Erro interno do servidor",
-          });
-        }
-
-        if (resultadosAno.length > 0) {
-          return res.status(400).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Ano Curricular Duplicado",
-            mensagem: `O ano ${anocurricular} já existe para este curso`,
-          });
-        }
-
-        const inserirSQL =
-          "INSERT INTO anocurricular (anocurricular, idcurso) VALUES (?, ?)";
-
-        conexao.query(
-          inserirSQL,
-          [anocurricular, idcurso],
-          (erroInsercao, resultados) => {
-            if (erroInsercao) {
-              console.error("Erro ao inserir Ano Curricular:", erroInsercao);
-
-              if (erroInsercao.code === "ER_NO_REFERENCED_ROW_2") {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Curso inválido",
-                  mensagem: "O curso selecionado não existe no sistema",
-                });
-              }
-
-              return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no servidor",
-                mensagem: "Erro interno ao registrar ano curricular",
-              });
-            }
-
-            conexao.query(
-              "SELECT curso as curso_nome FROM curso c WHERE c.idcurso = ?",
-              [idcurso],
-              (erroBusca, dadosCurso) => {
-                return res.status(201).json({
-
-                  sucesso: true,
-                  tipo: "sucesso",
-                  titulo: "Ano Curricular Registrado",
-                  mensagem: `Ano ${anocurricular} registrado com sucesso!`,
-                  dados: {
-
-                    id: resultados.insertId,
-                    anocurricular: anocurricular,
-                    idcurso: idcurso,
-                    curso_nome:
-                      dadosCurso[0]?.curso_nome || "Curso não encontrado",
-                  },
-                });
-              },
-            );
-          },
-        );
+    const existe = await AnoCurricular.findOne({
+      where: {
+        anocurricular,
+        idcurso,
       },
+      transaction,
+    });
+
+    if (existe) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: `Ano ${anocurricular} já existe para este curso`,
+      });
+    }
+
+    const novoAno = await AnoCurricular.create(
+      {
+        anocurricular,
+        idcurso,
+      },
+      { transaction }
     );
-  });
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: `Ano ${anocurricular} registrado com sucesso`,
+      dados: {
+        id: novoAno.idanocurricular,
+        anocurricular,
+        idcurso,
+        curso_nome: curso.curso,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    console.error("Erro ao registrar ano curricular:", error);
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
 });
 
 router.post("/registrardisciplina", async (req, res) => {
@@ -449,9 +365,16 @@ router.post("/registrardisciplina", async (req, res) => {
   );
 });
 
-router.post("/registrarDisciplinaCurso", (req, res) => {
-  const { iddisciplina, idanocurricular, idcurso, semestre, idcategoriacurso } =
-    req.body;
+
+
+router.post("/registrarDisciplinaCurso", async (req, res) => {
+  const {
+    iddisciplina,
+    idanocurricular,
+    idcurso,
+    semestre,
+    idcategoriacurso,
+  } = req.body;
 
   if (
     !iddisciplina ||
@@ -462,800 +385,468 @@ router.post("/registrarDisciplinaCurso", (req, res) => {
   ) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem:
-        "Por favor, preencha disciplina, ano curricular, curso, categoria e semestre",
+      mensagem: "Preencha todos os campos",
     });
   }
 
-  const verificarDisciplinaSQL =
-    "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
+  const transaction = await sequelize.transaction();
 
-  conexao.query(
-    verificarDisciplinaSQL,
-    [iddisciplina],
-    (erroDisciplina, resultadosDisciplina) => {
-      if (erroDisciplina) {
-        console.error("Erro ao verificar Disciplina:", erroDisciplina);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no servidor",
-          mensagem: "Erro interno do servidor",
-        });
-      }
-
-      if (resultadosDisciplina.length === 0) {
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Disciplina inválida",
-          mensagem: "A disciplina selecionada não existe",
-        });
-      }
-
-      const verificarAnoSQL =
-        "SELECT idanocurricular, anocurricular FROM anocurricular WHERE idanocurricular = ?";
-
-      conexao.query(
-        verificarAnoSQL,
-        [idanocurricular],
-        (erroAno, resultadosAno) => {
-          if (erroAno) {
-            console.error("Erro ao verificar Ano Curricular:", erroAno);
-            return res.status(500).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Erro no servidor",
-              mensagem: "Erro interno do servidor",
-            });
-          }
-
-          if (resultadosAno.length === 0) {
-            return res.status(400).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Ano Curricular inválido",
-              mensagem: "O ano curricular selecionado não existe",
-            });
-          }
-
-          const verificarCursoSQL =
-            "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
-
-          conexao.query(
-            verificarCursoSQL,
-            [idcurso],
-            (erroCurso, resultadosCurso) => {
-              if (erroCurso) {
-                console.error("Erro ao verificar Curso:", erroCurso);
-                return res.status(500).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Erro no servidor",
-                  mensagem: "Erro interno do servidor",
-                });
-              }
-
-              if (resultadosCurso.length === 0) {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Curso inválido",
-                  mensagem: "O curso selecionado não existe",
-                });
-              }
-
-              const verificarCategoriaSQL =
-                "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
-
-              conexao.query(
-                verificarCategoriaSQL,
-                [idcategoriacurso],
-                (erroCategoria, resultadosCategoria) => {
-                  if (erroCategoria) {
-                    console.error(
-                      "Erro ao verificar Categoria:",
-                      erroCategoria,
-                    );
-                    return res.status(500).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Erro no servidor",
-                      mensagem: "Erro interno do servidor",
-                    });
-                  }
-
-                  if (resultadosCategoria.length === 0) {
-                    return res.status(400).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Categoria inválida",
-                      mensagem: "A categoria selecionada não existe",
-                    });
-                  }
-
-                  if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
-                    return res.status(400).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Inconsistência de dados",
-                      mensagem:
-                        "O curso selecionado não pertence à categoria informada",
-                    });
-                  }
-
-                  const verificarDuplicadoSQL = `
-                        SELECT idsemestre 
-                        FROM semestre 
-                        WHERE iddisciplina = ? AND idanocurricular = ? AND idcurso = ? AND semestre = ?
-                    `;
-
-                  conexao.query(
-                    verificarDuplicadoSQL,
-                    [iddisciplina, idanocurricular, idcurso, semestre],
-                    (erroDuplicado, resultadosDuplicado) => {
-                      if (erroDuplicado) {
-                        console.error(
-                          "Erro ao verificar duplicidade:",
-                          erroDuplicado,
-                        );
-                        return res.status(500).json({
-                          sucesso: false,
-                          tipo: "erro",
-                          titulo: "Erro no servidor",
-                          mensagem: "Erro interno do servidor",
-                        });
-                      }
-
-                      if (resultadosDuplicado.length > 0) {
-                        return res.status(400).json({
-                          sucesso: false,
-                          tipo: "erro",
-                          titulo: "Disciplina Duplicada",
-                          mensagem: `Esta disciplina já está atribuída a este curso/ano no ${semestre}º semestre`,
-                        });
-                      }
-
-                      const inserirSQL = `
-                            INSERT INTO semestre (idcategoriacurso, iddisciplina, idanocurricular, idcurso, semestre) 
-                            VALUES (?, ?, ?, ?, ?)
-                        `;
-
-                      conexao.query(
-                        inserirSQL,
-                        [
-                          idcategoriacurso,
-                          iddisciplina,
-                          idanocurricular,
-                          idcurso,
-                          semestre,
-                        ],
-                        (erroInsercao, resultados) => {
-                          if (erroInsercao) {
-                            console.error(
-                              "Erro ao inserir no semestre:",
-                              erroInsercao,
-                            );
-
-
-                            if (
-                              erroInsercao.code === "ER_NO_REFERENCED_ROW_2"
-                            ) {
-                              return res.status(400).json({
-                                sucesso: false,
-                                tipo: "erro",
-                                titulo: "Chave estrangeira inválida",
-                                mensagem:
-                                  "Uma das referências (disciplina, curso, categoria ou ano) não existe no sistema",
-                              });
-                            }
-
-                            if (erroInsercao.code === "ER_DUP_ENTRY") {
-                              return res.status(400).json({
-                                sucesso: false,
-                                tipo: "erro",
-                                titulo: "Entrada duplicada",
-                                mensagem:
-                                  "Esta disciplina já foi atribuída a este curso/ano/semestre",
-                              });
-                            }
-
-                            return res.status(500).json({
-                              sucesso: false,
-                              tipo: "erro",
-                              titulo: "Erro no servidor",
-                              mensagem:
-                                "Erro interno ao registrar disciplina no curso",
-                            });
-                          }
-
-                          res.status(201).json({
-                            sucesso: true,
-                            tipo: "sucesso",
-                            titulo: "Disciplina Atribuída",
-                            mensagem: `Disciplina "${resultadosDisciplina[0].disciplina}" atribuída ao ${semestre}º semestre do ${resultadosAno[0].anocurricular}º ano com sucesso!`,
-                            dados: {
-                              id: resultados.insertId,
-                              iddisciplina: iddisciplina,
-                              idanocurricular: idanocurricular,
-                              idcurso: idcurso,
-                              idcategoriacurso: idcategoriacurso,
-                              semestre: semestre,
-                              disciplina_nome:
-                                resultadosDisciplina[0].disciplina,
-                              ano_nome: resultadosAno[0].anocurricular,
-                              curso_nome: resultadosCurso[0].curso,
-                              categoria_nome:
-                                resultadosCategoria[0].categoriacurso,
-                            },
-                          });
-                        },
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      );
-    },
-  );
-});
-
-router.post("/registrarprofessor", async (req, res) => {
   try {
-    const body = req.body || {};
-    const files = req.files || {};
 
-    const nomeprofessore = body.nomeprofessore || "";
-    const genero = body.genero || "";
-    const nacionalidadeprofessor = body.nacionalidadeprofessor || "";
-    const estadocivilprofessor = body.estadocivilprofessor || "";
-    const nomepaiprofessor = body.nomepaiprofessor || "";
-    const nomemaeprofessor = body.nomemaeprofessor || "";
-    const biprofessor = body.biprofessor || "";
-    const datanascimentoprofessor = body.datanascimentoprofessor || "";
-    const residenciaprofessor = body.residenciaprofessor || "";
-    const telefoneprofessor = body.telefoneprofessor || "";
-    const whatsappprofessor = body.whatsappprofessor || "";
-    const emailprofessor = body.emailprofessor || "";
-    const anoexprienciaprofessor = body.anoexprienciaprofessor || "";
-    const titulacaoprofessor = body.titulacaoprofessor || "";
-    const dataadmissaprofessor = body.dataadmissaprofessor || "";
-    const tipocontratoprofessor = body.tipocontratoprofessor || "";
-    const ibanprofessor = body.ibanprofessor || "";
-    const tiposanguineoprofessor = body.tiposanguineoprofessor || "";
-    const condicoesprofessor = body.condicoesprofessor || "";
-    const contactoemergenciaprofessor = body.contactoemergenciaprofessor || "";
-    const idAdm = body.idAdm || "";
+    const disciplina = await Disciplina.findByPk(iddisciplina, {
+      transaction,
+    });
 
+    if (!disciplina) {
+      await transaction.rollback();
+      return res.status(400).json({ mensagem: "Disciplina inválida" });
+    }
 
-    if (!nomeprofessore || !genero || !biprofessor || !idAdm) {
-      console.error("Campos obrigatórios faltando:", {
-        nomeprofessore: !!nomeprofessore,
-        genero: !!genero,
-        biprofessor: !!biprofessor,
-        idAdm: !!idAdm,
-      });
+    const ano = await AnoCurricular.findByPk(idanocurricular, {
+      transaction,
+    });
 
+    if (!ano) {
+      await transaction.rollback();
+      return res.status(400).json({ mensagem: "Ano inválido" });
+    }
+
+    const curso = await Curso.findByPk(idcurso, {
+      transaction,
+    });
+
+    if (!curso) {
+      await transaction.rollback();
+      return res.status(400).json({ mensagem: "Curso inválido" });
+    }
+
+    const categoria = await CategoriaCurso.findByPk(idcategoriacurso, {
+      transaction,
+    });
+
+    if (!categoria) {
+      await transaction.rollback();
+      return res.status(400).json({ mensagem: "Categoria inválida" });
+    }
+
+    if (curso.idcategoriacurso != idcategoriacurso) {
+      await transaction.rollback();
       return res.status(400).json({
-        sucesso: false,
-        tipo: "erro",
-        titulo: "Campos obrigatórios",
-        mensagem: "Nome, gênero, BI e Administrador são obrigatórios!",
+        mensagem: "Curso não pertence à categoria",
       });
     }
 
-    const verificarBISQL =
-      "SELECT idprofessor FROM professor WHERE nbiprofessor = ?";
-    conexao.query(verificarBISQL, [biprofessor], async (erro, resultados) => {
-      if (erro) {
-        console.error("Erro ao verificar BI:", erro);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no servidor",
-          mensagem: "Erro interno do servidor",
-        });
-      }
 
-      if (resultados.length > 0) {
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "BI existente",
-          mensagem: "Este número de BI já está registrado!",
-        });
-      }
-
-      try {
-        let codigoAcesso;
-        let codigoUnico = false;
-        let tentativas = 0;
-        const maxTentativas = 10;
-
-        while (!codigoUnico && tentativas < maxTentativas) {
-          codigoAcesso = Math.floor(1000 + Math.random() * 9000).toString();
-
-          const verificarCodigoSQL =
-            "SELECT idprofessor FROM professor WHERE senhaprofessor = ?";
-          const [resultadosCodigo] = await conexao
-            .promise()
-            .query(verificarCodigoSQL, [codigoAcesso]);
-
-          if (resultadosCodigo.length === 0) {
-            codigoUnico = true;
-          }
-          tentativas++;
-        }
-
-        if (!codigoUnico) {
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro ao gerar código",
-            mensagem:
-              "Não foi possível gerar um código único. Tente novamente.",
-          });
-        }
-
-        let codigoProfessor;
-        let codigoProfessorUnico = false;
-        tentativas = 0;
-
-        while (!codigoProfessorUnico && tentativas < maxTentativas) {
-          codigoProfessor = Math.floor(
-            10000000 + Math.random() * 90000000,
-          ).toString();
-
-          const verificarCodigoProfessorSQL =
-            "SELECT idprofessor FROM professor WHERE codigoprofessor = ?";
-          const [resultadosCodigoProfessor] = await conexao
-            .promise()
-            .query(verificarCodigoProfessorSQL, [codigoProfessor]);
-
-          if (resultadosCodigoProfessor.length === 0) {
-            codigoProfessorUnico = true;
-          }
-          tentativas++;
-        }
-
-        if (!codigoProfessorUnico) {
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro ao gerar código",
-            mensagem:
-              "Não foi possível gerar um código de identificação único. Tente novamente.",
-          });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const senhaCriptografada = await bcrypt.hash(codigoAcesso, salt);
-
-        let nomeFoto = null;
-        let nomeBIPDF = null;
-
-        const pastaProfessores = path.join(
-          __dirname,
-          "../../client/src/img/professores",
-        );
-        if (!fs.existsSync(pastaProfessores)) {
-          fs.mkdirSync(pastaProfessores, { recursive: true });
-          console.log("✅ Pasta criada:", pastaProfessores);
-        }
-
-        if (files.fotoprofessor) {
-          const foto = files.fotoprofessor;
-          const extensaoFoto = path.extname(foto.name);
-          nomeFoto = `professor_${codigoProfessor}_foto_${Date.now()}${extensaoFoto}`;
-          const caminhoFoto = path.join(pastaProfessores, nomeFoto);
-
-          foto.mv(caminhoFoto, (err) => {
-            if (err) {
-              console.error("Erro ao salvar foto:", err);
-            } else {
-              console.log("Foto salva:", nomeFoto);
-            }
-          });
-        } else {
-          console.log("Nenhuma foto enviada");
-        }
-
-        if (files.bipdfprofessor) {
-          const pdf = files.bipdfprofessor;
-          const extensaoPDF = path.extname(pdf.name);
-          nomeBIPDF = `professor_${codigoProfessor}_bi_${Date.now()}${extensaoPDF}`;
-          const caminhoPDF = path.join(pastaProfessores, nomeBIPDF);
-
-          pdf.mv(caminhoPDF, (err) => {
-            if (err) {
-              console.error("Erro ao salvar PDF:", err);
-            } else {
-              console.log("PDF do BI salvo:", nomeBIPDF);
-            }
-          });
-        } else {
-          console.log("Nenhum PDF do BI enviado");
-        }
-
-
-        const inserirProfessorSQL = `
-                    INSERT INTO professor (
-                        codigoprofessor, fotoprofessor, nomeprofessor, generoprofessor, 
-                        nacionalidadeprofessor, estadocivilprofessor, nomepaiprofessor, 
-                        nomemaeprofessor, nbiprofessor, datanascimentoprofessor, 
-                        bipdfprofessor, residenciaprofessor, telefoneprofessor, 
-                        whatsappprofessor, emailprofessor, anoexperienciaprofessor, 
-                        titulacaoprofessor, dataadmissaoprofessor, tipocontratoprofessor, 
-                        ibanprofessor, tiposanguineoprofessor, condicoesprofessor, 
-                        contactoemergenciaprofessor, idAdm, senhaprofessor
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `;
-
-        const converterParaNull = (valor) => (valor === "" ? null : valor);
-
-        const valores = [
-          codigoProfessor,
-          nomeFoto,
-          nomeprofessore,
-          genero,
-          converterParaNull(nacionalidadeprofessor),
-          converterParaNull(estadocivilprofessor),
-          converterParaNull(nomepaiprofessor),
-          converterParaNull(nomemaeprofessor),
-          biprofessor,
-          converterParaNull(datanascimentoprofessor),
-          nomeBIPDF,
-          converterParaNull(residenciaprofessor),
-          converterParaNull(telefoneprofessor),
-          converterParaNull(whatsappprofessor),
-          converterParaNull(emailprofessor),
-          converterParaNull(anoexprienciaprofessor),
-          converterParaNull(titulacaoprofessor),
-          converterParaNull(dataadmissaprofessor),
-          converterParaNull(tipocontratoprofessor),
-          converterParaNull(ibanprofessor),
-          converterParaNull(tiposanguineoprofessor),
-          converterParaNull(condicoesprofessor),
-          converterParaNull(contactoemergenciaprofessor),
-          idAdm,
-          senhaCriptografada,
-        ];
-
-
-        conexao.query(inserirProfessorSQL, valores, (erro, resultados) => {
-          if (erro) {
-            console.error("Erro ao inserir professor:", erro);
-            console.error("SQL Message:", erro.sqlMessage);
-
-            if (
-              nomeFoto &&
-              fs.existsSync(path.join(pastaProfessores, nomeFoto))
-            ) {
-              fs.unlinkSync(path.join(pastaProfessores, nomeFoto));
-              console.log("Foto removida devido ao erro:", nomeFoto);
-            }
-            if (
-              nomeBIPDF &&
-              fs.existsSync(path.join(pastaProfessores, nomeBIPDF))
-            ) {
-              fs.unlinkSync(path.join(pastaProfessores, nomeBIPDF));
-              console.log("PDF removido devido ao erro:", nomeBIPDF);
-
-            }
-
-
-            return res.status(500).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Erro no cadastro",
-              mensagem: "Erro ao registrar professor: " + erro.message,
-            });
-          }
-
-          console.log("Professor inserido com ID:", resultados.insertId);
-          console.log("Código do professor:", codigoProfessor);
-          console.log("Código de acesso (senha):", codigoAcesso);
-
-          setTimeout(() => {
-            res.status(201).json({
-              sucesso: true,
-              tipo: "sucesso",
-              titulo: "Professor Registrado!",
-              mensagem: "Professor registrado com sucesso!",
-              dados: {
-                idprofessor: resultados.insertId,
-                nomeprofessore: nomeprofessore,
-                codigoProfessor: codigoProfessor,
-                codigoAcesso: codigoAcesso,
-                biprofessor: biprofessor,
-                foto: nomeFoto,
-                bi_pdf: nomeBIPDF,
-              },
-            });
-          }, 1000);
-        });
-      } catch (erro) {
-        console.error("Erro ao processar arquivos:", erro);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no processamento",
-          mensagem: "Erro ao processar arquivos: " + erro.message,
-        });
-      }
+    const existe = await Semestre.findOne({
+      where: {
+        iddisciplina,
+        idanocurricular,
+        idcurso,
+        semestre,
+      },
+      transaction,
     });
-  } catch (erro) {
-    console.error("Erro no endpoint de registro de professor:", erro);
-    console.error("Stack trace:", erro.stack);
+
+    if (existe) {
+      await transaction.rollback();
+      return res.status(400).json({
+        mensagem: "Disciplina já atribuída neste semestre",
+      });
+    }
+
+ 
+    const novo = await Semestre.create(
+      {
+        idcategoriacurso,
+        iddisciplina,
+        idanocurricular,
+        idcurso,
+        semestre,
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: `Disciplina "${disciplina.disciplina}" atribuída ao ${semestre}º semestre com sucesso`,
+      dados: {
+        id: novo.idsemestre,
+        iddisciplina,
+        idanocurricular,
+        idcurso,
+        idcategoriacurso,
+        semestre,
+        disciplina_nome: disciplina.disciplina,
+        ano_nome: ano.anocurricular,
+        curso_nome: curso.curso,
+        categoria_nome: categoria.categoriacurso,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    console.error("Erro ao registrar disciplina no curso:", error);
 
     return res.status(500).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Erro interno",
-      mensagem: "Erro interno do servidor: " + erro.message,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
     });
   }
 });
 
-router.post("/registrerDisciplinaProfessor", (req, res) => {
+
+router.post("/registrarprofessor", async (req, res) => {
+  const body = req.body || {};
+  const files = req.files || {};
+
+  const {
+    nomeprofessore,
+    genero,
+    nacionalidadeprofessor,
+    estadocivilprofessor,
+    nomepaiprofessor,
+    nomemaeprofessor,
+    biprofessor,
+    datanascimentoprofessor,
+    residenciaprofessor,
+    telefoneprofessor,
+    whatsappprofessor,
+    emailprofessor,
+    anoexprienciaprofessor,
+    titulacaoprofessor,
+    dataadmissaprofessor,
+    tipocontratoprofessor,
+    ibanprofessor,
+    tiposanguineoprofessor,
+    condicoesprofessor,
+    contactoemergenciaprofessor,
+    idAdm,
+  } = body;
+
+  if (!nomeprofessore || !genero || !biprofessor || !idAdm) {
+    return res.status(400).json({
+      sucesso: false,
+      mensagem: "Nome, gênero, BI e admin são obrigatórios",
+    });
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+
+    const existeBI = await Professor.findOne({
+      where: { nbiprofessor: biprofessor },
+      transaction,
+    });
+
+    if (existeBI) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "BI já existe",
+      });
+    }
+
+  
+    const gerarCodigo = async (campo, tamanho, min, max) => {
+      let codigo;
+      let unico = false;
+      let tentativas = 0;
+
+      while (!unico && tentativas < 10) {
+        codigo = Math.floor(min + Math.random() * max).toString();
+
+        const existe = await Professor.findOne({
+          where: { [campo]: codigo },
+          transaction,
+        });
+
+        if (!existe) unico = true;
+
+        tentativas++;
+      }
+
+      if (!unico) throw new Error("Falha ao gerar código único");
+
+      return codigo;
+    };
+
+    const codigoAcesso = await gerarCodigo("senhaprofessor", 4, 1000, 9000);
+    const codigoProfessor = await gerarCodigo(
+      "codigoprofessor",
+      8,
+      10000000,
+      90000000
+    );
+
+    const senhaCriptografada = await bcrypt.hash(codigoAcesso, 10);
+
+  
+    const pasta = path.join(__dirname, "../../client/src/img/professores");
+    if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
+
+    let nomeFoto = null;
+    let nomeBIPDF = null;
+
+  
+    if (files.fotoprofessor) {
+      const foto = files.fotoprofessor;
+      const ext = path.extname(foto.name);
+
+      nomeFoto = `professor_${codigoProfessor}_foto_${Date.now()}${ext}`;
+      await foto.mv(path.join(pasta, nomeFoto));
+    }
+
+   
+    if (files.bipdfprofessor) {
+      const pdf = files.bipdfprofessor;
+      const ext = path.extname(pdf.name);
+
+      nomeBIPDF = `professor_${codigoProfessor}_bi_${Date.now()}${ext}`;
+      await pdf.mv(path.join(pasta, nomeBIPDF));
+    }
+
+    const professor = await Professor.create(
+      {
+        codigoprofessor: codigoProfessor,
+        fotoprofessor: nomeFoto,
+        nomeprofessor: nomeprofessore,
+        generoprofessor: genero,
+        nacionalidadeprofessor,
+        estadocivilprofessor,
+        nomepaiprofessor,
+        nomemaeprofessor,
+        nbiprofessor: biprofessor,
+        datanascimentoprofessor,
+        bipdfprofessor: nomeBIPDF,
+        residenciaprofessor,
+        telefoneprofessor,
+        whatsappprofessor,
+        emailprofessor,
+        anoexperienciaprofessor: anoexprienciaprofessor,
+        titulacaoprofessor,
+        dataadmissaoprofessor: dataadmissaprofessor,
+        tipocontratoprofessor,
+        ibanprofessor,
+        tiposanguineoprofessor,
+        condicoesprofessor,
+        contactoemergenciaprofessor,
+        idAdm,
+        senhaprofessor: senhaCriptografada,
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: "Professor registrado com sucesso",
+      dados: {
+        idprofessor: professor.idprofessor,
+        codigoProfessor,
+        codigoAcesso,
+        foto: nomeFoto,
+        bi_pdf: nomeBIPDF,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    console.error("Erro ao registrar professor:", error);
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
+});
+
+
+
+router.post("/registrerDisciplinaProfessor", async (req, res) => {
   const { idprofessor, iddisciplina } = req.body;
 
   if (!idprofessor || !iddisciplina) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "Por favor, selecione um professor e uma disciplina",
+      mensagem: "Professor e disciplina são obrigatórios",
     });
   }
 
-  const verificarProfessorSQL =
-    "SELECT idprofessor, nomeprofessor FROM professor WHERE idprofessor = ?";
+  const transaction = await sequelize.transaction();
 
-  conexao.query(
-    verificarProfessorSQL,
-    [idprofessor],
-    (erroProfessor, resultadosProfessor) => {
-      if (erroProfessor) {
-        console.error("Erro ao verificar Professor:", erroProfessor);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no servidor",
-          mensagem: "Erro interno do servidor",
-        });
-      }
+  try {
 
-      if (resultadosProfessor.length === 0) {
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Professor inválido",
-          mensagem: "O professor selecionado não existe",
-        });
-      }
+    const professor = await Professor.findByPk(idprofessor, {
+      transaction,
+    });
 
-      const verificarDisciplinaSQL =
-        "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
+    if (!professor) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Professor inválido",
+      });
+    }
 
-      conexao.query(
-        verificarDisciplinaSQL,
-        [iddisciplina],
-        (erroDisciplina, resultadosDisciplina) => {
-          if (erroDisciplina) {
-            console.error("Erro ao verificar Disciplina:", erroDisciplina);
-            return res.status(500).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Erro no servidor",
-              mensagem: "Erro interno do servidor",
-            });
-          }
+    const disciplina = await Disciplina.findByPk(iddisciplina, {
+      transaction,
+    });
 
-          if (resultadosDisciplina.length === 0) {
-            return res.status(400).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Disciplina inválida",
-              mensagem: "A disciplina selecionada não existe",
-            });
-          }
+    if (!disciplina) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Disciplina inválida",
+      });
+    }
 
-          const verificarDuplicadoSQL = `
-                SELECT iddisciplina 
-                FROM disc_prof 
-                WHERE idprofessor = ? AND iddisciplina = ?
-            `;
+    const existe = await DiscProf.findOne({
+      where: {
+        idprofessor,
+        iddisciplina,
+      },
+      transaction,
+    });
 
-          conexao.query(
-            verificarDuplicadoSQL,
-            [idprofessor, iddisciplina],
-            (erroDuplicado, resultadosDuplicado) => {
-              if (erroDuplicado) {
-                console.error("Erro ao verificar duplicidade:", erroDuplicado);
-                return res.status(500).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Erro no servidor",
-                  mensagem: "Erro interno do servidor",
-                });
-              }
+    if (existe) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Disciplina já atribuída a este professor",
+      });
+    }
 
-              if (resultadosDuplicado.length > 0) {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Disciplina Duplicada",
-                  mensagem:
-                    "Esta disciplina já está atribuída a este professor",
-                });
-              }
+    const relacao = await DiscProf.create(
+      {
+        idprofessor,
+        iddisciplina,
+      },
+      { transaction }
+    );
 
-              const inserirSQL = `
-                    INSERT INTO disc_prof (idprofessor, iddisciplina) 
-                    VALUES (?, ?)
-                `;
+    await transaction.commit();
 
-              conexao.query(
-                inserirSQL,
-                [idprofessor, iddisciplina],
-                (erroInsercao, resultados) => {
-                  if (erroInsercao) {
-                    console.error("Erro ao inserir relação:", erroInsercao);
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: `Disciplina "${disciplina.disciplina}" atribuída ao professor "${professor.nomeprofessor}" com sucesso!`,
+      dados: {
+        id: relacao.iddiscprof,
+        idprofessor,
+        iddisciplina,
+        professor_nome: professor.nomeprofessor,
+        disciplina_nome: disciplina.disciplina,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
 
+    console.error("Erro ao atribuir disciplina:", error);
 
-                    if (erroInsercao.code === "ER_NO_REFERENCED_ROW_2") {
-                      return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Chave estrangeira inválida",
-                        mensagem:
-                          "O professor ou disciplina não existe no sistema",
-                      });
-                    }
-
-                    if (erroInsercao.code === "ER_DUP_ENTRY") {
-                      return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Entrada duplicada",
-                        mensagem:
-                          "Esta disciplina já foi atribuída a este professor",
-                      });
-                    }
-
-                    return res.status(500).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Erro no servidor",
-                      mensagem:
-                        "Erro interno ao atribuir disciplina ao professor",
-                    });
-                  }
-
-                  return res.status(201).json({
-                    sucesso: true,
-                    tipo: "sucesso",
-                    titulo: "Disciplina Atribuída",
-                    mensagem: `Disciplina "${resultadosDisciplina[0].disciplina}" atribuída ao professor "${resultadosProfessor[0].nomeprofessor}" com sucesso!`,
-                    dados: {
-                      id: resultados.insertId,
-                      idprofessor: idprofessor,
-                      iddisciplina: iddisciplina,
-                      professor_nome: resultadosProfessor[0].nomeprofessor,
-                      disciplina_nome: resultadosDisciplina[0].disciplina,
-                    },
-                  });
-                },
-              );
-            },
-          );
-        },
-      );
-    },
-  );
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
 });
-
 router.post("/vincularProfessor", async (req, res) => {
   const { idprofessor, iddisciplina } = req.body;
 
   if (!idprofessor || !iddisciplina) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "Por favor, selecione um professor e uma disciplina",
+      mensagem: "Professor e disciplina são obrigatórios",
     });
   }
 
+  const transaction = await sequelize.transaction();
+
   try {
-    const verificaSql =
-      "SELECT * FROM disc_prof WHERE idprofessor = ? AND iddisciplina = ?";
 
-    conexao.query(
-      verificaSql,
-      [idprofessor, iddisciplina],
-      (verificaError, verificaResult) => {
-        if (verificaError) {
-          console.error("Erro ao verificar vínculo existente:", verificaError);
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro interno",
-            mensagem: "Erro ao verificar vínculo existente",
-          });
-        }
+    const professor = await Professor.findByPk(idprofessor, {
+      transaction,
+    });
 
-        if (verificaResult.length > 0) {
-          return res.status(409).json({
-            sucesso: false,
-            tipo: "erro",
+    if (!professor) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Professor não encontrado",
+      });
+    }
 
-            titulo: "Vínculo existente",
-            mensagem: "Este professor já está vinculado a esta disciplina",
-          });
 
-        }
+    const disciplina = await Disciplina.findByPk(iddisciplina, {
+      transaction,
+    });
 
-        const insertSql =
-          "INSERT INTO disc_prof (idprofessor, iddisciplina) VALUES (?, ?)";
+    if (!disciplina) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Disciplina não encontrada",
+      });
+    }
 
-        conexao.query(
-          insertSql,
-          [idprofessor, iddisciplina],
-          (insertError, result) => {
-            if (insertError) {
-              console.error("Erro ao vincular professor:", insertError);
-
-              if (insertError.code === "ER_NO_REFERENCED_ROW_2") {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Dados inválidos",
-                  mensagem: "Professor ou disciplina não encontrado no sistema",
-                });
-              }
-
-              return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro interno",
-                mensagem: "Não foi possível vincular o professor à disciplina",
-              });
-            }
-
-            return res.status(201).json({
-              sucesso: true,
-              tipo: "sucesso",
-              titulo: "Vinculação realizada",
-              mensagem: "Professor vinculado à disciplina com sucesso",
-              dados: {
-                idVinculo: result.insertId,
-                idprofessor,
-                iddisciplina,
-              },
-            });
-          },
-        );
+  
+    const existe = await DiscProf.findOne({
+      where: {
+        idprofessor,
+        iddisciplina,
       },
+      transaction,
+    });
+
+    if (existe) {
+      await transaction.rollback();
+      return res.status(409).json({
+        sucesso: false,
+        mensagem: "Professor já está vinculado a esta disciplina",
+      });
+    }
+
+
+    const vinculo = await DiscProf.create(
+      {
+        idprofessor,
+        iddisciplina,
+      },
+      { transaction }
     );
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: "Vínculo criado com sucesso",
+      dados: {
+        idVinculo: vinculo.iddiscprof,
+        idprofessor,
+        iddisciplina,
+      },
+    });
   } catch (error) {
-    console.error("Erro inesperado:", error);
+    await transaction.rollback();
+
+    console.error("Erro ao vincular professor:", error);
+
     return res.status(500).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Erro interno",
-      mensagem: "Ocorreu um erro inesperado no servidor",
+      mensagem: "Erro interno do servidor",
+      error: error.message,
     });
   }
 });
 
-router.post("/registrarPeriodo", (req, res) => {
+
+
+router.post("/registrarPeriodo", async (req, res) => {
   const {
     idanocurricular,
     idcurso,
@@ -1275,211 +866,129 @@ router.post("/registrarPeriodo", (req, res) => {
   ) {
     return res.status(400).json({
       sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem:
-        "Por favor, preencha todos os campos obrigatórios (ano curricular, curso, categoria, turma, período e ano letivo)",
+      mensagem: "Preencha todos os campos",
     });
   }
 
-  const verificarAnoSQL =
-    "SELECT idanocurricular, anocurricular FROM anocurricular WHERE idanocurricular = ?";
+  const transaction = await sequelize.transaction();
 
-  conexao.query(
-    verificarAnoSQL,
-    [idanocurricular],
-    (erroAno, resultadosAno) => {
-      if (erroAno) {
-        console.error("Erro ao verificar Ano Curricular:", erroAno);
-        return res.status(500).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Erro no servidor",
-          mensagem: "Erro interno do servidor",
-        });
-      }
+  try {
 
-      if (resultadosAno.length === 0) {
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Ano Curricular inválido",
-          mensagem: "O ano curricular selecionado não existe",
-        });
-      }
+    const ano = await AnoCurricular.findOne({
+      where: { idanocurricular },
+      transaction,
+    });
 
-      const verificarCursoSQL =
-        "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
+    if (!ano) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Ano curricular inválido",
+      });
+    }
 
-      conexao.query(
-        verificarCursoSQL,
-        [idcurso],
-        (erroCurso, resultadosCurso) => {
-          if (erroCurso) {
-            console.error("Erro ao verificar Curso:", erroCurso);
-            return res.status(500).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Erro no servidor",
-              mensagem: "Erro interno do servidor",
-            });
-          }
+    const curso = await Curso.findOne({
+      where: { idcurso },
+      transaction,
+    });
 
-          if (resultadosCurso.length === 0) {
-            return res.status(400).json({
-              sucesso: false,
-              tipo: "erro",
-              titulo: "Curso inválido",
-              mensagem: "O curso selecionado não existe",
-            });
-          }
+    if (!curso) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Curso inválido",
+      });
+    }
 
-          const verificarCategoriaSQL =
-            "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+  
+    const categoria = await CategoriaCurso.findOne({
+      where: { idcategoriacurso },
+      transaction,
+    });
 
-          conexao.query(
-            verificarCategoriaSQL,
-            [idcategoriacurso],
-            (erroCategoria, resultadosCategoria) => {
-              if (erroCategoria) {
-                console.error("Erro ao verificar Categoria:", erroCategoria);
-                return res.status(500).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Erro no servidor",
-                  mensagem: "Erro interno do servidor",
-                });
-              }
+    if (!categoria) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Categoria inválida",
+      });
+    }
 
-              if (resultadosCategoria.length === 0) {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Categoria inválida",
-                  mensagem: "A categoria selecionada não existe",
-                });
-              }
+    if (curso.idcategoriacurso != idcategoriacurso) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Curso não pertence à categoria",
+      });
+    }
 
-              if (resultadosCurso[0].idcategoriacurso != idcategoriacurso) {
-                return res.status(400).json({
-                  sucesso: false,
-                  tipo: "erro",
-                  titulo: "Inconsistência de dados",
-                  mensagem:
-                    "O curso selecionado não pertence à categoria informada",
-                });
-              }
+  
+    const duplicado = await Periodo.findOne({
+      where: {
+        idanocurricular,
+        idcurso,
+        turma,
+        periodo,
+        anoletivo,
+      },
+      transaction,
+    });
 
-              const verificarDuplicadoSQL = `
-                    SELECT idperiodo 
-                    FROM periodo 
-                    WHERE idanocurricular = ? AND idcurso = ? AND turma = ? AND periodo = ? AND anoletivo = ?
-                `;
+    if (duplicado) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Esta turma/período já existe",
+      });
+    }
 
-              conexao.query(
-                verificarDuplicadoSQL,
-                [idanocurricular, idcurso, turma, periodo, anoletivo],
-                (erroDuplicado, resultadosDuplicado) => {
-                  if (erroDuplicado) {
-                    console.error(
-                      "Erro ao verificar duplicidade:",
-                      erroDuplicado,
-                    );
-                    return res.status(500).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Erro no servidor",
-                      mensagem: "Erro interno do servidor",
-                    });
-                  }
+  
+    const novoPeriodo = await Periodo.create(
+      {
+        idanocurricular,
+        idcurso,
+        idcategoriacurso,
+        turma,
+        periodo,
+        anoletivo,
+      },
+      { transaction }
+    );
 
-                  if (resultadosDuplicado.length > 0) {
-                    return res.status(400).json({
-                      sucesso: false,
-                      tipo: "erro",
-                      titulo: "Turma/Período Duplicado",
-                      mensagem: `Esta turma "${turma}" no período "${periodo}" já existe para este curso/ano`,
-                    });
-                  }
+    await transaction.commit();
 
-                  const inserirSQL = `
-                        INSERT INTO periodo (idanocurricular, idcategoriacurso, idcurso, turma, periodo, anoletivo) 
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `;
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: `Turma ${turma} criada com sucesso`,
+      dados: {
+        id: novoPeriodo.idperiodo,
+        idanocurricular,
+        idcurso,
+        idcategoriacurso,
+        turma,
+        periodo,
+        anoletivo,
+        ano_nome: ano.anocurricular,
+        curso_nome: curso.curso,
+        categoria_nome: categoria.categoriacurso,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
 
-                  conexao.query(
-                    inserirSQL,
-                    [
-                      idanocurricular,
-                      idcategoriacurso,
-                      idcurso,
-                      turma,
-                      periodo,
-                      anoletivo,
-                    ],
-                    (erroInsercao, resultados) => {
-                      if (erroInsercao) {
-                        console.error("Erro ao inserir período:", erroInsercao);
-                        if (erroInsercao.code === "ER_NO_REFERENCED_ROW_2") {
-                          return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Chave estrangeira inválida",
-                            mensagem:
-                              "Uma das referências (ano curricular, curso ou categoria) não existe no sistema",
-                          });
-                        }
+    console.error("Erro ao registrar período:", error);
 
-                        if (erroInsercao.code === "ER_DUP_ENTRY") {
-                          return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Entrada duplicada",
-                            mensagem:
-                              "Esta turma/período já foi registrada para este curso/ano",
-                          });
-                        }
-
-                        return res.status(500).json({
-                          sucesso: false,
-                          tipo: "erro",
-                          titulo: "Erro no servidor",
-                          mensagem: "Erro interno ao registrar turma/período",
-
-                        });
-                      }
-
-                      res.status(201).json({
-                        sucesso: true,
-                        tipo: "sucesso",
-                        titulo: "Turma/Período Registrado",
-                        mensagem: `Turma "${turma}" no período "${periodo}" registrada com sucesso!`,
-                        dados: {
-                          id: resultados.insertId,
-                          idanocurricular: idanocurricular,
-                          idcurso: idcurso,
-                          anoletivo: anoletivo,
-                          idcategoriacurso: idcategoriacurso,
-                          turma: turma,
-                          periodo: periodo,
-                          ano_nome: resultadosAno[0].anocurricular,
-                          curso_nome: resultadosCurso[0].curso,
-                          categoria_nome: resultadosCategoria[0].categoriacurso,
-                        },
-                      });
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      );
-    },
-  );
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
 });
 
-router.post("/registrarfuncionario", (req, res) => {
+
+
+router.post("/registrarfuncionario", async (req, res) => {
   const {
     nome_funcionario,
     contacto_funcionario,
@@ -1488,236 +997,132 @@ router.post("/registrarfuncionario", (req, res) => {
     idAdm,
   } = req.body;
 
-  if (!nome_funcionario || !nome_funcionario.trim()) {
-    return res.status(400).json({
-      sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "O nome do funcionário é obrigatório!",
-    });
-  }
+  if (!nome_funcionario?.trim())
+    return res.status(400).json({ mensagem: "Nome obrigatório" });
 
-  if (!contacto_funcionario || !contacto_funcionario.trim()) {
-    return res.status(400).json({
-      sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "O contacto do funcionário é obrigatório!",
-    });
-  }
+  if (!contacto_funcionario?.trim())
+    return res.status(400).json({ mensagem: "Contacto obrigatório" });
 
-  if (!bi_funcionario || !bi_funcionario.trim()) {
-    return res.status(400).json({
-      sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "O número do BI é obrigatório!",
-    });
-  }
+  if (!bi_funcionario?.trim())
+    return res.status(400).json({ mensagem: "BI obrigatório" });
 
-  if (!cargo_funcionario || !cargo_funcionario.trim()) {
-    return res.status(400).json({
-      sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "O cargo do funcionário é obrigatório!",
-    });
-  }
+  if (!cargo_funcionario?.trim())
+    return res.status(400).json({ mensagem: "Cargo obrigatório" });
 
-  if (!idAdm) {
-    return res.status(400).json({
-      sucesso: false,
-      tipo: "erro",
-      titulo: "Dados incompletos",
-      mensagem: "O ID do administrador é obrigatório!",
-    });
-  }
+  if (!idAdm)
+    return res.status(400).json({ mensagem: "ID Admin obrigatório" });
 
-  conexao.beginTransaction(async (erroTransacao) => {
-    if (erroTransacao) {
-      console.error("Erro ao iniciar transação:", erroTransacao);
-      return res.status(500).json({
+  const transaction = await sequelize.transaction();
+
+  try {
+  
+    const existeContacto = await Funcionario.findOne({
+      where: { contacto_funcionario: contacto_funcionario.trim() },
+      transaction,
+    });
+
+    if (existeContacto) {
+      await transaction.rollback();
+      return res.status(400).json({
         sucesso: false,
-        tipo: "erro",
-        titulo: "Erro no servidor",
-        mensagem: "Erro interno ao iniciar transação",
+        mensagem: "Contacto já existe",
       });
     }
 
-    try {
-      const verificarContacto = await new Promise((resolve, reject) => {
-        conexao.query(
-          "SELECT id_funcionario FROM funcionario WHERE contacto_funcionario = ?",
-          [contacto_funcionario.trim()],
-          (erro, resultados) => {
-            if (erro) reject(erro);
-            else resolve(resultados);
-          },
-        );
-      });
+  
+    const existeBI = await Funcionario.findOne({
+      where: { bi_funcionario: bi_funcionario.trim() },
+      transaction,
+    });
 
-      if (verificarContacto.length > 0) {
-        conexao.rollback();
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Contacto existente",
-          mensagem: "Este contacto já está em uso por outro funcionário!",
-        });
-      }
-
-      const verificarBI = await new Promise((resolve, reject) => {
-        conexao.query(
-          "SELECT id_funcionario FROM funcionario WHERE bi_funcionario = ?",
-          [bi_funcionario.trim()],
-          (erro, resultados) => {
-            if (erro) reject(erro);
-            else resolve(resultados);
-          },
-        );
-      });
-
-      if (verificarBI.length > 0) {
-        conexao.rollback();
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "BI existente",
-          mensagem: "Este número de BI já está em uso por outro funcionário!",
-        });
-      }
-
-      const gerarSenha = () => {
-        const caracteres =
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        let senha = "";
-        for (let i = 0; i < 8; i++) {
-          senha += caracteres.charAt(
-            Math.floor(Math.random() * caracteres.length),
-          );
-        }
-        return senha;
-      };
-
-      const senha_funcionario = gerarSenha();
-      const salt = await bcrypt.genSalt(10);
-      const senhaCriptografada = await bcrypt.hash(senha_funcionario, salt);
-
-      const resultadoFuncionario = await new Promise((resolve, reject) => {
-        const inserirFuncionarioSQL = `
-                    INSERT INTO funcionario 
-                    (nome_funcionario, contacto_funcionario, bi_funcionario, senha_funcionario, idAdm, estado_funcionario) 
-                    VALUES (?, ?, ?, ?, ?, 'Ativo')
-                `;
-
-        conexao.query(
-          inserirFuncionarioSQL,
-          [
-            nome_funcionario.trim(),
-            contacto_funcionario.trim(),
-            bi_funcionario.trim(),
-            senhaCriptografada,
-            idAdm,
-          ],
-          (erro, resultado) => {
-            if (erro) reject(erro);
-            else resolve(resultado);
-          },
-        );
-      });
-
-      const id_funcionario = resultadoFuncionario.insertId;
-
-      const cargoResult = await new Promise((resolve, reject) => {
-        const buscarCargoSQL =
-          "SELECT id_cargo FROM cargo_funcionario WHERE cargo = ?";
-
-        conexao.query(
-          buscarCargoSQL,
-          [cargo_funcionario],
-          (erro, resultados) => {
-            if (erro) reject(erro);
-            else resolve(resultados);
-          },
-        );
-      });
-
-      if (cargoResult.length === 0) {
-        conexao.rollback();
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Cargo inválido",
-          mensagem: "O cargo informado não existe no sistema",
-        });
-      }
-
-      const id_cargo = cargoResult[0].id_cargo;
-
-      await new Promise((resolve, reject) => {
-        const inserirRelacaoSQL = `
-                    INSERT INTO cargo_funcionario_relation (id_funcionario, id_cargo) 
-                    VALUES (?, ?)
-                `;
-
-        conexao.query(
-          inserirRelacaoSQL,
-          [id_funcionario, id_cargo],
-          (erro, resultado) => {
-            if (erro) reject(erro);
-            else resolve(resultado);
-          },
-        );
-      });
-
-      conexao.commit((erroCommit) => {
-        if (erroCommit) {
-          console.error("Erro ao fazer commit:", erroCommit);
-          conexao.rollback();
-          return res.status(500).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Erro no servidor",
-            mensagem: "Erro interno ao finalizar transação",
-          });
-        }
-
-        return res.status(201).json({
-          sucesso: true,
-          tipo: "sucesso",
-          titulo: "Funcionário Registrado com Sucesso",
-          mensagem: `Funcionário ${nome_funcionario} registrado com sucesso!`,
-          dados: {
-            id: id_funcionario,
-            nome: nome_funcionario,
-            contacto: contacto_funcionario,
-            bi: bi_funcionario,
-            cargo: cargo_funcionario,
-            senha_original: senha_funcionario,
-          },
-        });
-      });
-    } catch (erro) {
-      console.error("Erro ao registrar funcionário:", erro);
-      conexao.rollback();
-
-      if (erro.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({
-          sucesso: false,
-          tipo: "erro",
-          titulo: "Funcionário Duplicado",
-          mensagem: "Este funcionário já está cadastrado no sistema",
-        });
-      }
-
-      return res.status(500).json({
+    if (existeBI) {
+      await transaction.rollback();
+      return res.status(400).json({
         sucesso: false,
-        tipo: "erro",
-        titulo: "Erro no servidor",
-        mensagem: "Erro interno ao registrar funcionário",
+        mensagem: "BI já existe",
       });
     }
-  });
+
+   
+    const gerarSenha = () => {
+      const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let senha = "";
+      for (let i = 0; i < 8; i++) {
+        senha += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return senha;
+    };
+
+    const senha_funcionario = gerarSenha();
+
+    const senhaCriptografada = await bcrypt.hash(senha_funcionario, 10);
+
+  
+    const funcionario = await Funcionario.create(
+      {
+        nome_funcionario: nome_funcionario.trim(),
+        contacto_funcionario: contacto_funcionario.trim(),
+        bi_funcionario: bi_funcionario.trim(),
+        senha_funcionario: senhaCriptografada,
+        idAdm,
+        estado_funcionario: "Ativo",
+      },
+      { transaction }
+    );
+
+    const id_funcionario = funcionario.id_funcionario;
+
+    const cargo = await CargoFuncionario.findOne({
+      where: { cargo: cargo_funcionario },
+      transaction,
+    });
+
+    if (!cargo) {
+      await transaction.rollback();
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: "Cargo inválido",
+      });
+    }
+
+    const id_cargo = cargo.id_cargo;
+
+   
+    await CargoFuncionarioRelation.create(
+      {
+        id_funcionario,
+        id_cargo,
+      },
+      { transaction }
+    );
+
+  
+    await transaction.commit();
+
+    return res.status(201).json({
+      sucesso: true,
+      mensagem: "Funcionário registado com sucesso",
+      dados: {
+        id: id_funcionario,
+        nome: nome_funcionario,
+        contacto: contacto_funcionario,
+        bi: bi_funcionario,
+        cargo: cargo_funcionario,
+        senha_original: senha_funcionario,
+      },
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    console.error("Erro ao registrar funcionário:", error);
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: "Erro interno do servidor",
+      error: error.message,
+    });
+  }
 });
 
 

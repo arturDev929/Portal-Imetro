@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const conexao = require("../infra/conexao");
 
+
 const DiscProf = conexao.define(
   "disc_prof",
   {
@@ -17,5 +18,4 @@ const DiscProf = conexao.define(
     timestamps: false,
   },
 );
-
 module.exports = DiscProf;
