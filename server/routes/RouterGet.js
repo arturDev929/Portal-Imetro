@@ -400,7 +400,7 @@ router.get("/ProfessoresDesativados", async (req, res) => {
     const professoresComFoto = professores.map((prof) => ({
       ...prof.dataValues,
       fotoUrl: prof.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${prof.fotoprofessor}`
         : null,
     }));
 
@@ -423,7 +423,7 @@ router.get("/Professores", async (req, res) => {
     const professoresComFoto = professores.map((prof) => ({
       ...prof.dataValues,
       fotoUrl: prof.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${prof.fotoprofessor}`
         : null,
     }));
 
@@ -579,7 +579,7 @@ router.get("/professorVinculado/:id", async (req, res) => {
         disciplina: item.Disciplina.disciplina,
         iddisciplina: item.Disciplina.iddisciplina,
         fotoUrl: professor.fotoprofessor
-          ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
+          ? `https://api-portal-imetro.onrender.com/api/img/professores/${professor.fotoprofessor}`
           : null,
       };
     });
@@ -623,7 +623,7 @@ router.get("/professorDisponivel/:id", async (req, res) => {
       nomeprofessor: professor.nomeprofessor,
       titulacaoprofessor: professor.titulacaoprofessor,
       fotoUrl: professor.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${professor.fotoprofessor}`
         : null,
     }));
 
@@ -831,7 +831,7 @@ router.get("/professoresMaisAtivos", async (req, res) => {
     const professoresComFoto = professores.map((p) => ({
       ...p,
       fotoUrl: p.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${p.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${p.fotoprofessor}`
         : null,
     }));
 
@@ -910,7 +910,7 @@ router.get("/Professores", async (req, res) => {
     const professoresComFoto = professores.map((prof) => ({
       ...prof.dataValues,
       fotoUrl: prof.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${prof.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${prof.fotoprofessor}`
         : null,
     }));
 
@@ -1015,7 +1015,7 @@ router.get("/professoresDesativados", async (req, res) => {
     const professoresComFoto = professores.map((professor) => ({
       ...professor.toJSON(),
       fotoUrl: professor.fotoprofessor
-        ? `${process.env.REACT_APP_API_URL}/api/img/professores/${professor.fotoprofessor}`
+        ? `https://api-portal-imetro.onrender.com/api/img/professores/${professor.fotoprofessor}`
         : null,
     }));
 
@@ -1360,13 +1360,13 @@ router.get("/EstudantesInscritos", async (req, res) => {
     const estudanteFoto = estudantes.map((estudante) => ({
       ...estudante.toJSON(),
       fotoUrl: estudante.foto_estudanteInscricao
-        ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}`
+        ? `https://api-portal-imetro.onrender.com/api/img/estudantes/${estudante.foto_estudanteInscricao}`
         : null,
       docUrl: estudante.documento_estudanteInscricao
-        ? `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}`
+        ? `https://api-portal-imetro.onrender.com/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}`
         : null,
       docInscricao: estudante.pdf_InscricaoRupe
-        ? `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}`
+        ? `https://api-portal-imetro.onrender.com/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}`
         : null,
     }));
 
