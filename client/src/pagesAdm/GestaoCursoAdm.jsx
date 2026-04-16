@@ -16,13 +16,8 @@ import CursoEdit from "./components/CursosEdit"
 import DepartamentoEdit from "./components/DepartamentosEdit"
 import DisciplinasEdit from "./components/DisciplinasEdit"
 import { MdAdd, MdFlightClass } from "react-icons/md";
-<<<<<<< HEAD
-import OutrosRegistros from "../components/OutrosRegistros";
-import TurmasAdm from "../components/TurmasAdm";
-=======
 import OutrosRegistros from "./components/OutrosRegistros";
 import TurmasAdm from "./components/TurmasAdm";
->>>>>>> 880eddc (Fiz a conexao com a DB na nuvem e estou alterando o sql para ORM (Sequelize))
 
 function HomeAdm() {
     const [user, setUser] = useState(null);

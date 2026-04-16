@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
 import { 
     MdEdit, 
     MdDeleteForever, 
@@ -14,7 +13,7 @@ import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { IoMdPersonAdd } from "react-icons/io";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css";
-import Api from "../service/api"
+import Api from "../../service/api"
 const API_TIMEOUT = 30000;
 
 function FuncionarioEdit() {
@@ -208,7 +207,7 @@ function FuncionarioEdit() {
         try {
             const response = await Api.post(`/post/registrarfuncionario`, {
                 ...dadosNovoFuncionario,
-                idAdm: user.id
+                idadm: user.id
             });
 
             if (response.data.sucesso) {

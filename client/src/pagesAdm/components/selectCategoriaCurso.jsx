@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../service/api";
+import api from "../../service/api";
 
 function SelectCategoriaCurso({onChange, value = ""}) {  
     const [categorias, setCategorias] = useState([]); 

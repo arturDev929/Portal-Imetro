@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import api from "../service/api";
-import Style from "../pages/Cadastro.module.css";
-import { IoMdFolder } from "react-icons/io";
+import api from "../../service/api";
+import Style from "../../pages/Cadastro.module.css";
+import { IoMdPerson } from "react-icons/io";
 
-function SelectCategoriaCurso({ value, onChange, disabled }) {  
-    const [categorias, setCategorias] = useState([]); 
+function SelectProfessor({ value, onChange, disabled }) {
+    const [professores, setProfessores] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -12,12 +12,12 @@ function SelectCategoriaCurso({ value, onChange, disabled }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/Cursos`);
-                setCategorias(response.data);
+                const response = await api.get(`/get/Professores`);
+                setProfessores(response.data);
                 setError(null);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
-                setError("Erro ao carregar categorias");
+                setError("Erro ao carregar professores");
             } finally {
                 setLoading(false);
             }
@@ -30,44 +30,44 @@ function SelectCategoriaCurso({ value, onChange, disabled }) {
         if (onChange) {
             onChange(e.target.value);
         }
-    }; 
+    };
 
     return (
-        <div className="d-flex">
-            <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
+        <div className="d-flex mb-3">
+            <span className={`${Style.span} input-group-text`}><IoMdPerson /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="idcategoriacurso" 
-                name="idcategoriacurso"
+                id="idprofessor" 
+                name="idprofessor"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
                 required
             >
-                <option value="">Selecione um curso</option>
+                <option value="">Selecione um professor</option>
                 
                 {loading && (
-                    <option value="" disabled>Carregando cursos...</option>
+                    <option value="" disabled>Carregando professores...</option>
                 )}
                 
                 {error && (
                     <option value="" disabled>{error}</option>
                 )}
                 
-                {!loading && !error && categorias.length > 0 && 
-                    categorias.map((categoria) => (
-                        <option key={categoria.idcurso} value={categoria.idcurso}>
-                            {categoria.curso}
+                {!loading && !error && professores.length > 0 && 
+                    professores.map((professor) => (
+                        <option key={professor.idprofessor} value={professor.idprofessor}>
+                            {professor.nomeprofessor}
                         </option>
                     ))
                 }
                 
-                {!loading && !error && categorias.length === 0 && (
-                    <option value="" disabled>Nenhuma categoria disponível</option>
+                {!loading && !error && professores.length === 0 && (
+                    <option value="" disabled>Nenhum professor disponível</option>
                 )}
             </select>
         </div>
     );
 }
 
-export default SelectCategoriaCurso;
+export default SelectProfessor;

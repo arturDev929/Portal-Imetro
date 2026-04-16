@@ -1,13 +1,13 @@
 import api from "../../service/api";
 import { useState, useEffect } from "react";
-import Style from "../../components/DepartamentosEdit.module.css";
+import Style from "../../pagesAdm/components/DepartamentosEdit.module.css";
 import { FaInfoCircle } from "react-icons/fa";
 import { GrStatusGood } from "react-icons/gr";
 import { VscError } from "react-icons/vsc";
 import { MdPerson, MdLocationOn, MdPhone, MdEmail, MdAttachFile } from "react-icons/md";
 import { RiContactsBook3Line } from "react-icons/ri";
 import { FaBriefcase, FaUniversity, FaHeartbeat } from "react-icons/fa";
-import { showSuccessToast, showErrorToast, showInfoToast } from "../../components/CustomToast";
+import { showSuccessToast, showErrorToast, showInfoToast } from "../../pagesAdm/components/CustomToast";
 
 function Inscricoes() {
     const [EstudantesInscritos, setEstudantesInscritos] = useState([]);
