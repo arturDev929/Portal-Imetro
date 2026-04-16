@@ -8,14 +8,14 @@ const ativarProfessor = async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: "Id é obrigatório!" });
     }
-    const encontrarProfessor = await ProfessorModel.findByPk(id);
+    const encontrarProfessor = await Professor.findByPk(id);
     if (!encontrarProfessor) {
       return res.status(400).json({ error: "Professor não encontrado" });
     }
     if (encontrarProfessor.estado === "Ativo") {
       return res.status(400).json({ error: "Este professor já está ativo" });
     }
-    await ProfessorModel.update(
+    await Professor.update(
       { estado: "Ativo" },
       {
         where: {
@@ -38,7 +38,7 @@ const desativarProfessor = async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: "Id é obrigatório!" });
     }
-    const encontrarProfessor = await ProfessorModel.findByPk(id);
+    const encontrarProfessor = await Professor.findByPk(id);
     if (!encontrarProfessor) {
       return res.status(400).json({ error: "Professor não encontrado" });
     }
@@ -47,7 +47,7 @@ const desativarProfessor = async (req, res) => {
         .status(400)
         .json({ error: "Este professor já está Desativado" });
     }
-    await ProfessorModel.update(
+    await Professor.update(
       { estado: "Desativado" },
       {
         where: {

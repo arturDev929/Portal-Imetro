@@ -79,4 +79,22 @@ Semestre.belongsTo(AnoCurricular, { foreignKey: "idanocurricular" });
 AnoCurricular.hasMany(Semestre, { foreignKey: "idanocurricular" });
 
 Curso.belongsTo(CategoriaCurso, { foreignKey: "idcategoriacurso" });
-Curso.hasMany(Semestre, { foreignKey: "idcurso" });
+Curso.hasMany(Semestre, { foreignKey: "idcurso" }); 
+const sequelize = require("../infra/conexao");
+
+module.exports = {
+  sequelize,
+  Professor,
+  Disciplina,
+  DiscProf,
+  Admimetro,
+  CargoFuncionario,
+  CategoriaCurso,
+  Funcionario,
+  Curso,
+  AnoCurricular,
+  EstudanteInscricao,
+  CargoFuncionarioRelation,
+  Periodo,
+  Semestre
+};
