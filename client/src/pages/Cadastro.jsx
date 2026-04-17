@@ -12,8 +12,8 @@ import SelectCurso from "../pagesAdm/components/selectCursos";
 import Api from "../service/api"
 
 function Cadastro() {
-    const [etapa, setEtapa] = useState(1); // 1: dados pessoais, 2: documento e bi, 3: curso e período, 4: senha e arquivos, 5: verificação
-    const [etapaVerificacao, setEtapaVerificacao] = useState(false); // true: tela de verificação
+    const [etapa, setEtapa] = useState(1);
+    const [etapaVerificacao, setEtapaVerificacao] = useState(false);
     const [valores, setValores] = useState({
         nomeEstudante: '',
         contactoEstudante: '',
@@ -23,15 +23,13 @@ function Cadastro() {
         periodoEstudante: '',
         idcurso: '',
         senhaEstudante: '',
-        confirmarSenha: '',
-        documentoEstudante: null,
-        fotoEstudante: null
+        confirmarSenha: ''
     });
 
     const [codigoVerificacao, setCodigoVerificacao] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [tentativas, setTentativas] = useState(0);
-    const [tempoRestante, setTempoRestante] = useState(600); // 10 minutos em segundos
+    const [tempoRestante, setTempoRestante] = useState(600);
     const [timerAtivo, setTimerAtivo] = useState(false);
     const [arquivos, setArquivos] = useState({
         documentoEstudante: null,
@@ -65,11 +63,6 @@ function Cadastro() {
                 ...prev,
                 [name]: files[0]
             }));
-            
-            setValores(prev => ({
-                ...prev,
-                [name]: files[0]
-            }));
         }
     };
 
@@ -87,7 +80,6 @@ function Cadastro() {
         newCodigo[index] = value;
         setCodigoVerificacao(newCodigo);
 
-        // Auto-focus próximo input
         if (value && index < 5) {
             const nextInput = document.getElementById(`codigo-${index + 1}`);
             if (nextInput) nextInput.focus();
@@ -95,7 +87,6 @@ function Cadastro() {
     };
 
     const handleKeyDown = (index, e) => {
-        // Se backspace e campo vazio, voltar para input anterior
         if (e.key === 'Backspace' && !codigoVerificacao[index] && index > 0) {
             const prevInput = document.getElementById(`codigo-${index - 1}`);
             if (prevInput) prevInput.focus();
@@ -105,6 +96,11 @@ function Cadastro() {
     const validarEtapa1 = () => {
         if (!valores.nomeEstudante || !valores.contactoEstudante || !valores.emailEstudante) {
             showErrorToast("Erro", "Preencha todos os campos obrigatórios!");
+            return false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(valores.emailEstudante)) {
+            showErrorToast("Erro", "Email inválido!");
             return false;
         }
         return true;
@@ -215,12 +211,15 @@ function Cadastro() {
         try {
             const formData = new FormData();
             
-            // Adicionar dados do formulário
-            Object.keys(valores).forEach(key => {
-                if (key !== 'documentoEstudante' && key !== 'fotoEstudante' && key !== 'confirmarSenha') {
-                    formData.append(key, valores[key]);
-                }
-            });
+            // Adicionar todos os dados do formulário
+            formData.append('nomeEstudante', valores.nomeEstudante);
+            formData.append('contactoEstudante', valores.contactoEstudante);
+            formData.append('emailEstudante', valores.emailEstudante);
+            formData.append('biEstudante', valores.biEstudante);
+            formData.append('sexoEstudante', valores.sexoEstudante);
+            formData.append('periodoEstudante', valores.periodoEstudante);
+            formData.append('idcurso', valores.idcurso);
+            formData.append('senhaEstudante', valores.senhaEstudante);
             
             // Adicionar código e email
             formData.append('codigo', codigoCompleto);
@@ -256,9 +255,7 @@ function Cadastro() {
                     periodoEstudante: '',
                     idcurso: '',
                     senhaEstudante: '',
-                    confirmarSenha: '',
-                    documentoEstudante: null,
-                    fotoEstudante: null
+                    confirmarSenha: ''
                 });
                 
                 setArquivos({
@@ -275,22 +272,16 @@ function Cadastro() {
         } catch (error) {
             console.error("Erro ao verificar código:", error);
             
-            if (error.response?.data) {
-                setTentativas(prev => prev + 1);
-                showErrorToast(
-                    error.response.data.titulo || "Erro",
-                    error.response.data.mensagem || "Erro na verificação"
-                );
-                
-                // Limpar código em caso de erro
-                setCodigoVerificacao(['', '', '', '', '', '']);
-                document.getElementById('codigo-0')?.focus();
-            } else {
-                showErrorToast(
-                    "Erro de conexão",
-                    "Não foi possível conectar ao servidor!"
-                );
-            }
+            const errorData = error.response?.data;
+            setTentativas(prev => prev + 1);
+            showErrorToast(
+                errorData?.titulo || "Erro",
+                errorData?.mensagem || "Erro na verificação"
+            );
+            
+            // Limpar código em caso de erro
+            setCodigoVerificacao(['', '', '', '', '', '']);
+            document.getElementById('codigo-0')?.focus();
         } finally {
             setLoading(false);
         }
@@ -345,7 +336,7 @@ function Cadastro() {
                 <div className="d-flex col-md-6 mb-3">
                     <span className={`${Style.span} input-group-text`}><FaPhone /></span>
                     <input 
-                        type="text" 
+                        type="tel" 
                         className={`${Style.inputHome} form-control`} 
                         name="contactoEstudante"
                         placeholder="+244 000-000-000"
@@ -521,7 +512,6 @@ function Cadastro() {
                                     
                                     {!etapaVerificacao ? (
                                         <>
-                                            {/* Indicador de progresso */}
                                             <div className="mb-4">
                                                 <div className="progress" style={{ height: '5px' }}>
                                                     <div 
@@ -582,7 +572,6 @@ function Cadastro() {
                                             </form>
                                         </>
                                     ) : (
-                                        // Tela de verificação de código
                                         <div className="text-white">
                                             <button 
                                                 onClick={voltarParaFormulario}
