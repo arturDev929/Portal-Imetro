@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../pagesAdm/components/navbar";
 import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
-import { showSuccessToast, showErrorToast } from "../pagesAdm/components/CustomToast";
+import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
 import { api } from "../service/api";
 function Home() {
   const navigate = useNavigate();

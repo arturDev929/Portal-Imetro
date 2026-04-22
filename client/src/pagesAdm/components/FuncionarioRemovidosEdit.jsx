@@ -10,7 +10,7 @@ import {
     GrStatusGood
 } from "react-icons/gr"
 import { FaIdCard, FaUserTie } from "react-icons/fa";
-import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
+import { showSuccessToast, showErrorToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 import Api from '../../service/api';
 const API_TIMEOUT = 30000;

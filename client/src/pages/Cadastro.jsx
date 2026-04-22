@@ -7,7 +7,7 @@ import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, FaArrowRight, FaArrowLef
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
-import { showSuccessToast, showErrorToast } from "../pagesAdm/components/CustomToast";
+import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
 import SelectCurso from "../pagesAdm/components/selectCursos";
 import Api from "../service/api"
 

@@ -6,8 +6,8 @@ import { GrStatusGood } from "react-icons/gr";
 import { VscError } from "react-icons/vsc";
 import { MdPerson, MdLocationOn, MdPhone, MdEmail, MdAttachFile } from "react-icons/md";
 import { RiContactsBook3Line } from "react-icons/ri";
-import { FaBriefcase, FaUniversity, FaHeartbeat } from "react-icons/fa";
-import { showSuccessToast, showErrorToast, showInfoToast } from "../../pagesAdm/components/CustomToast";
+import {FaUniversity } from "react-icons/fa";
+import { showSuccessToast, showErrorToast} from "../../components/global/CustomToast";
 
 function Inscricoes() {
     const [EstudantesInscritos, setEstudantesInscritos] = useState([]);
@@ -86,7 +86,7 @@ function Inscricoes() {
             
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} recusada com sucesso!`);
-                // Remover o estudante da lista
+
                 setEstudantesInscritos(prevEstudantes => 
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );

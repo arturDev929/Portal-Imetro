@@ -1,8 +1,7 @@
 // GestaoProfessoresAdm.js
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "./components/SidebarAdm";
-import NavbarAdm from "./components/NavbarAdm";
+import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -163,9 +162,9 @@ function GestaoProfessoresAdm() {
     if (loading) {
         return (
             <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-                <SidebarAdm />
+                {/* <SidebarAdm /> */}
                 <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                    <NavbarAdm />
+                    {/* <NavbarAdm /> */}
                     <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
                         <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
                             <span className="visually-hidden">Carregando...</span>
@@ -177,18 +176,15 @@ function GestaoProfessoresAdm() {
     }
 
     return (
-        <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-            <SidebarAdm />
-            <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                <NavbarAdm />
-                <main className="p-4" style={{ backgroundColor: 'var(--cinza-claro)' }}>
-                    {/* Header Section */}
-                    <div className="row mb-4">
-                        <div className="col-12">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
-                                        Dashboard de Professores
+        <AdminLayout>
+            <div style={{ backgroundColor: 'var(--cinza-claro)' }}>
+                {/* Header Section */}
+                <div className="row mb-4">
+                    <div className="col-12">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                    Dashboard de Professores
                                     </h2>
                                     <p className="text-muted mb-0">
                                         Bem-vindo, {user ? user.nome : 'Administrador'} | Análise completa do corpo docente
@@ -1007,9 +1003,8 @@ function GestaoProfessoresAdm() {
                     {secaoAtiva === "ProfessorRemovidosEdit" && (
                         <ProfessorRemovidosEdit />
                     )}
-                </main>
             </div>
-        </div>
+        </AdminLayout>
     );
 }
 

@@ -1,13 +1,10 @@
 import axios from "axios";
-const backendPort = import.meta.env.VITE_BACKEND_PORT || "8081";
-const host = window.location.hostname;
-
-export const baseURL =
-  import.meta.env.VITE_API_URL ||
-  `http://${host}:${backendPort}`;
+import { API_BASE_URL } from "../constants/api";
 
 export const api = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
 });
+
+export const baseURL = API_BASE_URL;
 
 export default api;

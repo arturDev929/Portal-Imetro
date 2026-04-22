@@ -1,10 +1,9 @@
-import NavbarAdm from "./components/NavbarAdm";
-import SidebarAdm from "./components/SidebarAdm";
+import AdminLayout from "../layouts/AdminLayout";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
-import { showErrorToast } from "./components/CustomToast";
+import { showErrorToast } from "../components/global/CustomToast";
 import { api } from "../service/api";
-import { showSuccessToast } from "./components/CustomToast"; // Missing import
+import { showSuccessToast } from "../components/global/CustomToast"; // Missing import
 
 function FuncionáriosAdmRegistrer() {
   const [user, setUser] = useState(null);
@@ -77,18 +76,14 @@ function FuncionáriosAdmRegistrer() {
     }
   };
   return (
-    <div className="container-fluid">
-      <SidebarAdm />
-      <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-        <NavbarAdm />
-        <main className="p-4">
-          <div className="row">
-            <div className="col-12 mb-4">
-              <h3 className="text-primary">
-                <IoMdAddCircleOutline className="me-2 mb-1" />
-                Registrar Funcionários
-              </h3>
-            </div>
+    <AdminLayout>
+      <div className="row">
+        <div className="col-12 mb-4">
+          <h3 className="text-primary">
+            <IoMdAddCircleOutline className="me-2 mb-1" />
+            Registrar Funcionários
+          </h3>
+        </div>
             <div className="col-12 col-lg-6 mb-3">
               <div className="shadow-sm rounded-3 p-4 bg-light border">
                 <h5 className="text-primary mb-3">
@@ -173,9 +168,7 @@ function FuncionáriosAdmRegistrer() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </AdminLayout>
   );
 }
 export default FuncionáriosAdmRegistrer;

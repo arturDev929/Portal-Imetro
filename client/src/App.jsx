@@ -1,49 +1,52 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Cadastro from "./pages/Cadastro";
-import Home from "./pages/Home"
-import HomeAdm from "./pagesAdm/HomeAdm";
-import FuncionáriosAdmRegistrer from "./pagesAdm/FuncionariosAdmRegistrer";
-import GestaoCursoAdm from "./pagesAdm/GestaoCursoAdm";
-import GestaoProfessoresAdm from "./pagesAdm/GestaoProfessoresAdm";
-import GestaoFuncionarioAdm from "./pagesAdm/GestaoFuncionarioAdm";
-import HomeFuncionarioM from "./pagesFuncionarioMatricula/Home";
+import { lazy, Suspense } from "react";
+import Layout from "./layouts/Layout";
+import { useAuth } from "./hooks/global/useAuth";
+
+const Cadastro = lazy(() => import("./pages/Cadastro"));
+const Home = lazy(() => import("./pages/Home"));
+const HomeAdm = lazy(() => import("./pagesAdm/HomeAdm"));
+const FuncionáriosAdmRegistrer = lazy(() => import("./pagesAdm/FuncionariosAdmRegistrer"));
+const GestaoCursoAdm = lazy(() => import("./pagesAdm/GestaoCursoAdm"));
+const GestaoProfessoresAdm = lazy(() => import("./pagesAdm/GestaoProfessoresAdm"));
+const GestaoFuncionarioAdm = lazy(() => import("./pagesAdm/GestaoFuncionarioAdm"));
+const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 
 const RotaPrivada = ({ children }) => {
-  const isLogado = localStorage.getItem("usuarioLogado");
-  return isLogado ? children : <Navigate to="/" replace />;
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn() ? children : <Navigate to="/" replace />;
 };
 
 function App() {
   return (
     <Router>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        style={{
-          marginTop: '70px'
-        }}
-      />
-      <Routes>
-        <Route exact path="/" element={<Home/>}/>
-        <Route exact path="/cadastro" element={<Cadastro/>}/>
-        
-        <Route path="/homeAdm" element={<RotaPrivada><HomeAdm/></RotaPrivada>}/>
-        <Route path="/funcionariosAdmRegistrer" element={<RotaPrivada><FuncionáriosAdmRegistrer/></RotaPrivada>}/>
-        <Route path="/gestaoCursoAdm" element={<RotaPrivada><GestaoCursoAdm/></RotaPrivada>}/>
-        <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
-        <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
-        <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
-      </Routes>
+      <Layout>
+        <Suspense fallback={
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            fontSize: '20px',
+            color: 'var(--azul-escuro)'
+          }}>
+            Carregando...
+          </div>
+        }>
+          <Routes>
+            <Route exact path="/" element={<Home/>}/>
+            <Route exact path="/cadastro" element={<Cadastro/>}/>
+            
+            <Route path="/homeAdm" element={<RotaPrivada><HomeAdm/></RotaPrivada>}/>
+            <Route path="/funcionariosAdmRegistrer" element={<RotaPrivada><FuncionáriosAdmRegistrer/></RotaPrivada>}/>
+            <Route path="/gestaoCursoAdm" element={<RotaPrivada><GestaoCursoAdm/></RotaPrivada>}/>
+            <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
+            <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
+            <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
+            
+          </Routes>
+        </Suspense>
+      </Layout>
     </Router>
   );
 }

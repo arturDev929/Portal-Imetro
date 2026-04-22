@@ -28,7 +28,7 @@ import { RiContactsBook3Line } from "react-icons/ri";
 import { IoMdPersonAdd } from "react-icons/io";
 import SelectDisciplina from "./SelectDisciplina";
 import SelectProfessor from "./SelectProfessor";
-import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
+import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 
 const API_TIMEOUT = 30000;

@@ -1,5 +1,4 @@
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
+import FuncionarioLayout from "../layouts/FuncionarioLayout";
 import { useEffect, useState } from "react";
 import Inscricoes from "./components/Inscricoes";
 import EstudantesAprovados from "./components/EstudantesAprovados";
@@ -21,24 +20,20 @@ function HomeAdm() {
     }, []);
 
     return (
-        <div className={`container-fluid p-0 m-0`}>
-            <Sidebar/>
-            <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                <Navbar/>
-                <main className="p-4">
-                    <div className="row mb-4">
-                        <div className="col-12">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
-                                        Dashboard de Estudantes
-                                    </h2>
-                                    {user && (
-                                        <p className="text-muted mb-0">
-                                            Bem-vindo, {user.nome} | Gestão de inscrições e matrículas
-                                        </p>
-                                    )}
-                                </div>
+        <FuncionarioLayout>
+            <div className="row mb-4">
+                <div className="col-12">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                Dashboard de Estudantes
+                            </h2>
+                            {user && (
+                                <p className="text-muted mb-0">
+                                    Bem-vindo, {user.nome} | Gestão de inscrições e matrículas
+                                </p>
+                            )}
+                        </div>
                                 <div className="badge p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
                                     <IoMdPerson size={24} color="white" />
                                 </div>
@@ -116,9 +111,7 @@ function HomeAdm() {
                             )}
                         </div>
                     </div>
-                </main>
-            </div>
-        </div>
+        </FuncionarioLayout>
     );
 }
 

@@ -3,7 +3,7 @@ import api,{baseURL} from "../../service/api";
 import { FaBook } from "react-icons/fa";
 import { MdEdit, MdDeleteForever, MdSearch, MdRefresh, MdAdd } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
-import { showErrorToast, showSuccessToast, useConfirmToast} from "./CustomToast";
+import { showErrorToast, showSuccessToast, useConfirmToast} from "../../components/global/CustomToast";
 import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
 import Style from "./DepartamentosEdit.module.css"
 

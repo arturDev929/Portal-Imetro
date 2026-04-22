@@ -5,7 +5,7 @@ import SelectCurso from "./selectCursos";
 import CategoriaCursoAno from "./CategoriaCursoAno";
 import SelectDisciplina from "./SelectDisciplina";
 import { IoMdAddCircleOutline } from "react-icons/io";
-import { showSuccessToast, showErrorToast } from "./CustomToast";
+import { showSuccessToast, showErrorToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 import { Fa0 } from "react-icons/fa6";
 import style from "../../pages/Cadastro.module.css"

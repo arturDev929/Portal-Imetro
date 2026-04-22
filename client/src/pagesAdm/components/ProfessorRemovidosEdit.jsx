@@ -21,7 +21,7 @@ import {
     FaBriefcase,
 } from "react-icons/fa";
 import { RiContactsBook3Line } from "react-icons/ri";
-import { showSuccessToast, showErrorToast, useConfirmToast } from "./CustomToast";
+import { showSuccessToast, showErrorToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 const API_TIMEOUT = 30000;
 

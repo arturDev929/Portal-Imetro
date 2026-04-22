@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "./components/SidebarAdm";
-import NavbarAdm from "./components/NavbarAdm";
+import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -19,7 +18,7 @@ import { MdAdd, MdFlightClass } from "react-icons/md";
 import OutrosRegistros from "./components/OutrosRegistros";
 import TurmasAdm from "./components/TurmasAdm";
 
-function HomeAdm() {
+function GestaoCursoAdm() {
     const [user, setUser] = useState(null);
     const [departamento, setDepartamento] = useState(0);
     const [licenciatura, setLicenciatura] = useState(0);
@@ -154,9 +153,9 @@ function HomeAdm() {
     if (loading) {
         return (
             <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-                <SidebarAdm />
+                {/* <SidebarAdm /> */}
                 <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                    <NavbarAdm />
+                    {/* <NavbarAdm /> */}
                     <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
                         <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
                             <span className="visually-hidden">Carregando...</span>
@@ -168,11 +167,8 @@ function HomeAdm() {
     }
 
     return (
-        <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-            <SidebarAdm />
-            <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                <NavbarAdm />
-                <main className="p-4" style={{ backgroundColor: 'var(--cinza-claro)' }}>
+        <AdminLayout>
+            <div style={{ backgroundColor: 'var(--cinza-claro)' }}>
                     <div className="row mb-4">
                         <div className="col-12">
                             <div className="d-flex justify-content-between align-items-center">
@@ -671,10 +667,9 @@ function HomeAdm() {
                     {secaoAtiva === "outros" && (
                         <OutrosRegistros />
                     )}
-                </main>
             </div>
-        </div>
+        </AdminLayout>
     );
 }
 
-export default HomeAdm;
+export default GestaoCursoAdm;

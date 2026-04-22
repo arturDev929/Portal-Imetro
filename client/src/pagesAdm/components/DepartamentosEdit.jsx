@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons/md";
 import { IoMdBusiness } from "react-icons/io";
 import api from "../../service/api";
-import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
+import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
 const API_TIMEOUT = 5000;

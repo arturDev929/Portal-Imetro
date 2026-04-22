@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../service/api";
-import SidebarAdm from "./components/SidebarAdm";
-import NavbarAdm from "./components/NavbarAdm";
+import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
 import {
   XAxis,
@@ -157,9 +156,9 @@ function GestaoFuncionariosAdm() {
   if (loading) {
     return (
       <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-        <SidebarAdm />
+        {/* <SidebarAdm /> */}
         <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-          <NavbarAdm />
+          {/* <NavbarAdm /> */}
           <div
             className="d-flex justify-content-center align-items-center"
             style={{ height: "80vh" }}
@@ -178,17 +177,14 @@ function GestaoFuncionariosAdm() {
   }
 
   return (
-    <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-      <SidebarAdm />
-      <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-        <NavbarAdm />
-        <main className="p-4" style={{ backgroundColor: "var(--cinza-claro)" }}>
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h2
-                    style={{ color: "var(--azul-escuro)", fontWeight: "600" }}
+    <AdminLayout>
+      <div style={{ backgroundColor: "var(--cinza-claro)" }}>
+        <div className="row mb-4">
+          <div className="col-12">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h2
+                  style={{ color: "var(--azul-escuro)", fontWeight: "600" }}
                   >
                     Dashboard de Funcionários
                   </h2>
@@ -665,9 +661,8 @@ function GestaoFuncionariosAdm() {
           {secaoAtiva === "funcionariosRemovidos" && (
             <FuncionarioRemovidosEdit />
           )}
-        </main>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
