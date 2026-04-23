@@ -100,14 +100,14 @@ export const useConfirmToast = () => {
     const showConfirmToast = useCallback((message, onConfirm, onCancel = null, titulo = "Confirmação") => {
         setIsConfirming(true);
         toast(
-            <div className="text-white">
+            <div>
                 <div className="d-flex align-items-center mb-3">
                     <div>
                         <h5 className={`mb-0 fw-bold ${Style.titulo}`}>{titulo}</h5>
                         <p className="mb-1">{message}</p>
                         <div className="d-flex gap-2 mt-3">
                             <button
-                                className="btn btn-sm btn-outline-light"
+                                className="btn btn-sm btn-outline-danger"
                                 onClick={() => {
                                     setIsConfirming(false);
                                     toast.dismiss();
@@ -117,7 +117,7 @@ export const useConfirmToast = () => {
                                 Cancelar
                             </button>
                             <button
-                                className="btn btn-sm btn-light"
+                                className="btn btn-sm btn-success"
                                 onClick={() => {
                                     setIsConfirming(false);
                                     toast.dismiss();
@@ -142,7 +142,7 @@ export const useConfirmToast = () => {
                     borderRadius: '10px',
                     border: 'none',
                     color: 'var(--azul-escuro)',
-                    backgroundColor: 'var(--warning)',
+                    backgroundColor: 'var(--branco)',
                     minWidth: '400px'
                 }
             }

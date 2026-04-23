@@ -7,7 +7,7 @@ const AdminLayout = ({ children }) => {
       <SidebarAdm />
       <div className="col-md-9 ms-md-auto col-lg-10 px-0">
         <NavbarAdm />
-        <main className="p-4">
+        <main className="p-4" style={{ backgroundColor: 'var(--cinza-claro)' }}>
           {children}
         </main>
       </div>

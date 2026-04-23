@@ -153,9 +153,7 @@ function GestaoCursoAdm() {
     if (loading) {
         return (
             <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-                {/* <SidebarAdm /> */}
                 <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-                    {/* <NavbarAdm /> */}
                     <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
                         <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
                             <span className="visually-hidden">Carregando...</span>

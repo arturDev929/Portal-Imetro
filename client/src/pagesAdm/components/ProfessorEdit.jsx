@@ -30,6 +30,7 @@ import SelectDisciplina from "./SelectDisciplina";
 import SelectProfessor from "./SelectProfessor";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
+import Table from "../../components/global/Table"
 
 const API_TIMEOUT = 30000;
 

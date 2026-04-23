@@ -3,8 +3,8 @@ import React from 'react';
 const Table = ({ headers, data, renderRow, className = "table table-hover" }) => {
   return (
     <div className="table-responsive">
-      <table className={className}>
-        <thead>
+      <table className={className} >
+        <thead style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--branco)' }}>
           <tr>
             {headers.map((header, index) => (
               <th key={index}>{header}</th>
@@ -14,7 +14,7 @@ const Table = ({ headers, data, renderRow, className = "table table-hover" }) =>
         <tbody>
           {data.map((item, index) => renderRow(item, index))}
         </tbody>
-      </table>
+      </table> 
     </div>
   );
 };

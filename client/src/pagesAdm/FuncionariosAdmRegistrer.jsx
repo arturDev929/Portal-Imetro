@@ -77,7 +77,7 @@ function FuncionáriosAdmRegistrer() {
   };
   return (
     <AdminLayout>
-      <div className="row">
+      <div className="row h-100">
         <div className="col-12 mb-4">
           <h3 className="text-primary">
             <IoMdAddCircleOutline className="me-2 mb-1" />

@@ -12,7 +12,7 @@ import {
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
 import api from "../../service/api";
-import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "../../components/global/CustomToast";
+import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast} from "./CustomToast";
 import Style from "./DepartamentosEdit.module.css"
 
 const API_TIMEOUT = 5000;

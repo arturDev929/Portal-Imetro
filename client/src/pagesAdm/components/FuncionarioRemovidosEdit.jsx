@@ -13,6 +13,7 @@ import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
 import Api from '../../service/api';
+import Table from '../../components/global/Table';
 const API_TIMEOUT = 30000;
 
 function FuncionarioRemovidosEdit() {
@@ -153,6 +154,99 @@ function FuncionarioRemovidosEdit() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
+    const headers = ['Nome', 'Contacto', 'BI', 'Cargo', 'Ativar', 'Excluir'];
+
+    const renderRow = useCallback((item) => (
+        <tr key={item.id_funcionario}>
+            <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
+                <MdPerson className="me-2 mb-1"/>{item.nome_funcionario}
+            </td>
+            <td className="align-middle">
+                <MdPhone className="me-1" style={{color:'var(--azul-escuro)'}}/>
+                {item.contacto_funcionario || 'N/I'}
+            </td>
+            <td className="align-middle">
+                <FaIdCard className="me-1" style={{color:'var(--azul-escuro)'}}/>
+                {item.bi_funcionario || 'N/I'}
+            </td>   
+            <td className="align-middle">
+                <span className="badge bg-secondary">{item.cargo || 'N/I'}</span>
+            </td>
+            <td className="text-center">
+                <button 
+                    className={`btn btn-sm ${Style.btnAdd}`}
+                    onClick={() => ativarFuncionario(item.id_funcionario, item.nome_funcionario)}
+                    disabled={loading || isConfirming}
+                    title={`Ativar ${item.nome_funcionario}`}
+                >
+                    <GrStatusGood />
+                </button>
+            </td>
+            <td className="text-center">
+                <button 
+                    className={`btn btn-sm ${Style.btnDeletar}`}
+                    onClick={() => excluirPermanente(item.id_funcionario, item.nome_funcionario)}
+                    disabled={loading || isConfirming}
+                    title={`Excluir permanentemente ${item.nome_funcionario}`}
+                >
+                    <MdDeleteForever />
+                </button>
+            </td>
+        </tr>
+    ), [loading, isConfirming, ativarFuncionario, excluirPermanente]);
+
+    const renderConteudo = () => {
+        if (loading) {
+            return (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                        <span className="visually-hidden">Carregando...</span>
+                    </div>
+                    <p className="text-muted mb-0">Carregando funcionários...</p>
+                </div>
+            );
+        }
+
+        if (semResultados) {
+            return (
+                <div className="text-center py-5">
+                    <MdSearch size={48} className="text-muted mb-3" />
+                    <p className="text-muted mb-2">Nenhum funcionário encontrado para "{termoPesquisa}"</p>
+                    <button 
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={limparPesquisa}
+                    >
+                        Limpar pesquisa
+                    </button>
+                </div>
+            );
+        }
+
+        if (isEmpty) {
+            return (
+                <div className="text-center py-5">
+                    <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                    <p className="text-muted mb-3">Nenhum funcionário encontrado</p>
+                    <button className="btn btn-outline-primary" onClick={() => fetchFuncionarios(true)}>
+                        <MdRefresh className="me-1" />
+                        Carregar funcionários
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-responsive">
+                <Table 
+                    headers={headers}
+                    data={listaFiltrada}
+                    renderRow={renderRow}
+                    className="table table-hover table-striped border"
+                />
+            </div>
+        );
+    };
+
     return (
         <div className="row mb-4">
             <div className="col-12">
@@ -228,95 +322,7 @@ function FuncionarioRemovidosEdit() {
                     </div>
                 </div>
 
-                <div className="table-responsive">
-                    <table className="table table-hover table-striped border">
-                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
-                            <tr>
-                                <th className="col-3">Nome</th>
-                                <th className="col-2">Contacto</th>
-                                <th className="col-2">BI</th>
-                                <th className="col-3">Cargo</th>
-                                <th className="col-1 text-center">Ativar</th>
-                                <th className="col-1 text-center">Excluir</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
-                                            <span className="visually-hidden">Carregando...</span>
-                                        </div>
-                                        <p className="text-muted mb-0">Carregando funcionários...</p>
-                                    </td>
-                                </tr>
-                            ) : semResultados ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <MdSearch size={48} className="text-muted mb-3" />
-                                        <p className="text-muted mb-2">Nenhum funcionário encontrado para "{termoPesquisa}"</p>
-                                        <button 
-                                            className="btn btn-outline-primary btn-sm"
-                                            onClick={limparPesquisa}
-                                        >
-                                            Limpar pesquisa
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : isEmpty ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                                        <p className="text-muted mb-3">Nenhum funcionário desativado encontrado</p>
-                                        <button className="btn btn-outline-primary" onClick={() => fetchFuncionarios(true)}>
-                                            <MdRefresh className="me-1" />
-                                            Carregar funcionários
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : (
-                                listaFiltrada.map((item) => (
-                                    <tr key={item.id_funcionario}>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            <MdPerson className="me-2 mb-1"/>{item.nome_funcionario}
-                                        </td>
-                                        <td className="align-middle">
-                                            <MdPhone className="me-1" style={{color:'var(--azul-escuro)'}}/>
-                                            {item.contacto_funcionario || 'N/I'}
-                                        </td>
-                                        <td className="align-middle">
-                                            <FaIdCard className="me-1" style={{color:'var(--azul-escuro)'}}/>
-                                            {item.bi_funcionario || 'N/I'}
-                                        </td>
-                                        <td className="align-middle">
-                                            <span className="badge bg-secondary">{item.cargo || 'N/I'}</span>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnAdd}`}
-                                                onClick={() => ativarFuncionario(item.id_funcionario, item.nome_funcionario)}
-                                                disabled={loading || isConfirming}
-                                                title={`Ativar ${item.nome_funcionario}`}
-                                            >
-                                                <GrStatusGood />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnDeletar}`}
-                                                onClick={() => excluirPermanente(item.id_funcionario, item.nome_funcionario)}
-                                                disabled={loading || isConfirming}
-                                                title={`Excluir permanentemente ${item.nome_funcionario}`}
-                                            >
-                                                <MdDeleteForever />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {renderConteudo()}
             </div>
         </div>
     );
