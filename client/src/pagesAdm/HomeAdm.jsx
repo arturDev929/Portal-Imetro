@@ -1,5 +1,4 @@
 import AdminLayout from "../layouts/AdminLayout";
-import Style from "./HomeAdm.module.css";
 
 function HomeAdm() {
     return (

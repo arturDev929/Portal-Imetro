@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import api,{baseURL} from "../../service/api";
+import api, { baseURL } from "../../service/api";
 import { FaBook } from "react-icons/fa";
 import { MdEdit, MdDeleteForever, MdSearch, MdRefresh, MdAdd } from "react-icons/md";
 import { FaChalkboardTeacher } from "react-icons/fa";
-import { showErrorToast, showSuccessToast, useConfirmToast} from "../../components/global/CustomToast";
-import { CiCircleMinus, CiCirclePlus} from "react-icons/ci";
-import Style from "./DepartamentosEdit.module.css"
+import { showErrorToast, showSuccessToast, useConfirmToast } from "../../components/global/CustomToast";
+import { CiCircleMinus, CiCirclePlus } from "react-icons/ci";
+import Style from "./DepartamentosEdit.module.css";
+import Table from "../../components/global/Table";
 
 
 function DisciplinasEdit() {
@@ -31,7 +32,7 @@ function DisciplinasEdit() {
     });
     const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
-    
+
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -43,7 +44,7 @@ function DisciplinasEdit() {
             }
         }
     }, []);
-    
+
     const fetchDisciplinas = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -51,7 +52,7 @@ function DisciplinasEdit() {
             setListaDisciplina(response.data);
             setListaFiltrada(response.data);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
-            
+
             if (mostrarNotificacao && response.data && response.data.length > 0) {
                 showSuccessToast(
                     "Sucesso",
@@ -74,11 +75,11 @@ function DisciplinasEdit() {
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
-        
+
         if (termo.trim() === '') {
             setListaFiltrada(listaDisciplina);
         } else {
-            const filtrados = listaDisciplina.filter(item => 
+            const filtrados = listaDisciplina.filter(item =>
                 item.disciplina.toLowerCase().includes(termo.toLowerCase())
             );
             setListaFiltrada(filtrados);
@@ -94,7 +95,7 @@ function DisciplinasEdit() {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(listaDisciplina);
         } else {
-            const filtrados = listaDisciplina.filter(item => 
+            const filtrados = listaDisciplina.filter(item =>
                 item.disciplina.toLowerCase().includes(termoPesquisa.toLowerCase())
             );
             setListaFiltrada(filtrados);
@@ -151,8 +152,8 @@ function DisciplinasEdit() {
     const DeletarDisciplina = (disciplina) => {
         showConfirmToast(
             `Ao deletar esta disciplina irá desvincular a todos os cursos. Tem a certeza que pretendes deletar "${disciplina.disciplina}"?`,
-            async () =>{
-                try{
+            async () => {
+                try {
                     await api.delete(`/delete/disciplina/${disciplina.iddisciplina}`);
                     const updatedList = listaDisciplina.filter(
                         item => item.iddisciplina !== disciplina.iddisciplina
@@ -162,10 +163,10 @@ function DisciplinasEdit() {
                         "Sucesso",
                         `Disciplina ${disciplina.disciplina} foi deletada com sucesso.`
                     )
-                }catch (error){
+                } catch (error) {
                     showErrorToast(
                         "Erro!",
-                        `Erro ao excluir a disciplina ${disciplina.disciplina}` 
+                        `Erro ao excluir a disciplina ${disciplina.disciplina}`
                     )
                 }
             },
@@ -174,35 +175,35 @@ function DisciplinasEdit() {
         )
     }
 
-    useEffect(()=>{
-        if(isModalOpenProfessor){
-            document.body.style.overflow='hidden';
-        }else{
-            document.body.style.overflow='auto';
+    useEffect(() => {
+        if (isModalOpenProfessor) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
         }
-        return ()=>{
-            document.body.style.overflow='auto';
+        return () => {
+            document.body.style.overflow = 'auto';
         }
-    },[isModalOpenProfessor]);
+    }, [isModalOpenProfessor]);
 
     const openModalProfessor = (disciplina) => {
         setProfessor(disciplina);
         setIsModalOpenProfessor(true);
-        
+
         api.get(`/get/professorVinculado/${disciplina.iddisciplina}`)
-            .then((response)=>{
+            .then((response) => {
                 setProfessoresVinculados(response.data)
             })
-            .catch((error)=>{
+            .catch((error) => {
                 console.error("Erro ao buscar professores vinculados:", error);
                 showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
             })
-        
+
         api.get(`/get/professorDisponivel/${disciplina.iddisciplina}`)
-            .then((response)=>{
+            .then((response) => {
                 setProfessoresDisponiveis(response.data)
             })
-            .catch((error)=>{
+            .catch((error) => {
                 console.error("Erro ao buscar professores disponíveis:", error);
                 showErrorToast("Erro", "Não foi possível carregar os professores disponíveis");
             })
@@ -213,26 +214,26 @@ function DisciplinasEdit() {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
         })
-        .then(() => {
-            showSuccessToast("Sucesso", "Professor vinculado com sucesso!");
-            
-            const professorParaVincular = professoresDisponiveis.find(p => p.idprofessor === professorId);
-            
-            setProfessoresDisponiveis(prev => prev.filter(p => p.idprofessor !== professorId));
-            
-            setProfessoresVinculados(prev => [...prev, {
-                ...professorParaVincular,
-                iddisciplina: professor.iddisciplina,
-                disciplina: professor.disciplina
-            }]);
-        })
-        .catch(() => {
-            showErrorToast("Erro", "Não foi possível vincular o professor");
-        });
+            .then(() => {
+                showSuccessToast("Sucesso", "Professor vinculado com sucesso!");
+
+                const professorParaVincular = professoresDisponiveis.find(p => p.idprofessor === professorId);
+
+                setProfessoresDisponiveis(prev => prev.filter(p => p.idprofessor !== professorId));
+
+                setProfessoresVinculados(prev => [...prev, {
+                    ...professorParaVincular,
+                    iddisciplina: professor.iddisciplina,
+                    disciplina: professor.disciplina
+                }]);
+            })
+            .catch(() => {
+                showErrorToast("Erro", "Não foi possível vincular o professor");
+            });
     };
 
-    const getProfessorImagem = (professor)=>{
-        if(professor.fotoUrl){
+    const getProfessorImagem = (professor) => {
+        if (professor.fotoUrl) {
             return professor.fotoUrl
         }
         if (professor.fotoprofessor) {
@@ -244,8 +245,8 @@ function DisciplinasEdit() {
     const desvincularProfessor = (prof) => {
         showConfirmToast(
             `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da disciplina de ${prof.disciplina}?`,
-            async () =>{
-                try{
+            async () => {
+                try {
                     await api.delete(`/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
                     const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
                     setProfessoresVinculados(updateLista);
@@ -253,7 +254,7 @@ function DisciplinasEdit() {
                         "Sucesso!",
                         `Professor ${prof.nomeprofessor} foi desvinculado da disciplina de ${prof.disciplina}`
                     )
-                }catch(error){
+                } catch (error) {
                     console.error("Erro ao desvincular professor:", error);
                     showErrorToast("Erro", "Não foi possível desvincular o professor");
                 }
@@ -261,7 +262,7 @@ function DisciplinasEdit() {
         )
     };
 
-    const closeModalProfessor = () =>{
+    const closeModalProfessor = () => {
         setIsModalOpenProfessor(false);
         setProfessor(null);
     }
@@ -297,34 +298,34 @@ function DisciplinasEdit() {
             showErrorToast("Erro", "Usuário não autenticado");
             return;
         }
-        
+
         const nome = dadosNovaDisciplina.disciplina?.trim();
-        
+
         if (!nome) {
             showErrorToast("Validação", "Preencha o nome da disciplina");
             return;
         }
 
         setSalvando(true);
-        
+
         try {
             await api.post(`/post/registrardisciplina`, {
                 disciplina: nome,
                 idAdm: user.id
             });
-            
+
             showSuccessToast(
                 "Sucesso",
                 `Disciplina "${nome}" foi adicionada com sucesso!`
             );
-            
+
             fecharModalAdicionar();
-            
+
             await fetchDisciplinas(false);
-            
+
         } catch (error) {
             console.error("Erro ao adicionar disciplina:", error);
-            
+
             if (error.response?.data?.error) {
                 showErrorToast("Erro", error.response.data.error);
             } else if (error.response?.data?.message) {
@@ -337,11 +338,103 @@ function DisciplinasEdit() {
         }
     };
 
+    const headers = ['Nome da Disciplina', 'Professores', 'Editar', 'Apagar'];
+    const renderRow = useCallback((disciplina) => (
+        <tr key={disciplina.iddisciplina}>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                <FaBook className="mb-1 me-2" style={{ color: 'var(--azul-escuro)' }} />
+                {disciplina.disciplina}
+            </td>
+            <td>
+                <button
+                    className={`btn btn-sm ${Style.btnOutros}`}
+                    onClick={() => openModalProfessor(disciplina)}
+                    disabled={loading || isConfirming}
+                    title="Professores"
+                >
+                    <FaChalkboardTeacher />
+                </button>
+            </td>
+            <td>
+                <button
+                    className={`btn btn-sm ${Style.btnEditar}`}
+                    onClick={() => openModal(disciplina)}
+                    disabled={loading || salvando || isConfirming}
+                    title="Editar"
+                >
+                    <MdEdit />
+                </button>
+            </td>
+            <td>
+                <button
+                    className={`btn btn-sm ${Style.btnDeletar}`}
+                    disabled={loading || isConfirming}
+                    onClick={() => DeletarDisciplina(disciplina)}
+                    title="Excluir"
+                >
+                    <MdDeleteForever />
+                </button>
+            </td>
+        </tr>
+    ), [openModal, DeletarDisciplina, openModalProfessor]);
+
+    const renderConteudo = () => {
+        if (loading) {
+            return (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                        <span className="visually-hidden">Carregando...</span>
+                    </div>
+                    <p className="text-muted mb-0">Carregando disciplinas...</p>
+                </div>
+            );
+        }
+
+        if (semResultados) {
+            return (
+                <div className="text-center py-5">
+                    <MdSearch size={48} className="text-muted mb-3" />
+                    <p className="text-muted mb-2">Nenhuma disciplina encontrada para "{termoPesquisa}"</p>
+                    <button 
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={limparPesquisa}
+                    >
+                        Limpar pesquisa
+                    </button>
+                </div>
+            );
+        }
+
+        if (isEmpty) {
+            return (
+                <div className="text-center py-5">
+                    <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                    <p className="text-muted mb-3">Nenhuma disciplina encontrada</p>
+                    <button className="btn btn-outline-primary" onClick={() => fetchDisciplinas(true)}>
+                        <MdRefresh className="me-1" />
+                        Carregar disciplinas
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-responsive">
+                <Table 
+                    headers={headers}
+                    data={listaFiltrada}
+                    renderRow={renderRow}
+                    className="table table-hover table-striped border"
+                />
+            </div>
+        );
+    };
+
     return (
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="h4 mb-0" style={{color:'var(--azul-escuro)'}}>
+                    <h2 className="h4 mb-0" style={{ color: 'var(--azul-escuro)' }}>
                         <FaBook className="mb-2 me-2" />
                         Disciplinas/Cadeiras
                     </h2>
@@ -351,7 +444,7 @@ function DisciplinasEdit() {
                                 Atualizado: {ultimaAtualizacao}
                             </small>
                         )}
-                        <button 
+                        <button
                             className={`btn btn-sm ${Style.AtulizarDepartamento}`}
                             onClick={() => fetchDisciplinas(true)}
                             disabled={loading || isConfirming}
@@ -378,7 +471,7 @@ function DisciplinasEdit() {
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="position-relative flex-grow-1">
                                         <div className="input-group">
-                                            <span className="input-group-text border-end-0" style={{backgroundColor:'var(--cinza-claro)'}}>
+                                            <span className="input-group-text border-end-0" style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                 <MdSearch className="text-muted" size={20} />
                                             </span>
                                             <input
@@ -388,23 +481,23 @@ function DisciplinasEdit() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{ 
+                                                style={{
                                                     borderLeft: 'none',
                                                     boxShadow: 'none',
                                                     backgroundColor: 'var(--cinza-claro)',
-                                                    padding:'10px'
+                                                    padding: '10px'
                                                 }}
                                             />
                                             {termoPesquisa && (
-                                                <button 
-                                                    className="btn border-start-0" 
+                                                <button
+                                                    className="btn border-start-0"
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{ 
+                                                    style={{
                                                         borderLeft: 'none',
                                                         backgroundColor: 'var(--danger)',
-                                                        color:'var(--branco)'
+                                                        color: 'var(--branco)'
                                                     }}
                                                 >
                                                     ✕
@@ -413,7 +506,7 @@ function DisciplinasEdit() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -426,105 +519,19 @@ function DisciplinasEdit() {
                     </div>
                 </div>
 
-                <div className="d-flex col-12 table-responsive">
-                    <table className="table table-hover table-striped border">
-                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
-                            <tr>
-                                <th className="col-9">Nome</th>
-                                <th className="col-1 text-center">PF's</th>
-                                <th className="col-1 text-center">Editar</th>
-                                <th className="col-1 text-center">Apagar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-5">
-                                        <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
-                                            <span className="visually-hidden">Carregando...</span>
-                                        </div>
-                                        <p className="text-muted mb-0">Carregando disciplinas...</p>
-                                    </td>
-                                </tr>
-                            ) : semResultados ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-5">
-                                        <MdSearch size={48} className="text-muted mb-3" />
-                                        <p className="text-muted mb-2">Nenhuma disciplina encontrada para "{termoPesquisa}"</p>
-                                        <button 
-                                            className="btn btn-outline-primary btn-sm"
-                                            onClick={limparPesquisa}
-                                        >
-                                            Limpar pesquisa
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : isEmpty ? (
-                                <tr>
-                                    <td colSpan="4" className="text-center py-5">
-                                        <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                                        <p className="text-muted mb-3">Nenhuma disciplina encontrada</p>
-                                        <button className="btn btn-outline-primary" onClick={() => fetchDisciplinas(true)}>
-                                            <MdRefresh className="me-1" />
-                                            Carregar disciplinas
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : (
-                                listaFiltrada.map((disciplina) => (
-                                    <tr key={disciplina.iddisciplina}>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            <FaBook className="mb-1 me-2" style={{color:'var(--azul-escuro)'}} />
-                                            {disciplina.disciplina}
-                                        </td>
-                                        <td className="text-center">
-                                            <button
-                                                className={`btn btn-sm ${Style.btnOutros}`}
-                                                onClick={() => openModalProfessor(disciplina)}
-                                                disabled={loading || isConfirming}
-                                                title="Professores"
-                                            >
-                                                <FaChalkboardTeacher />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button
-                                                className={`btn btn-sm ${Style.btnEditar}`}
-                                                onClick={() => openModal(disciplina)}
-                                                disabled={loading || salvando || isConfirming}
-                                                title="Editar"
-                                            >
-                                                <MdEdit />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnDeletar}`}
-                                                disabled={loading || isConfirming}
-                                                onClick={() => DeletarDisciplina(disciplina)}
-                                                title="Excluir"
-                                            >
-                                                <MdDeleteForever />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {renderConteudo()}
 
                 {modalAdicionarAberto && (
-                    <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                    <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                         <div className="modal-dialog modal-dialog-centered modal-lg">
                             <div className="modal-content shadow-lg border-0">
-                                <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
+                                <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                     <h5 className="modal-title mb-0">
-                                        <MdAdd className="me-2 mb-1"/>
+                                        <MdAdd className="me-2 mb-1" />
                                         Adicionar Nova Disciplina
                                     </h5>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="btn-close btn-close-white"
                                         onClick={fecharModalAdicionar}
                                         disabled={salvando || isConfirming}
@@ -534,8 +541,8 @@ function DisciplinasEdit() {
                                     <div className="modal-body">
                                         <div className="row">
                                             <div className="col-12 mb-3">
-                                                <input 
-                                                    type="text" 
+                                                <input
+                                                    type="text"
                                                     className="form-control form-control-lg shadow-sm"
                                                     id="novaDisciplina"
                                                     name="disciplina"
@@ -551,16 +558,16 @@ function DisciplinasEdit() {
                                         </div>
                                     </div>
                                     <div className="modal-footer border-0">
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             className={`btn ${Style.btnCancelar}`}
                                             onClick={fecharModalAdicionar}
                                             disabled={salvando || isConfirming}
                                         >
                                             Cancelar
                                         </button>
-                                        <button 
-                                            type="submit" 
+                                        <button
+                                            type="submit"
                                             className={`btn ${Style.btnSubmit}`}
                                             disabled={salvando || isConfirming || !dadosNovaDisciplina.disciplina.trim()}
                                         >
@@ -581,10 +588,10 @@ function DisciplinasEdit() {
                 )}
 
                 {isModalOpen && (
-                    <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                    <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                         <div className="modal-dialog modal-dialog-centered modal-lg">
                             <div className="modal-content shadow-lg border-0">
-                                <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
+                                <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                     <h5 className="modal-title mb-0">
                                         <FaBook className="me-2 mb-1" />
                                         {disciplinaSelecionada?.disciplina}
@@ -651,10 +658,10 @@ function DisciplinasEdit() {
                 )}
 
                 {isModalOpenProfessor && (
-                    <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                    <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                         <div className="modal-dialog modal-dialog-centered modal-xl">
                             <div className="modal-content shadow-lg border-0">
-                                <div className="modal-header" style={{backgroundColor: 'var(--azul-escuro)',color:'var(--dourado)'}}>
+                                <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                     <h5 className="modal-title">
                                         <FaChalkboardTeacher className="me-2 mb-1" />
                                         Professores Vinculados a disciplina de {professor?.disciplina}
@@ -670,34 +677,34 @@ function DisciplinasEdit() {
                                 <div className="modal-body">
                                     <div className="row">
                                         <div className="col-12 col-md-6 border-end">
-                                            <h4 className="text-center mb-4" style={{color:'var(--azul-escuro)'}}>Professores Vinculados</h4>
+                                            <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Vinculados</h4>
                                             <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                                 {professoresVinculados && professoresVinculados.length > 0 ? (
                                                     professoresVinculados.map((prof) => (
                                                         <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">
                                                             <div className="d-flex align-items-center">
-                                                                <img 
+                                                                <img
                                                                     src={getProfessorImagem(prof)}
-                                                                    alt={prof.nomeprofessor} 
+                                                                    alt={prof.nomeprofessor}
                                                                     className="rounded-circle me-3"
-                                                                    style={{width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)'}}
+                                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
                                                                     onError={(e) => {
                                                                         e.target.onerror = null;
                                                                         e.target.src = '/default-avatar.png';
                                                                     }}
                                                                 />
                                                                 <div>
-                                                                    <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>
+                                                                    <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
                                                                     <small className="text-muted">{prof.titulacaoprofessor}</small>
                                                                 </div>
                                                             </div>
-                                                            <button 
+                                                            <button
                                                                 className={`btn btn-sm ${Style.btnDeletar}`}
                                                                 onClick={() => desvincularProfessor(prof)}
                                                                 disabled={isConfirming}
                                                                 title="Remover vinculação"
                                                             >
-                                                                <CiCircleMinus size={24}/>
+                                                                <CiCircleMinus size={24} />
                                                             </button>
                                                         </div>
                                                     ))
@@ -710,34 +717,34 @@ function DisciplinasEdit() {
                                         </div>
 
                                         <div className="col-12 col-md-6">
-                                            <h4 className="text-center mb-4" style={{color:'var(--azul-escuro)'}}>Professores Disponíveis</h4>
+                                            <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Disponíveis</h4>
                                             <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                                 {professoresDisponiveis && professoresDisponiveis.length > 0 ? (
                                                     professoresDisponiveis.map((prof) => (
                                                         <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">
                                                             <div className="d-flex align-items-center">
-                                                                <img 
+                                                                <img
                                                                     src={getProfessorImagem(prof)}
-                                                                    alt={prof.nomeprofessor} 
+                                                                    alt={prof.nomeprofessor}
                                                                     className="rounded-circle me-3"
-                                                                    style={{width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)'}}
+                                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
                                                                     onError={(e) => {
                                                                         e.target.onerror = null;
                                                                         e.target.src = '/default-avatar.png';
                                                                     }}
                                                                 />
                                                                 <div>
-                                                                    <h6 className="mb-0" style={{color:'var(--azul-escuro)'}}>{prof.nomeprofessor}</h6>
+                                                                    <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
                                                                     <small className="text-muted">{prof.titulacaoprofessor}</small>
                                                                 </div>
                                                             </div>
-                                                            <button 
+                                                            <button
                                                                 className={`btn btn-sm ${Style.btnAdd}`}
                                                                 onClick={() => vincularProfessor(prof.idprofessor)}
                                                                 disabled={isConfirming}
                                                                 title="Vincular professor"
                                                             >
-                                                                <CiCirclePlus size={24}/>
+                                                                <CiCirclePlus size={24} />
                                                             </button>
                                                         </div>
                                                     ))

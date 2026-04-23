@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../service/api';
-import { 
-    MdRefresh, 
+import {
+    MdRefresh,
     MdSearch,
     MdPerson,
     MdEmail,
@@ -13,16 +13,17 @@ import {
 import {
     GrStatusGood
 } from "react-icons/gr"
-import { 
-    FaBook, 
-    FaInfoCircle, 
-    FaHeartbeat, 
+import {
+    FaBook,
+    FaInfoCircle,
+    FaHeartbeat,
     FaUniversity,
     FaBriefcase,
 } from "react-icons/fa";
 import { RiContactsBook3Line } from "react-icons/ri";
 import { showSuccessToast, showErrorToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
+import Table from "../../components/global/Table";
 const API_TIMEOUT = 30000;
 
 function ProfessorRemovidosEdit() {
@@ -46,7 +47,7 @@ function ProfessorRemovidosEdit() {
             });
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
-            
+
             if (mostrarNotificacao && response.data && response.data.length > 0) {
                 showSuccessToast(
                     "Sucesso",
@@ -86,7 +87,7 @@ function ProfessorRemovidosEdit() {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
         } else {
-            const filtrados = lista.filter(item => 
+            const filtrados = lista.filter(item =>
                 item.nomeprofessor?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
                 (item.codigoprofessor && item.codigoprofessor.toLowerCase().includes(termoPesquisa.toLowerCase()))
             );
@@ -96,11 +97,11 @@ function ProfessorRemovidosEdit() {
 
     const fetchDisciplinasProfessor = useCallback(async (idProfessor, nomeProfessor) => {
         if (!idProfessor) return;
-        
+
         try {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
-            
+
             const response = await api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
@@ -141,7 +142,7 @@ function ProfessorRemovidosEdit() {
                     const response = await api.put(`/put/professor/ativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
-                    
+
                     if (response.status === 200) {
                         await fetchProfessores(false);
                         showSuccessToast(`Professor ${nome} ativado com sucesso!`);
@@ -180,12 +181,118 @@ function ProfessorRemovidosEdit() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
+    const headers = ['Foto', 'Nome', 'Titulação', 'Código', 'Disciplinas', 'Info', 'Ativar'];
+    const renderRow = useCallback((item) => (
+        <tr key={item.idprofessor}>
+            <td className="align-middle">
+                <img
+                    src={item.fotoUrl || '/default-avatar.png'}
+                    alt={`Foto de ${item.nomeprofessor}`}
+                    className="img-fluid rounded-circle"
+                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                    onError={(e) => {
+                        e.target.src = '/default-avatar.png';
+                    }}
+                />
+            </td>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                <MdPerson className="me-2 mb-1" />{item.nomeprofessor}
+            </td>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                {item.titulacaoprofessor}
+            </td>
+            <td className="align-middle text-muted">
+                <small>{item.codigoprofessor || 'N/I'}</small>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnOutros}`}
+                    onClick={() => fetchDisciplinasProfessor(item.idprofessor, item.nomeprofessor)}
+                    disabled={loading || loadingDisciplinas || isConfirming}
+                    title={`Ver disciplinas de ${item.nomeprofessor}`}
+                >
+                    <FaBook />
+                </button>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnOutros}`}
+                    onClick={() => fetchInfoProfessor(item)}
+                    disabled={loading || isConfirming}
+                    title={`Informações de ${item.nomeprofessor}`}
+                >
+                    <FaInfoCircle />
+                </button>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnAdd}`}
+                    onClick={() => ativarProfessor(item.idprofessor, item.nomeprofessor)}
+                    disabled={loading || isConfirming}
+                    title={`Ativar ${item.nomeprofessor}`}
+                >
+                    <GrStatusGood />
+                </button>
+            </td>
+        </tr>
+    ), [fetchDisciplinasProfessor, fetchInfoProfessor, ativarProfessor, loading, loadingDisciplinas, isConfirming]);
+    const renderConteudo = () => {
+        if (loading) {
+            return (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                        <span className="visually-hidden">Carregando...</span>
+                    </div>
+                    <p className="text-muted mb-0">Carregando funcionários...</p>
+                </div>
+            );
+        }
+
+        if (semResultados) {
+            return (
+                <div className="text-center py-5">
+                    <MdSearch size={48} className="text-muted mb-3" />
+                    <p className="text-muted mb-2">Nenhum funcionário encontrado para "{termoPesquisa}"</p>
+                    <button 
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={limparPesquisa}
+                    >
+                        Limpar pesquisa
+                    </button>
+                </div>
+            );
+        }
+
+        if (isEmpty) {
+            return (
+                <div className="text-center py-5">
+                    <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                    <p className="text-muted mb-3">Nenhum professor encontrado</p>
+                    <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
+                        <MdRefresh className="me-1" />
+                        Carregar professores
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-responsive">
+                <Table 
+                    headers={headers}
+                    data={listaFiltrada}
+                    renderRow={renderRow}
+                    className="table table-hover table-striped border"
+                />
+            </div>
+        );
+    };
     return (
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="h4 mb-0" style={{color:'var(--azul-escuro)'}}>
-                        <MdPerson className="me-2 mb-2"/>
+                    <h2 className="h4 mb-0" style={{ color: 'var(--azul-escuro)' }}>
+                        <MdPerson className="me-2 mb-2" />
                         Professores Removidos
                     </h2>
                 </div>
@@ -197,7 +304,7 @@ function ProfessorRemovidosEdit() {
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="position-relative flex-grow-1">
                                         <div className="input-group">
-                                            <span className="input-group-text border-end-0" style={{backgroundColor:'var(--cinza-claro)'}}>
+                                            <span className="input-group-text border-end-0" style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                 <MdSearch className="text-muted" size={20} />
                                             </span>
                                             <input
@@ -207,23 +314,23 @@ function ProfessorRemovidosEdit() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{ 
+                                                style={{
                                                     borderLeft: 'none',
                                                     boxShadow: 'none',
                                                     backgroundColor: 'var(--cinza-claro)',
-                                                    padding:'10px'
+                                                    padding: '10px'
                                                 }}
                                             />
                                             {termoPesquisa && (
-                                                <button 
-                                                    className="btn border-start-0" 
+                                                <button
+                                                    className="btn border-start-0"
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{ 
+                                                    style={{
                                                         borderLeft: 'none',
                                                         backgroundColor: 'var(--danger)',
-                                                        color:'var(--branco)'
+                                                        color: 'var(--branco)'
                                                     }}
                                                 >
                                                     ✕
@@ -232,7 +339,7 @@ function ProfessorRemovidosEdit() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -245,125 +352,20 @@ function ProfessorRemovidosEdit() {
                     </div>
                 </div>
 
-                <div className="table-responsive">
-                    <table className="table table-hover table-striped border">
-                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
-                            <tr>
-                                <th className="col-1">Foto</th>
-                                <th className="col-4">Nome</th>
-                                <th className="col-2">Titulação</th>
-                                <th className="col-2">Código</th>
-                                <th className="col-1 text-center">Disciplinas</th>
-                                <th className="col-1 text-center">Info</th>
-                                <th className="col-1 text-center">Ativar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
-                                            <span className="visually-hidden">Carregando...</span>
-                                        </div>
-                                        <p className="text-muted mb-0">Carregando professores...</p>
-                                    </td>
-                                </tr>
-                            ) : semResultados ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <MdSearch size={48} className="text-muted mb-3" />
-                                        <p className="text-muted mb-2">Nenhum professor encontrado para "{termoPesquisa}"</p>
-                                        <button 
-                                            className="btn btn-outline-primary btn-sm"
-                                            onClick={limparPesquisa}
-                                        >
-                                            Limpar pesquisa
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : isEmpty ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center py-5">
-                                        <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                                        <p className="text-muted mb-3">Nenhum professor encontrado</p>
-                                        <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
-                                            <MdRefresh className="me-1" />
-                                            Carregar professores
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : (
-                                listaFiltrada.map((item) => (
-                                    <tr key={item.idprofessor}>
-                                        <td className="align-middle">
-                                            <img
-                                                src={item.fotoUrl || '/default-avatar.png'}
-                                                alt={`Foto de ${item.nomeprofessor}`}
-                                                className="img-fluid rounded-circle"
-                                                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                                                onError={(e) => {
-                                                    e.target.src = '/default-avatar.png';
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            <MdPerson className="me-2 mb-1"/>{item.nomeprofessor}
-                                        </td>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            {item.titulacaoprofessor}
-                                        </td>
-                                        <td className="align-middle text-muted">
-                                            <small>{item.codigoprofessor || 'N/I'}</small>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnOutros}`}
-                                                onClick={() => fetchDisciplinasProfessor(item.idprofessor, item.nomeprofessor)}
-                                                disabled={loading || loadingDisciplinas || isConfirming}
-                                                title={`Ver disciplinas de ${item.nomeprofessor}`}
-                                            >
-                                                <FaBook />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnOutros}`}
-                                                onClick={() => fetchInfoProfessor(item)}
-                                                disabled={loading || isConfirming}
-                                                title={`Informações de ${item.nomeprofessor}`}
-                                            >
-                                                <FaInfoCircle />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnAdd}`}
-                                                onClick={() => ativarProfessor(item.idprofessor, item.nomeprofessor)}
-                                                disabled={loading || isConfirming}
-                                                title={`Ativar ${item.nomeprofessor}`}
-                                            >
-                                                <GrStatusGood />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {renderConteudo()}
             </div>
 
             {modalDisciplinasAberto && professorSelecionado && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <FaBook className="me-2" />
                                     Disciplinas do Professor {professorSelecionado.nomeprofessor}
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalDisciplinas}
                                     disabled={loadingDisciplinas || isConfirming}
@@ -381,11 +383,11 @@ function ProfessorRemovidosEdit() {
                                     <div className="row">
                                         {disciplinasProfessor.map((disciplina) => (
                                             <div key={disciplina.iddisciplina} className="col-md-6 mb-2">
-                                                <div className="p-3 border rounded d-flex justify-content-between align-items-center" 
-                                                    style={{backgroundColor:'var(--cinza-claro)'}}>
+                                                <div className="p-3 border rounded d-flex justify-content-between align-items-center"
+                                                    style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                     <div className="d-flex align-items-center">
-                                                        <MdBook className="me-2" style={{color:'var(--azul-escuro)'}} />
-                                                        <span className="fw-semibold" style={{color:'var(--azul-escuro)'}}>
+                                                        <MdBook className="me-2" style={{ color: 'var(--azul-escuro)' }} />
+                                                        <span className="fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
                                                             {disciplina.disciplina}
                                                         </span>
                                                     </div>
@@ -394,15 +396,15 @@ function ProfessorRemovidosEdit() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4" style={{color:'var(--azul-escuro)'}}>
+                                    <div className="text-center py-4" style={{ color: 'var(--azul-escuro)' }}>
                                         <MdBook size={48} className="text-muted mb-3" />
                                         <p className="mb-0">Nenhuma disciplina atribuída a este professor.</p>
                                     </div>
                                 )}
                             </div>
                             <div className="modal-footer border-0">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className={`btn ${Style.btnCancelar}`}
                                     onClick={fecharModalDisciplinas}
                                 >
@@ -415,21 +417,21 @@ function ProfessorRemovidosEdit() {
             )}
 
             {modalInfoAberto && professorSelecionadoInfo && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <FaInfoCircle className="me-2" />
                                     Informações do Professor - {professorSelecionadoInfo.nomeprofessor}
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalInfo}
                                 />
                             </div>
-                            <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                 <div className="container-fluid">
                                     <div className="row mb-4">
                                         <div className="col-md-2 text-center">
@@ -439,14 +441,14 @@ function ProfessorRemovidosEdit() {
                                                 style={{ width: '120px', height: '120px', objectFit: 'cover' }}
                                                 alt={professorSelecionadoInfo.nomeprofessor}
                                             />
-                                            <h6 className="mt-2 mb-0" style={{color:'var(--azul-escuro)'}}>
+                                            <h6 className="mt-2 mb-0" style={{ color: 'var(--azul-escuro)' }}>
                                                 Código: {professorSelecionadoInfo.codigoprofessor || 'N/I'}
                                             </h6>
                                         </div>
                                         <div className="col-md-10">
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
-                                                    <h6 className="card-title" style={{color:'var(--azul-escuro)'}}>
+                                                    <h6 className="card-title" style={{ color: 'var(--azul-escuro)' }}>
                                                         <MdPerson className="me-2" />
                                                         Dados Pessoais
                                                     </h6>
@@ -469,7 +471,7 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <RiContactsBook3Line className="me-2" />
                                         Contato e Residência
                                     </h6>
@@ -502,7 +504,7 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <FaBriefcase className="me-2" />
                                         Dados Profissionais
                                     </h6>
@@ -543,7 +545,7 @@ function ProfessorRemovidosEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <FaUniversity className="me-2" />/<FaHeartbeat className="me-2" />
                                         Dados Bancários e Saúde
                                     </h6>
@@ -574,7 +576,7 @@ function ProfessorRemovidosEdit() {
                                         </div>
                                     </div>
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <MdAttachFile className="me-2" />
                                         Documentos
                                     </h6>
@@ -602,8 +604,8 @@ function ProfessorRemovidosEdit() {
                                 </div>
                             </div>
                             <div className="modal-footer border-0">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className={`btn ${Style.btnCancelar}`}
                                     onClick={fecharModalInfo}
                                 >

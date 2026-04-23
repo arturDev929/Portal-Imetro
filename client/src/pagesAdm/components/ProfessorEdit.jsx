@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Api from "../../service/api"
-import { 
-    MdEdit, 
-    MdDeleteForever, 
-    MdRefresh, 
+import {
+    MdEdit,
+    MdDeleteForever,
+    MdRefresh,
     MdSearch,
     MdAdd,
     MdBook,
@@ -16,11 +16,11 @@ import {
     MdOutlineLocalHospital,
     MdAddCircleOutline
 } from "react-icons/md";
-import { 
-    FaBook, 
-    FaInfoCircle, 
-    FaIdCard, 
-    FaHeartbeat, 
+import {
+    FaBook,
+    FaInfoCircle,
+    FaIdCard,
+    FaHeartbeat,
     FaUniversity,
     FaBriefcase,
 } from "react-icons/fa";
@@ -41,22 +41,22 @@ function ProfessorEdit() {
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
-    
+
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [modalInfoAberto, setModalInfoAberto] = useState(false);
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [modalAdicionarDisciplinaAberto, setModalAdicionarDisciplinaAberto] = useState(false);
-    
+
     const [professorSelecionado, setProfessorSelecionado] = useState(null);
     const [professorSelecionadoInfo, setProfessorSelecionadoInfo] = useState(null);
     const [disciplinasProfessor, setDisciplinasProfessor] = useState([]);
     const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
     const [removendoDisciplina, setRemovendoDisciplina] = useState(null);
-    
+
     const [iddisciplina, setIdDisciplina] = useState("");
     const [idprofessor, setIdProfessor] = useState("");
-    
+
     const [dadosNovoProfessor, setDadosNovoProfessor] = useState({
         fotoprofessor: null,
         nomeprofessore: "",
@@ -81,7 +81,7 @@ function ProfessorEdit() {
         condicoesprofessor: "",
         contactoemergenciaprofessor: ""
     });
-    
+
     const [dadosEdicao, setDadosEdicao] = useState({
         idprofessor: '',
         codigoprofessor: '',
@@ -128,7 +128,7 @@ function ProfessorEdit() {
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
-            
+
             if (mostrarNotificacao && response.data && response.data.length > 0) {
                 showSuccessToast(
                     "Sucesso",
@@ -157,11 +157,11 @@ function ProfessorEdit() {
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
-        
+
         if (termo.trim() === '') {
             setListaFiltrada(lista);
         } else {
-            const filtrados = lista.filter(item => 
+            const filtrados = lista.filter(item =>
                 item.nomeprofessor?.toLowerCase().includes(termo.toLowerCase()) ||
                 (item.codigoprofessor && item.codigoprofessor.toLowerCase().includes(termo.toLowerCase()))
             );
@@ -178,7 +178,7 @@ function ProfessorEdit() {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
         } else {
-            const filtrados = lista.filter(item => 
+            const filtrados = lista.filter(item =>
                 item.nomeprofessor?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
                 (item.codigoprofessor && item.codigoprofessor.toLowerCase().includes(termoPesquisa.toLowerCase()))
             );
@@ -188,11 +188,11 @@ function ProfessorEdit() {
 
     const fetchDisciplinasProfessor = useCallback(async (idProfessor, nomeProfessor) => {
         if (!idProfessor) return;
-        
+
         try {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
-            
+
             const response = await Api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
@@ -285,7 +285,7 @@ function ProfessorEdit() {
 
     const handleNovoProfessorInputChange = useCallback((e) => {
         const { name, value, files } = e.target;
-        
+
         if (files && files[0]) {
             setDadosNovoProfessor((prev) => ({
                 ...prev,
@@ -301,7 +301,7 @@ function ProfessorEdit() {
 
     const adicionarProfessor = useCallback(async (e) => {
         e?.preventDefault();
-        
+
         if (!user?.id) {
             showErrorToast("Acesso Negado", "Administrador não autenticado!");
             return;
@@ -315,13 +315,13 @@ function ProfessorEdit() {
         setSalvando(true);
         try {
             const formData = new FormData();
-            
+
             Object.keys(dadosNovoProfessor).forEach(key => {
                 if (dadosNovoProfessor[key] !== null && dadosNovoProfessor[key] !== undefined && dadosNovoProfessor[key] !== "") {
                     formData.append(key, dadosNovoProfessor[key]);
                 }
             });
-            
+
             formData.append('idAdm', user.id);
 
             const response = await Api.post(`/post/registrarprofessor`, formData, {
@@ -334,7 +334,7 @@ function ProfessorEdit() {
             if (response.data.sucesso) {
                 const codigoProfessor = response.data.dados?.codigoProfessor;
                 const codigoAcesso = response.data.dados?.codigoAcesso;
-                
+
                 showSuccessToast(
                     "Professor Registrado com Sucesso!",
                     "Professor registrado com sucesso.",
@@ -343,7 +343,7 @@ function ProfessorEdit() {
                         "Senha de Acesso": codigoAcesso
                     }
                 );
-                
+
                 await fetchProfessores(false);
                 fecharModalAdicionar();
             }
@@ -362,7 +362,7 @@ function ProfessorEdit() {
                 timeout: API_TIMEOUT
             });
             const infoCompletas = response.data;
-            
+
             setDadosEdicao({
                 idprofessor: professor.idprofessor,
                 codigoprofessor: professor.codigoprofessor || infoCompletas.codigoprofessor || '',
@@ -428,7 +428,7 @@ function ProfessorEdit() {
 
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
-        
+
         if (!dadosEdicao.nomeprofessor?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
             return;
@@ -470,7 +470,7 @@ function ProfessorEdit() {
                 "Professor atualizado com sucesso",
                 { "Professor": dadosEdicao.nomeprofessor }
             );
-            
+
             await fetchProfessores(false);
             fecharModalEditar();
         } catch (error) {
@@ -493,14 +493,14 @@ function ProfessorEdit() {
 
     const adicionarDisciplinaProfessor = useCallback(async (e) => {
         e?.preventDefault();
-        
+
         if (!iddisciplina || !idprofessor) {
             showErrorToast("Seleção Incompleta", "Por favor, selecione uma disciplina e um professor.");
             return;
         }
-        
+
         setSalvando(true);
-        
+
         try {
             const response = await Api.post(`/post/registrerDisciplinaProfessor`, {
                 iddisciplina,
@@ -509,9 +509,9 @@ function ProfessorEdit() {
                 timeout: API_TIMEOUT,
                 headers: { 'Content-Type': 'application/json' }
             });
-            
+
             const data = response.data;
-            
+
             if (data.sucesso) {
                 showSuccessToast(
                     data.titulo || "Disciplina Adicionada",
@@ -525,7 +525,7 @@ function ProfessorEdit() {
             } else {
                 showErrorToast(data.titulo || "Erro", data.mensagem);
             }
-            
+
         } catch (error) {
             console.error("Erro:", error);
             showErrorToast("Erro no Processamento", error.message);
@@ -545,7 +545,7 @@ function ProfessorEdit() {
                     await Api.delete(`/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
                         timeout: API_TIMEOUT
                     });
-                    
+
                     showSuccessToast(
                         "Sucesso",
                         "Disciplina desvinculada com sucesso",
@@ -556,7 +556,7 @@ function ProfessorEdit() {
                         timeout: API_TIMEOUT
                     });
                     setDisciplinasProfessor(response.data || []);
-                    
+
                 } catch (error) {
                     console.error("Erro ao remover disciplina:", error);
                     showErrorToast("Erro", "Não foi possível desvincular a disciplina");
@@ -577,7 +577,7 @@ function ProfessorEdit() {
                     const response = await Api.put(`/put/professor/desativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
-                    
+
                     if (response.status === 200) {
                         await fetchProfessores(false);
                         showSuccessToast(`Professor ${nome} desativado com sucesso!`);
@@ -644,12 +644,129 @@ function ProfessorEdit() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
+    const headers = ['Foto', 'Nome', 'Titulação', 'Código', 'Disciplinas', 'Info', 'Editar', 'Apagar'];
+
+    const renderRow = useCallback((item) => (
+        <tr key={item.idprofessor}>
+            <td className="align-middle">
+                <img
+                    src={item.fotoUrl || '/default-avatar.png'}
+                    alt={`Foto de ${item.nomeprofessor}`}
+                    className="img-fluid rounded-circle"
+                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                    onError={(e) => {
+                        e.target.src = '/default-avatar.png';
+                    }}
+                />
+            </td>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                <MdPerson className="me-2 mb-1" />{item.nomeprofessor}
+            </td>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                {item.titulacaoprofessor}
+            </td>
+            <td className="align-middle text-muted">
+                <small>{item.codigoprofessor || 'N/I'}</small>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnOutros}`}
+                    onClick={() => fetchDisciplinasProfessor(item.idprofessor, item.nomeprofessor)}
+                    disabled={loading || loadingDisciplinas || isConfirming}
+                    title={`Ver disciplinas de ${item.nomeprofessor}`}
+                >
+                    <FaBook />
+                </button>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnOutros}`}
+                    onClick={() => fetchInfoProfessor(item)}
+                    disabled={loading || isConfirming}
+                    title={`Informações de ${item.nomeprofessor}`}
+                >
+                    <FaInfoCircle />
+                </button>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnEditar}`}
+                    onClick={() => abrirModalEditar(item)}
+                    disabled={loading || salvando || isConfirming}
+                    title={`Editar ${item.nomeprofessor}`}
+                >
+                    <MdEdit />
+                </button>
+            </td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnDeletar}`}
+                    onClick={() => deletarProfessor(item.idprofessor, item.nomeprofessor)}
+                    disabled={loading || salvando || isConfirming}
+                    title={`Excluir ${item.nomeprofessor}`}
+                >
+                    <MdDeleteForever />
+                </button>
+            </td>
+        </tr>
+    ), [fetchDisciplinasProfessor, fetchInfoProfessor, abrirModalEditar, deletarProfessor, loading, loadingDisciplinas, isConfirming, salvando]);
+    const renderConteudo = () => {
+        if (loading) {
+            return (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                        <span className="visually-hidden">Carregando...</span>
+                    </div>
+                    <p className="text-muted mb-0">Carregando funcionários...</p>
+                </div>
+            );
+        }
+
+        if (semResultados) {
+            return (
+                <div className="text-center py-5">
+                    <MdSearch size={48} className="text-muted mb-3" />
+                    <p className="text-muted mb-2">Nenhum funcionário encontrado para "{termoPesquisa}"</p>
+                    <button 
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={limparPesquisa}
+                    >
+                        Limpar pesquisa
+                    </button>
+                </div>
+            );
+        }
+
+        if (isEmpty) {
+            return (
+                <div className="text-center py-5">
+                    <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
+                    <p className="text-muted mb-3">Nenhum professor encontrado</p>
+                    <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
+                        <MdRefresh className="me-1" />
+                        Carregar professores
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="table-responsive">
+                <Table 
+                    headers={headers}
+                    data={listaFiltrada}
+                    renderRow={renderRow}
+                    className="table table-hover table-striped border"
+                />
+            </div>
+        );
+    };
     return (
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="h4 mb-0" style={{color:'var(--azul-escuro)'}}>
-                        <MdPerson className="me-2 mb-2"/>
+                    <h2 className="h4 mb-0" style={{ color: 'var(--azul-escuro)' }}>
+                        <MdPerson className="me-2 mb-2" />
                         Professores
                     </h2>
                     <div className="d-flex gap-2">
@@ -658,7 +775,7 @@ function ProfessorEdit() {
                                 Atualizado: {ultimaAtualizacao}
                             </small>
                         )}
-                        <button 
+                        <button
                             className={`btn btn-sm ${Style.AtulizarDepartamento}`}
                             onClick={() => fetchProfessores(true)}
                             disabled={loading || isConfirming}
@@ -694,7 +811,7 @@ function ProfessorEdit() {
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="position-relative flex-grow-1">
                                         <div className="input-group">
-                                            <span className="input-group-text border-end-0" style={{backgroundColor:'var(--cinza-claro)'}}>
+                                            <span className="input-group-text border-end-0" style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                 <MdSearch className="text-muted" size={20} />
                                             </span>
                                             <input
@@ -704,23 +821,23 @@ function ProfessorEdit() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{ 
+                                                style={{
                                                     borderLeft: 'none',
                                                     boxShadow: 'none',
                                                     backgroundColor: 'var(--cinza-claro)',
-                                                    padding:'10px'
+                                                    padding: '10px'
                                                 }}
                                             />
                                             {termoPesquisa && (
-                                                <button 
-                                                    className="btn border-start-0" 
+                                                <button
+                                                    className="btn border-start-0"
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{ 
+                                                    style={{
                                                         borderLeft: 'none',
                                                         backgroundColor: 'var(--danger)',
-                                                        color:'var(--branco)'
+                                                        color: 'var(--branco)'
                                                     }}
                                                 >
                                                     ✕
@@ -729,7 +846,7 @@ function ProfessorEdit() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {!loading && termoPesquisa && listaFiltrada.length > 0 && (
                                     <div className="mt-2 text-muted small">
                                         <span className="badge bg-light text-dark p-2">
@@ -742,180 +859,64 @@ function ProfessorEdit() {
                     </div>
                 </div>
 
-                <div className="table-responsive">
-                    <table className="table table-hover table-striped border">
-                        <thead style={{backgroundColor:'var(--azul-escuro)',color:'var(--branco)'}}>
-                            <tr>
-                                <th className="col-1">Foto</th>
-                                <th className="col-4">Nome</th>
-                                <th className="col-2">Titulação</th>
-                                <th className="col-1">Código</th>
-                                <th className="col-1 text-center">Disciplinas</th>
-                                <th className="col-1 text-center">Info</th>
-                                <th className="col-1 text-center">Editar</th>
-                                <th className="col-1 text-center">Apagar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="8" className="text-center py-5">
-                                        <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
-                                            <span className="visually-hidden">Carregando...</span>
-                                        </div>
-                                        <p className="text-muted mb-0">Carregando professores...</p>
-                                    </td>
-                                </tr>
-                            ) : semResultados ? (
-                                <tr>
-                                    <td colSpan="8" className="text-center py-5">
-                                        <MdSearch size={48} className="text-muted mb-3" />
-                                        <p className="text-muted mb-2">Nenhum professor encontrado para "{termoPesquisa}"</p>
-                                        <button 
-                                            className="btn btn-outline-primary btn-sm"
-                                            onClick={limparPesquisa}
-                                        >
-                                            Limpar pesquisa
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : isEmpty ? (
-                                <tr>
-                                    <td colSpan="8" className="text-center py-5">
-                                        <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                                        <p className="text-muted mb-3">Nenhum professor encontrado</p>
-                                        <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
-                                            <MdRefresh className="me-1" />
-                                            Carregar professores
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : (
-                                listaFiltrada.map((item) => (
-                                    <tr key={item.idprofessor}>
-                                        <td className="align-middle">
-                                            <img
-                                                src={item.fotoUrl || '/default-avatar.png'}
-                                                alt={`Foto de ${item.nomeprofessor}`}
-                                                className="img-fluid rounded-circle"
-                                                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                                                onError={(e) => {
-                                                    e.target.src = '/default-avatar.png';
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            <MdPerson className="me-2 mb-1"/>{item.nomeprofessor}
-                                        </td>
-                                        <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                                            {item.titulacaoprofessor}
-                                        </td>
-                                        <td className="align-middle text-muted">
-                                            <small>{item.codigoprofessor || 'N/I'}</small>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnOutros}`}
-                                                onClick={() => fetchDisciplinasProfessor(item.idprofessor, item.nomeprofessor)}
-                                                disabled={loading || loadingDisciplinas || isConfirming}
-                                                title={`Ver disciplinas de ${item.nomeprofessor}`}
-                                            >
-                                                <FaBook />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnOutros}`}
-                                                onClick={() => fetchInfoProfessor(item)}
-                                                disabled={loading || isConfirming}
-                                                title={`Informações de ${item.nomeprofessor}`}
-                                            >
-                                                <FaInfoCircle />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnEditar}`}
-                                                onClick={() => abrirModalEditar(item)}
-                                                disabled={loading || salvando || isConfirming}
-                                                title={`Editar ${item.nomeprofessor}`}
-                                            >
-                                                <MdEdit />
-                                            </button>
-                                        </td>
-                                        <td className="text-center">
-                                            <button 
-                                                className={`btn btn-sm ${Style.btnDeletar}`}
-                                                onClick={() => deletarProfessor(item.idprofessor,item.nomeprofessor)}
-                                                disabled={loading || salvando || isConfirming}
-                                                title={`Excluir ${item.nomeprofessor}`}
-                                            >
-                                                <MdDeleteForever />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {renderConteudo()}
             </div>
 
             {modalAdicionarAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <IoMdPersonAdd className="me-2" />
                                     Registrar Novo Professor
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalAdicionar}
                                     disabled={salvando || isConfirming}
                                 />
                             </div>
                             <form onSubmit={adicionarProfessor} encType="multipart/form-data">
-                                <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                     <div className="container-fluid">
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <IoMdPersonAdd className="me-2" />
                                             Dados Pessoais
                                         </h6>
-                                        
+
                                         <div className="row">
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Foto do Professor</label>
-                                                <input 
-                                                    type="file" 
-                                                    className="form-control shadow-sm" 
-                                                    name="fotoprofessor" 
-                                                    accept="image/*" 
+                                                <input
+                                                    type="file"
+                                                    className="form-control shadow-sm"
+                                                    name="fotoprofessor"
+                                                    accept="image/*"
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Nome Completo *</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Nome Completo..." 
-                                                    className="form-control shadow-sm" 
-                                                    name="nomeprofessore" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome Completo..."
+                                                    className="form-control shadow-sm"
+                                                    name="nomeprofessore"
                                                     value={dadosNovoProfessor.nomeprofessore}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                     required
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Gênero *</label>
-                                                <select 
-                                                    className="form-control shadow-sm" 
+                                                <select
+                                                    className="form-control shadow-sm"
                                                     name="genero"
                                                     value={dadosNovoProfessor.genero}
                                                     onChange={handleNovoProfessorInputChange}
@@ -927,13 +928,13 @@ function ProfessorEdit() {
                                                     <option value="Feminino">Feminino</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Nacionalidade</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Nacionalidade..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nacionalidade..."
+                                                    className="form-control shadow-sm"
                                                     name="nacionalidadeprofessor"
                                                     value={dadosNovoProfessor.nacionalidadeprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -943,8 +944,8 @@ function ProfessorEdit() {
 
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Estado Civil</label>
-                                                <select 
-                                                    className="form-control shadow-sm" 
+                                                <select
+                                                    className="form-control shadow-sm"
                                                     name="estadocivilprofessor"
                                                     value={dadosNovoProfessor.estadocivilprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -957,39 +958,39 @@ function ProfessorEdit() {
                                                     <option value="Viúvo(a)">Viúvo(a)</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Nome do Pai</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Nome do Pai..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome do Pai..."
+                                                    className="form-control shadow-sm"
                                                     name="nomepaiprofessor"
                                                     value={dadosNovoProfessor.nomepaiprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Nome da Mãe</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Nome da Mãe..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome da Mãe..."
+                                                    className="form-control shadow-sm"
                                                     name="nomemaeprofessor"
                                                     value={dadosNovoProfessor.nomemaeprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Nº do B.I *</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Nº B.I..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nº B.I..."
+                                                    className="form-control shadow-sm"
                                                     name="biprofessor"
                                                     value={dadosNovoProfessor.biprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -997,43 +998,43 @@ function ProfessorEdit() {
                                                     required
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Data de Nascimento</label>
-                                                <input 
-                                                    type="date" 
-                                                    className="form-control shadow-sm" 
-                                                    name="datanascimentoprofessor" 
+                                                <input
+                                                    type="date"
+                                                    className="form-control shadow-sm"
+                                                    name="datanascimentoprofessor"
                                                     value={dadosNovoProfessor.datanascimentoprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label small text-muted mb-1">B.I Frente e Verso/Curriculum Vitae (PDF)</label>
-                                                <input 
-                                                    type="file" 
-                                                    className="form-control shadow-sm" 
-                                                    name="bipdfprofessor" 
-                                                    accept=".pdf,application/pdf" 
+                                                <input
+                                                    type="file"
+                                                    className="form-control shadow-sm"
+                                                    name="bipdfprofessor"
+                                                    accept=".pdf,application/pdf"
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
                                             <RiContactsBook3Line className="me-2" />
                                             Dados de Contato
                                         </h6>
-                                        
+
                                         <div className="row">
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label small text-muted mb-1">Residência</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Residência..." 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Residência..."
                                                     className="form-control shadow-sm"
                                                     name="residenciaprofessor"
                                                     value={dadosNovoProfessor.residenciaprofessor}
@@ -1041,51 +1042,51 @@ function ProfessorEdit() {
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label small text-muted mb-1">Telefone</label>
-                                                <input 
-                                                    type="tel" 
-                                                    placeholder="Telefone..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="tel"
+                                                    placeholder="Telefone..."
+                                                    className="form-control shadow-sm"
                                                     name="telefoneprofessor"
                                                     value={dadosNovoProfessor.telefoneprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label small text-muted mb-1">WhatsApp</label>
-                                                <input 
-                                                    type="tel" 
-                                                    placeholder="WhatsApp..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="tel"
+                                                    placeholder="WhatsApp..."
+                                                    className="form-control shadow-sm"
                                                     name="whatsappprofessor"
                                                     value={dadosNovoProfessor.whatsappprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Email</label>
-                                                <input 
-                                                    type="email" 
-                                                    placeholder="Email..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="email"
+                                                    placeholder="Email..."
+                                                    className="form-control shadow-sm"
                                                     name="emailprofessor"
                                                     value={dadosNovoProfessor.emailprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Contacto de Emergência</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Contacto de Emergência..." 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Contacto de Emergência..."
                                                     className="form-control shadow-sm"
                                                     name="contactoemergenciaprofessor"
                                                     value={dadosNovoProfessor.contactoemergenciaprofessor}
@@ -1095,18 +1096,18 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
                                             <FaBriefcase className="me-2" />
                                             Dados Profissionais
                                         </h6>
-                                        
+
                                         <div className="row">
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Anos de Experiência</label>
-                                                <input 
-                                                    type="number" 
-                                                    placeholder="Anos de Experiência..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="number"
+                                                    placeholder="Anos de Experiência..."
+                                                    className="form-control shadow-sm"
                                                     name="anoexprienciaprofessor"
                                                     value={dadosNovoProfessor.anoexprienciaprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -1116,11 +1117,11 @@ function ProfessorEdit() {
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Titulação</label>
-                                                <select 
-                                                    className="form-control shadow-sm" 
+                                                <select
+                                                    className="form-control shadow-sm"
                                                     name="titulacaoprofessor"
                                                     value={dadosNovoProfessor.titulacaoprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -1133,23 +1134,23 @@ function ProfessorEdit() {
                                                     <option value="Pós-Doutoramento">Pós-Doutoramento</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Data de Admissão</label>
-                                                <input 
-                                                    type="date" 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="date"
+                                                    className="form-control shadow-sm"
                                                     name="dataadmissaprofessor"
                                                     value={dadosNovoProfessor.dataadmissaprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Tipo de Contrato</label>
-                                                <select 
-                                                    className="form-control shadow-sm" 
+                                                <select
+                                                    className="form-control shadow-sm"
                                                     name="tipocontratoprofessor"
                                                     value={dadosNovoProfessor.tipocontratoprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -1162,13 +1163,13 @@ function ProfessorEdit() {
                                                     <option value="Estagiário">Estagiário</option>
                                                 </select>
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">IBAN</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="IBAN..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="IBAN..."
+                                                    className="form-control shadow-sm"
                                                     name="ibanprofessor"
                                                     value={dadosNovoProfessor.ibanprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -1177,31 +1178,31 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3 mt-4" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
                                             <MdOutlineLocalHospital className="me-2" />
                                             Dados de Saúde
                                         </h6>
-                                        
+
                                         <div className="row">
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Tipo Sanguíneo</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Tipo Sanguíneo..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Tipo Sanguíneo..."
+                                                    className="form-control shadow-sm"
                                                     name="tiposanguineoprofessor"
                                                     value={dadosNovoProfessor.tiposanguineoprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
                                                 />
                                             </div>
-                                            
+
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label small text-muted mb-1">Condições de Saúde/Alergia</label>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Condições de Saúde/Alergia..." 
-                                                    className="form-control shadow-sm" 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Condições de Saúde/Alergia..."
+                                                    className="form-control shadow-sm"
                                                     name="condicoesprofessor"
                                                     value={dadosNovoProfessor.condicoesprofessor}
                                                     onChange={handleNovoProfessorInputChange}
@@ -1212,16 +1213,16 @@ function ProfessorEdit() {
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className={`btn ${Style.btnCancelar}`}
                                         onClick={fecharModalAdicionar}
                                         disabled={salvando || isConfirming}
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className={`btn ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !dadosNovoProfessor.nomeprofessore?.trim()}
                                     >
@@ -1242,16 +1243,16 @@ function ProfessorEdit() {
             )}
 
             {modalAdicionarDisciplinaAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <MdAddCircleOutline className="me-2" />
                                     Adicionar Disciplina ao Professor
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalAdicionarDisciplina}
                                     disabled={salvando || isConfirming}
@@ -1261,34 +1262,34 @@ function ProfessorEdit() {
                                 <div className="modal-body">
                                     <div className="row g-3">
                                         <div className="col-12">
-                                            <SelectDisciplina 
-                                                onChange={(e) => setIdDisciplina(e.target.value)} 
-                                                value={iddisciplina} 
-                                                name="iddisciplina" 
+                                            <SelectDisciplina
+                                                onChange={(e) => setIdDisciplina(e.target.value)}
+                                                value={iddisciplina}
+                                                name="iddisciplina"
                                                 disabled={salvando || isConfirming}
                                             />
                                         </div>
                                         <div className="col-12">
-                                            <SelectProfessor 
-                                                onChange={(e) => setIdProfessor(e.target.value)} 
-                                                value={idprofessor} 
-                                                name="idprofessor" 
+                                            <SelectProfessor
+                                                onChange={(e) => setIdProfessor(e.target.value)}
+                                                value={idprofessor}
+                                                name="idprofessor"
                                                 disabled={salvando || isConfirming}
                                             />
                                         </div>
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className={`btn ${Style.btnCancelar}`}
                                         onClick={fecharModalAdicionarDisciplina}
                                         disabled={salvando || isConfirming}
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className={`btn ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !iddisciplina || !idprofessor}
                                     >
@@ -1309,16 +1310,16 @@ function ProfessorEdit() {
             )}
 
             {modalDisciplinasAberto && professorSelecionado && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <FaBook className="me-2" />
                                     Disciplinas do Professor {professorSelecionado.nomeprofessor}
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalDisciplinas}
                                     disabled={loadingDisciplinas || isConfirming}
@@ -1336,18 +1337,18 @@ function ProfessorEdit() {
                                     <div className="row">
                                         {disciplinasProfessor.map((disciplina) => (
                                             <div key={disciplina.iddisciplina} className="col-md-6 mb-2">
-                                                <div className="p-3 border rounded d-flex justify-content-between align-items-center" 
-                                                    style={{backgroundColor:'var(--cinza-claro)'}}>
+                                                <div className="p-3 border rounded d-flex justify-content-between align-items-center"
+                                                    style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                     <div className="d-flex align-items-center">
-                                                        <MdBook className="me-2" style={{color:'var(--azul-escuro)'}} />
-                                                        <span className="fw-semibold" style={{color:'var(--azul-escuro)'}}>
+                                                        <MdBook className="me-2" style={{ color: 'var(--azul-escuro)' }} />
+                                                        <span className="fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
                                                             {disciplina.disciplina}
                                                         </span>
                                                     </div>
                                                     <button
                                                         className={`btn btn-sm ${Style.btnDeletar}`}
                                                         onClick={() => removerDisciplina(
-                                                            disciplina.iddisciplina, 
+                                                            disciplina.iddisciplina,
                                                             disciplina.disciplina,
                                                             professorSelecionado.idprofessor,
                                                             professorSelecionado.nomeprofessor
@@ -1366,15 +1367,15 @@ function ProfessorEdit() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4" style={{color:'var(--azul-escuro)'}}>
+                                    <div className="text-center py-4" style={{ color: 'var(--azul-escuro)' }}>
                                         <MdBook size={48} className="text-muted mb-3" />
                                         <p className="mb-0">Nenhuma disciplina atribuída a este professor.</p>
                                     </div>
                                 )}
                             </div>
                             <div className="modal-footer border-0">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className={`btn ${Style.btnCancelar}`}
                                     onClick={fecharModalDisciplinas}
                                 >
@@ -1387,21 +1388,21 @@ function ProfessorEdit() {
             )}
 
             {modalInfoAberto && professorSelecionadoInfo && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <FaInfoCircle className="me-2" />
                                     Informações do Professor - {professorSelecionadoInfo.nomeprofessor}
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalInfo}
                                 />
                             </div>
-                            <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                 <div className="container-fluid">
                                     <div className="row mb-4">
                                         <div className="col-md-2 text-center">
@@ -1411,14 +1412,14 @@ function ProfessorEdit() {
                                                 style={{ width: '120px', height: '120px', objectFit: 'cover' }}
                                                 alt={professorSelecionadoInfo.nomeprofessor}
                                             />
-                                            <h6 className="mt-2 mb-0" style={{color:'var(--azul-escuro)'}}>
+                                            <h6 className="mt-2 mb-0" style={{ color: 'var(--azul-escuro)' }}>
                                                 Código: {professorSelecionadoInfo.codigoprofessor || 'N/I'}
                                             </h6>
                                         </div>
                                         <div className="col-md-10">
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
-                                                    <h6 className="card-title" style={{color:'var(--azul-escuro)'}}>
+                                                    <h6 className="card-title" style={{ color: 'var(--azul-escuro)' }}>
                                                         <MdPerson className="me-2" />
                                                         Dados Pessoais
                                                     </h6>
@@ -1441,7 +1442,7 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <RiContactsBook3Line className="me-2" />
                                         Contato e Residência
                                     </h6>
@@ -1474,7 +1475,7 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <FaBriefcase className="me-2" />
                                         Dados Profissionais
                                     </h6>
@@ -1515,7 +1516,7 @@ function ProfessorEdit() {
 
                                     <hr className="my-4" />
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <FaUniversity className="me-2" />/<FaHeartbeat className="me-2" />
                                         Dados Bancários e Saúde
                                     </h6>
@@ -1546,7 +1547,7 @@ function ProfessorEdit() {
                                         </div>
                                     </div>
 
-                                    <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                         <MdAttachFile className="me-2" />
                                         Documentos
                                     </h6>
@@ -1574,8 +1575,8 @@ function ProfessorEdit() {
                                 </div>
                             </div>
                             <div className="modal-footer border-0">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className={`btn ${Style.btnCancelar}`}
                                     onClick={fecharModalInfo}
                                 >
@@ -1588,23 +1589,23 @@ function ProfessorEdit() {
             )}
 
             {modalEditarAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <MdEdit className="me-2" />
                                     Editar Professor - {dadosEdicao.nomeprofessor}
                                 </h5>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-close btn-close-white"
                                     onClick={fecharModalEditar}
                                     disabled={salvando || isConfirming}
                                 />
                             </div>
                             <form onSubmit={salvarEdicao}>
-                                <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+                                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                     <div className="container-fluid">
                                         <div className="row mb-4">
                                             <div className="col-md-12 text-center">
@@ -1620,7 +1621,7 @@ function ProfessorEdit() {
                                                         className="position-absolute bottom-0 end-0 bg-white rounded-circle p-2 shadow-sm"
                                                         style={{ cursor: 'pointer', transform: 'translate(-10%, -10%)' }}
                                                     >
-                                                        <MdCameraAlt style={{color:'var(--azul-escuro)'}} />
+                                                        <MdCameraAlt style={{ color: 'var(--azul-escuro)' }} />
                                                     </label>
                                                     <input
                                                         type="file"
@@ -1634,7 +1635,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <MdPerson className="me-2" />
                                             Identificação Básica
                                         </h6>
@@ -1664,7 +1665,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <FaIdCard className="me-2" />
                                             Dados Pessoais
                                         </h6>
@@ -1754,7 +1755,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <RiContactsBook3Line className="me-2" />
                                             Contato e Residência
                                         </h6>
@@ -1816,7 +1817,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <FaBriefcase className="me-2" />
                                             Dados Profissionais
                                         </h6>
@@ -1886,7 +1887,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <MdOutlineLocalHospital className="me-2" />
                                             Dados de Saúde
                                         </h6>
@@ -1923,7 +1924,7 @@ function ProfessorEdit() {
                                             </div>
                                         </div>
 
-                                        <h6 className="mb-3" style={{color:'var(--azul-escuro)'}}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <MdAttachFile className="me-2" />
                                             Documentos
                                         </h6>
@@ -1971,16 +1972,16 @@ function ProfessorEdit() {
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className={`btn ${Style.btnCancelar}`}
                                         onClick={fecharModalEditar}
                                         disabled={salvando || isConfirming}
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className={`btn ${Style.btnSubmit}`}
                                         disabled={salvando || isConfirming || !dadosEdicao.nomeprofessor?.trim()}
                                     >
