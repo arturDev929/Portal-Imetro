@@ -50,9 +50,13 @@ function Home() {
             "Coordenador de Admissões e Matrículas"
           ) {
             navigate("/homefuncionarioM");
-          } else {
+          } else if (response.data.tipoUsuario === "funcionario") {
             // Para outros funcionários, você pode definir uma rota padrão
             navigate("/homefuncionario");
+          }else if (response.data.tipoUsuario === "professor") {
+            navigate("/hometeacher");
+          }else{
+            navigate("/");
           }
         }, 100);
       } else {
@@ -154,7 +158,7 @@ function Home() {
                     <p className="mt-3 text-white">
                       Ainda não tens uma conta?{" "}
                       <Link to="/cadastro" className={Style.LinkHome}>
-                        Cadastrar-se
+                        Fazer Inscrição
                       </Link>
                     </p>
                   </form>

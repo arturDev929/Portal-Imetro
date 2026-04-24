@@ -15,7 +15,6 @@ router.post("/", (req, res) => {
         });
     }
 
-    // Primeiro tenta buscar na tabela admimetro (ADM)
     const sqlAdm = "SELECT * FROM admimetro WHERE emailAdm = ?";
     
     conexao.query(sqlAdm, [numEstudante], async (err, resultsAdm) => {
@@ -29,7 +28,6 @@ router.post("/", (req, res) => {
             });
         }
 
-        // Se encontrou na tabela admimetro
         if (resultsAdm.length > 0) {
             const usuario = resultsAdm[0];
 
@@ -67,7 +65,6 @@ router.post("/", (req, res) => {
                 });
             }
         } else {
-            // Se não encontrou na admimetro, busca na tabela funcionario
             const sqlFuncionario = `
                 SELECT 
                     f.id_funcionario,
@@ -81,7 +78,7 @@ router.post("/", (req, res) => {
                 FROM funcionario f
                 INNER JOIN cargo_funcionario_relation cfr ON f.id_funcionario = cfr.id_funcionario
                 INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo
-                WHERE f.bi_funcionario = ? AND f.estado_funcionario = 'Ativo'
+                WHERE f.bi_funcionario = ?
             `;
             
             conexao.query(sqlFuncionario, [numEstudante], async (err, resultsFunc) => {
@@ -95,61 +92,177 @@ router.post("/", (req, res) => {
                     });
                 }
 
-                if (resultsFunc.length === 0) {
-                    return res.status(401).json({ 
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Usuário não encontrado",
-                        mensagem: "Usuário não encontrado ou inativo."
-                    });
-                }
+                if (resultsFunc.length > 0) {
+                    const usuario = resultsFunc[0];
 
-                const usuario = resultsFunc[0];
+                    try {
+                        const senhaCorreta = await bcrypt.compare(password, usuario.senha_funcionario);
 
-                try {
-                    const senhaCorreta = await bcrypt.compare(password, usuario.senha_funcionario);
-
-                    if (senhaCorreta) {
-                        // Inicializa as variáveis
-                        let rota = "/homefuncionario";
-                        let tipoUsuario = "funcionario";
-                        
-                        // Verifica o cargo
-                        if (usuario.nome_cargo === "Coordenador de Admissões e Matrículas") {
-                            rota = "/homefuncionarioM";
-                            tipoUsuario = "Coordenador de Admissões e Matrículas";
-                        }
-
-                        return res.status(200).json({ 
-                            sucesso: true,
-                            tipo: "sucesso",
-                            titulo: "Login realizado",
-                            mensagem: "Login realizado com sucesso!",
-                            tipoUsuario: tipoUsuario,
-                            rota: rota,
-                            dados: { 
-                                id: usuario.id_funcionario,
-                                nome: usuario.nome_funcionario,
-                                bi: usuario.bi_funcionario,
-                                contacto: usuario.contacto_funcionario,
-                                cargo: usuario.nome_cargo,
-                                id_cargo: usuario.id_cargo
+                        if (senhaCorreta) {
+                            let rota = "/homefuncionario";
+                            let tipoUsuario = "funcionario";
+                            
+                            if (usuario.nome_cargo === "Coordenador de Admissões e Matrículas") {
+                                rota = "/homefuncionarioM";
+                                tipoUsuario = "Coordenador de Admissões e Matrículas";
                             }
-                        });
-                    } else {
-                        return res.status(401).json({ 
+
+                            return res.status(200).json({ 
+                                sucesso: true,
+                                tipo: "sucesso",
+                                titulo: "Login realizado",
+                                mensagem: "Login realizado com sucesso!",
+                                tipoUsuario: tipoUsuario,
+                                rota: rota,
+                                dados: { 
+                                    id: usuario.id_funcionario,
+                                    nome: usuario.nome_funcionario,
+                                    bi: usuario.bi_funcionario,
+                                    contacto: usuario.contacto_funcionario,
+                                    cargo: usuario.nome_cargo,
+                                    id_cargo: usuario.id_cargo
+                                }
+                            });
+                        } else {
+                            return res.status(401).json({ 
+                                sucesso: false,
+                                tipo: "erro",
+                                titulo: "Dados Incorretos",
+                                mensagem: "Dados Incorretos."
+                            });
+                        }
+                    } catch (error) {
+                        return res.status(500).json({ 
                             sucesso: false,
                             tipo: "erro",
-                            titulo: "Dados Incorretos",
-                            mensagem: "Dados Incorretos."
+                            titulo: "Erro ao verificar senha",
+                            mensagem: "Erro ao verificar senha."
                         });
                     }
-                } catch (error) {
-                    return res.status(500).json({ 
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Erro ao verificar senha",
-                        mensagem: "Erro ao verificar senha."
+                } else {
+                    const sqlProfessor = `
+                        SELECT 
+                            codigoprofessor,
+                            nomeprofessor,
+                            senhaprofessor
+                        FROM professor 
+                        WHERE codigoprofessor = ?
+                    `;
+                    
+                    conexao.query(sqlProfessor, [numEstudante], async (err, resultsProf) => {
+                        if (err) {
+                            console.error("Erro no banco:", err);
+                            return res.status(500).json({ 
+                                sucesso: false,
+                                tipo: "erro",
+                                titulo: "Erro no servidor",
+                                mensagem: "Erro interno no servidor."
+                            });
+                        }
+
+                        if (resultsProf.length === 0) {
+                            // Verificar estudantes se não encontrar professor
+                            const sqlEstudante = `
+                                SELECT 
+                                    numeroInscricao_estudanteInscricao,
+                                    senha_estudanteInscricao,
+                                    nome_estudanteInscricao
+                                FROM estudanteinscricao 
+                                WHERE numeroInscricao_estudanteInscricao = ?
+                            `;
+                            
+                            conexao.query(sqlEstudante, [numEstudante], async (err, resultsEstudante) => {
+                                if (err) {
+                                    console.error("Erro no banco:", err);
+                                    return res.status(500).json({ 
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Erro no servidor",
+                                        mensagem: "Erro interno no servidor."
+                                    });
+                                }
+
+                                if (resultsEstudante.length > 0) {
+                                    const usuario = resultsEstudante[0];
+
+                                    try {
+                                        const senhaCorreta = await bcrypt.compare(password, usuario.senha_estudanteInscricao);
+
+                                        if (senhaCorreta) {
+                                            return res.status(200).json({ 
+                                                sucesso: true,
+                                                tipo: "sucesso",
+                                                titulo: "Login realizado",
+                                                mensagem: "Login realizado com sucesso!",
+                                                tipoUsuario: "estudante",
+                                                rota: "/homestudent",
+                                                dados: { 
+                                                    numeroInscricao: usuario.numeroInscricao_estudanteInscricao,
+                                                    nome: usuario.nome_estudanteInscricao
+                                                }
+                                            });
+                                        } else {
+                                            return res.status(401).json({ 
+                                                sucesso: false,
+                                                tipo: "erro",
+                                                titulo: "Dados Incorretos",
+                                                mensagem: "Dados Incorretos."
+                                            });
+                                        }
+                                    } catch (error) {
+                                        return res.status(500).json({ 
+                                            sucesso: false,
+                                            tipo: "erro",
+                                            titulo: "Erro ao verificar senha",
+                                            mensagem: "Erro ao verificar senha."
+                                        });
+                                    }
+                                } else {
+                                    // Usuário não encontrado em nenhuma tabela
+                                    return res.status(401).json({ 
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Usuário não encontrado",
+                                        mensagem: "Usuário não encontrado."
+                                    });
+                                }
+                            });
+                        } else {
+                            const usuario = resultsProf[0];
+
+                            try {
+                                const senhaCorreta = await bcrypt.compare(password, usuario.senhaprofessor);
+
+                                if (senhaCorreta) {
+                                    return res.status(200).json({ 
+                                        sucesso: true,
+                                        tipo: "sucesso",
+                                        titulo: "Login realizado",
+                                        mensagem: "Login realizado com sucesso!",
+                                        tipoUsuario: "professor",
+                                        rota: "/hometeacher",
+                                        dados: { 
+                                            id: usuario.codigoprofessor,
+                                            nome: usuario.nomeprofessor
+                                        }
+                                    });
+                                } else {
+                                    return res.status(401).json({ 
+                                        sucesso: false,
+                                        tipo: "erro",
+                                        titulo: "Dados Incorretos",
+                                        mensagem: "Dados Incorretos."
+                                    });
+                                }
+                            } catch (error) {
+                                return res.status(500).json({ 
+                                    sucesso: false,
+                                    tipo: "erro",
+                                    titulo: "Erro ao verificar senha",
+                                    mensagem: "Erro ao verificar senha."
+                                });
+                            }
+                        }
                     });
                 }
             });
