@@ -4,6 +4,7 @@ const conexao = require("../infra/conexao");
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require("bcryptjs");
+const authMiddleware = require("../middleware/authMiddleware");
 
 router.put('/categoriaCurso/:id', (req, res) => {
     const { id } = req.params;
@@ -322,7 +323,7 @@ router.put('/disciplina/:id', (req, res) => {
     });
 });
 
-router.put('/atulizarprofessor/:id', (req, res) => {
+router.put('/atulizarprofessor/:id', authMiddleware, (req, res) => {
     const { id } = req.params;
     const {
         codigoprofessor,

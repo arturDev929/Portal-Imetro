@@ -73,8 +73,6 @@ function GestaoFuncionariosAdm() {
         .get("/get/estatisticasFuncionarios")
         .then((response) => {
           setTotalFuncionarios(response.data.totalFuncionarios || 0);
-          // setFuncionariosComBI(response.data.funcionariosComBI || 0);
-          // setFuncionariosComContacto(response.data.funcionariosComContacto || 0);
           setUltimaAtualizacao(new Date());
         })
         .catch((error) => {
@@ -156,9 +154,7 @@ function GestaoFuncionariosAdm() {
   if (loading) {
     return (
       <div className={`container-fluid ${Style.gestaoCursos} p-0 m-0`}>
-        {/* <SidebarAdm /> */}
         <div className="col-md-9 ms-md-auto col-lg-10 px-0">
-          {/* <NavbarAdm /> */}
           <div
             className="d-flex justify-content-center align-items-center"
             style={{ height: "80vh" }}

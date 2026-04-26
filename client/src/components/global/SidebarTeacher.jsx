@@ -54,25 +54,25 @@ function SidebarTeacher(){
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
                             {/* <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6> */}
-                            <Link to="#" className={`nav-link active ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
+                            <Link to="/hometeacher" className={`nav-link active ${Style.Link}`}>
+                                <IoPersonCircleOutline className="me-2"/> Perfil
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
+                                <PiNotePencilLight className="me-2"/>Lançamento de Notas
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/>Alunos Admitidos
+                                <PiStudentDuotone className="me-2"/>Alunos Admitidos
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <MdTopic className="mb-2 me-2"/>Add. Tópicos
+                                <MdTopic className="me-2"/>Add. Tópicos
                             </Link>
                         </div>
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Configurações</h6>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="/definicoesTeacher" className={`nav-link ${Style.Link}`}>
                                 <IoSettingsOutline className="me-2"/>Configurações
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="/segurancaTeacher" className={`nav-link ${Style.Link}`}>
                                 <GrSecure className="me-2"/>Segurança
                             </Link>
                         </div>
@@ -93,7 +93,7 @@ function SidebarTeacher(){
             <div className={`offcanvas offcanvas-start d-md-none ${Style.containerFluid}`} tabIndex="-1" id="sidebarMobile">
                 <div className="offcanvas-header border-bottom">
                     <h5 className="mb-0">
-                        <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} to="/homeAdm"/>
+                        <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} to="/hometeacher"/>
                         <span className="ms-2 fw-bold text-light">Portal Imetro</span>
                     </h5>
                     <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
@@ -101,8 +101,8 @@ function SidebarTeacher(){
                 <div className="offcanvas-body p-0">
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
+                            <Link to="/hometeacher" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2"/> Perfil
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas

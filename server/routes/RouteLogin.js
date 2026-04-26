@@ -142,11 +142,13 @@ router.post("/", (req, res) => {
                 } else {
                     const sqlProfessor = `
                         SELECT 
+                            idprofessor,
                             codigoprofessor,
                             nomeprofessor,
-                            senhaprofessor
+                            senhaprofessor,
+                            estado
                         FROM professor 
-                        WHERE codigoprofessor = ?
+                        WHERE codigoprofessor = ? AND estado = 'Ativo'
                     `;
                     
                     conexao.query(sqlProfessor, [numEstudante], async (err, resultsProf) => {
@@ -242,7 +244,8 @@ router.post("/", (req, res) => {
                                         tipoUsuario: "professor",
                                         rota: "/hometeacher",
                                         dados: { 
-                                            id: usuario.codigoprofessor,
+                                            id: usuario.idprofessor,
+                                            codigo: usuario.codigoprofessor,
                                             nome: usuario.nomeprofessor
                                         }
                                     });

@@ -51,7 +51,6 @@ function Home() {
           ) {
             navigate("/homefuncionarioM");
           } else if (response.data.tipoUsuario === "funcionario") {
-            // Para outros funcionários, você pode definir uma rota padrão
             navigate("/homefuncionario");
           }else if (response.data.tipoUsuario === "professor") {
             navigate("/hometeacher");

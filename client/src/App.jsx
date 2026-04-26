@@ -12,6 +12,8 @@ const GestaoProfessoresAdm = lazy(() => import("./pagesAdm/GestaoProfessoresAdm"
 const GestaoFuncionarioAdm = lazy(() => import("./pagesAdm/GestaoFuncionarioAdm"));
 const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 const HomeTeacher = lazy(() => import("./pagesTeacher/Home"));
+// const DefinicoesTeacher = lazy(() => import("./pagesTeacher/Definicoes"));
+// const SegurancaTeacher = lazy(() => import("./pagesTeacher/Seguranca"));
 
 const RotaPrivada = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -45,6 +47,8 @@ function App() {
             <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
             <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
             <Route path="/hometeacher" element={<RotaPrivada><HomeTeacher/></RotaPrivada>}/>
+            {/* <Route path="/definicoesTeacher" element={<RotaPrivada><DefinicoesTeacher/></RotaPrivada>}/>
+            <Route path="/segurancaTeacher" element={<RotaPrivada><SegurancaTeacher/></RotaPrivada>}/> */}
           </Routes>
         </Suspense>
       </Layout>
