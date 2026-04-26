@@ -28,6 +28,7 @@ function Home() {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
+  // Load user from localStorage
   useEffect(() => {
     const usuarioSalvo = localStorage.getItem("usuarioLogado");
     if (usuarioSalvo) {
@@ -38,9 +39,10 @@ function Home() {
     }
   }, [navigate]);
 
+  // Fetch professor data when user or codigo changes
   useEffect(() => {
     if (user || codigo) {
-      const codigoToUse = codigo || user?.id;
+      const codigoToUse = codigo || user?.codigo;
       if (codigoToUse) {
         fetchProfessorData(codigoToUse);
       }
@@ -67,6 +69,7 @@ function Home() {
     return date.toLocaleDateString('pt-BR');
   };
 
+  // Status badge helper function
   const getStatusBadge = (status) => {
     if (status === 'Ativo') {
       return <span className="badge bg-success">{status}</span>;

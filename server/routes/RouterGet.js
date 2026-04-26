@@ -1078,6 +1078,7 @@ router.get('/EstudantesInscritos', (req, res) => {
 
 router.get('/PerfilProfessor/:codigo', async (req, res) => {
    const { codigo } = req.params;
+   
    const sqlProfessor = `SELECT 
             p.idprofessor,
             p.nomeprofessor,
@@ -1123,6 +1124,7 @@ router.get('/PerfilProfessor/:codigo', async (req, res) => {
         const professor = professorResult[0];
         const id = professor.idprofessor;
         
+        // Second query to get disciplines
         const sqlDisciplinas = `
             SELECT 
                 disciplina.iddisciplina,

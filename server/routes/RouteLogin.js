@@ -140,13 +140,15 @@ router.post("/", (req, res) => {
                         });
                     }
                 } else {
+                    
                     const sqlProfessor = `
                         SELECT 
                             idprofessor,
                             codigoprofessor,
                             nomeprofessor,
                             senhaprofessor,
-                            estado
+                            estado,
+                            fotoprofessor
                         FROM professor 
                         WHERE codigoprofessor = ? AND estado = 'Ativo'
                     `;
@@ -220,7 +222,6 @@ router.post("/", (req, res) => {
                                         });
                                     }
                                 } else {
-                                    // Usuário não encontrado em nenhuma tabela
                                     return res.status(401).json({ 
                                         sucesso: false,
                                         tipo: "erro",
@@ -236,6 +237,12 @@ router.post("/", (req, res) => {
                                 const senhaCorreta = await bcrypt.compare(password, usuario.senhaprofessor);
 
                                 if (senhaCorreta) {
+                                    const baseUrl = `${req.protocol}://${req.get('host')}`;
+                                    const fotoUrl = usuario.fotoprofessor ? 
+                                            `${baseUrl}/api/img/professores/${usuario.fotoprofessor}` : 
+                                            console.log("Foto do professor não encontrada") ||
+                                        null;
+
                                     return res.status(200).json({ 
                                         sucesso: true,
                                         tipo: "sucesso",
@@ -246,7 +253,8 @@ router.post("/", (req, res) => {
                                         dados: { 
                                             id: usuario.idprofessor,
                                             codigo: usuario.codigoprofessor,
-                                            nome: usuario.nomeprofessor
+                                            nome: usuario.nomeprofessor,
+                                            fotoUrl:fotoUrl
                                         }
                                     });
                                 } else {
