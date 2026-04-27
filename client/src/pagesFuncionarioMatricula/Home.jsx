@@ -6,12 +6,13 @@ import EstudantesReprovados from "./components/EstudantesReprovados";
 import { FaUserCheck, FaUserTimes, FaUserPlus } from 'react-icons/fa';
 import { IoMdPerson } from "react-icons/io";
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
+import axios from "axios";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
     // Estado para controlar qual seção está visível
     const [secaoAtiva, setSecaoAtiva] = useState("inscritos"); // inscritos, aprovados, reprovados
-    
+    const [inscritos,setInscritos]=useState([])
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -19,6 +20,15 @@ function HomeAdm() {
         }
     }, []);
 
+    useEffect(()=>{
+       
+        RequestData()
+    },[inscritos])
+    async function  RequestData() {
+        const data=await axios.get("/EstudantesInscritos")
+        
+        console.log(data.data)
+    }
     return (
         <FuncionarioLayout>
             <div className="row mb-4">
