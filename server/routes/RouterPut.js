@@ -323,7 +323,7 @@ router.put('/disciplina/:id', (req, res) => {
     });
 });
 
-router.put('/atulizarprofessor/:id', authMiddleware, (req, res) => {
+router.put('/atualizarprofessor/:id', (req, res) => {
     const { id } = req.params;
     const {
         codigoprofessor,
@@ -332,7 +332,7 @@ router.put('/atulizarprofessor/:id', authMiddleware, (req, res) => {
         nacionalidadeprofessor,
         estadocivilprofessor,
         nomepaiprofessor,
-        nomemaeprofessor,
+        nomemaeprofessor, 
         nbiprofessor,
         datanascimentoprofessor,
         residenciaprofessor,
