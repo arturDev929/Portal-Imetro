@@ -1074,6 +1074,112 @@ router.get('/EstudantesInscritos', (req, res) => {
     });
 });
 
+// 1. ESTUDANTES PENDENTES (sua rota atual)
+router.get('/EstudantesPendentes', (req, res) => {
+    const sql = `SELECT * FROM estudanteinscricao ei 
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso 
+                 WHERE pdf_InscricaoRupe IS NULL 
+                 AND estado_estdanteInscrito = 'Pendente' 
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
+    // ... seu código existente
+});
+
+// 2. ESTUDANTES APROVADOS
+router.get('/EstudantesAprovados', (req, res) => {
+    const sql = `SELECT * FROM estudanteinscricao ei 
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso 
+                 WHERE estado_estdanteInscrito = 'Aprovado' 
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar aprovados:", error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudantesFormatados = result.map(estudante => ({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null
+            }));
+            res.status(200).json(estudantesFormatados);
+        }
+    });
+});
+
+// 3. ESTUDANTES REPROVADOS
+router.get('/EstudantesReprovados', (req, res) => {
+    const sql = `SELECT * FROM estudanteinscricao ei 
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso 
+                 WHERE estado_estdanteInscrito = 'Reprovado' 
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar reprovados:", error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudantesFormatados = result.map(estudante => ({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null
+            }));
+            res.status(200).json(estudantesFormatados);
+        }
+    });
+});
+
+// 4. ROTA GENÉRICA COM PARÂMETRO (MAIS FLEXÍVEL)
+router.get('/EstudantesByStatus/:status', (req, res) => {
+    const { status } = req.params; // status pode ser: Pendente, Aprovado, Reprovado
+    const sql = `SELECT * FROM estudanteinscricao ei 
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso 
+                 WHERE estado_estdanteInscrito = ? 
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
+    
+    conexao.query(sql, [status], (error, result) => {
+        if(error) {
+            console.error(`Erro ao buscar ${status}:`, error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudantesFormatados = result.map(estudante => ({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null
+            }));
+            res.status(200).json(estudantesFormatados);
+        }
+    });
+});
+
+// 5. ESTATÍSTICAS DE INSCRIÇÕES
+router.get('/EstatisticasInscricoes', (req, res) => {
+    const sql = `SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Pendente' THEN 1 ELSE 0 END) as pendentes,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Aprovado' THEN 1 ELSE 0 END) as aprovados,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Reprovado' THEN 1 ELSE 0 END) as reprovados,
+                    SUM(CASE WHEN pdf_InscricaoRupe IS NULL THEN 1 ELSE 0 END) as sem_pagamento
+                 FROM estudanteinscricao`;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar estatísticas:", error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            res.status(200).json(result[0]);
+        }
+    });
+});
+
 
 
 router.get('/PerfilProfessor/:codigo', async (req, res) => {

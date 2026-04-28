@@ -1,17 +1,16 @@
 import FuncionarioLayout from "../layouts/FuncionarioLayout";
 import { useEffect, useState } from "react";
 import Inscricoes from "./components/Inscricoes";
-import EstudantesAprovados from "./components/EstudantesAprovados";
-import EstudantesReprovados from "./components/EstudantesReprovados";
 import { FaUserCheck, FaUserTimes, FaUserPlus } from 'react-icons/fa';
 import { IoMdPerson } from "react-icons/io";
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
 import axios from "axios";
+import api from "../service/api";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
     // Estado para controlar qual seção está visível
-    const [secaoAtiva, setSecaoAtiva] = useState("inscritos"); // inscritos, aprovados, reprovados
+    const [secaoAtiva, setSecaoAtiva] = useState("Pendente"); // inscritos, aprovados, reprovados
     const [inscritos,setInscritos]=useState([])
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
@@ -25,10 +24,32 @@ function HomeAdm() {
         RequestData()
     },[inscritos])
     async function  RequestData() {
-        const data=await axios.get("/EstudantesInscritos")
+        const data=await api.get("/get/EstudantesInscritos")
         
         console.log(data.data)
     }
+
+    const secoes = [
+        {
+            cor: "#003366",
+            titulo: "Estudantes Inscritos",
+            icone: FaUserPlus,
+            status: "Pendente"
+        },
+        {
+            cor: "#28a745",
+            titulo: "Estudantes Aprovados",
+            icone: FaUserCheck,
+            status: "Aprovado"
+        },
+        {
+            cor: "#dc3545",
+            titulo: "Estudantes Reprovados",
+            icone: FaUserTimes,
+            status: "Reprovado"
+        }
+    ];
+
     return (
         <FuncionarioLayout>
             <div className="row mb-4">
@@ -54,8 +75,8 @@ function HomeAdm() {
                     <div className="row mb-4 g-2">
                         <div className="col-md-2">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "inscritos" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("inscritos")}
+                                className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                onClick={() => setSecaoAtiva("Pendente")}
                             >
                                 <FaUserPlus className="me-2 mb-1" />
                                 E. Inscritos
@@ -64,7 +85,7 @@ function HomeAdm() {
                         <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "aprovados" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("aprovados")}
+                                onClick={() => setSecaoAtiva("Aprovado")}
                             >
                                 <FaUserCheck className="me-2 mb-1" />
                                 E. Aprovados
@@ -73,7 +94,7 @@ function HomeAdm() {
                         <div className="col-md-2">
                             <button 
                                 className={`btn w-100 ${secaoAtiva === "reprovados" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("reprovados")}
+                                onClick={() => setSecaoAtiva("Reprovado")}
                             >
                                 <FaUserTimes className="me-2 mb-1" />
                                 E. Reprovados
@@ -84,41 +105,20 @@ function HomeAdm() {
                     {/* Seções condicionais */}
                     <div className="row">
                         <div className="col-12">
-                            {secaoAtiva === "inscritos" && (
-                                <div>
+                        {secoes.map((secao) => (
+                            secaoAtiva === secao.status && (
+                                <div key={secao.status}>
                                     <div className="d-flex align-items-center gap-2 mb-3">
-                                        <FaUserPlus size={20} color="#003366" />
+                                        <secao.icone size={20} color={secao.cor} className="me-2" />
                                         <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                            Estudantes Inscritos
+                                            {secao.titulo}
                                         </h4>
                                     </div>
-                                    <Inscricoes />
+                                    <Inscricoes filtroStatus={secao.status} />
                                 </div>
-                            )}
-
-                            {secaoAtiva === "aprovados" && (
-                                <div>
-                                    <div className="d-flex align-items-center gap-2 mb-3">
-                                        <FaUserCheck size={20} color="#28a745" />
-                                        <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                            Estudantes Aprovados
-                                        </h4>
-                                    </div>
-                                    <EstudantesAprovados/>
-                                </div>
-                            )}
-
-                            {secaoAtiva === "reprovados" && (
-                                <div>
-                                    <div className="d-flex align-items-center gap-2 mb-3">
-                                        <FaUserTimes size={20} color="#dc3545" />
-                                        <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                            Estudantes Reprovados
-                                        </h4>
-                                    </div>
-                                    <EstudantesReprovados/>
-                                </div>
-                            )}
+                            )
+                        ))}
+                            
                         </div>
                     </div>
         </FuncionarioLayout>

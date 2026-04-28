@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { lazy, Suspense } from "react";
 import Layout from "./layouts/Layout";
 import { useAuth } from "./hooks/global/useAuth";
+import LancarNotasM from "./pagesFuncionarioMatricula/LancarNotas";
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
 const Home = lazy(() => import("./pages/Home"));
@@ -46,6 +47,7 @@ function App() {
             <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
             <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
             <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
+            <Route path="/lancarNotasM" element={<RotaPrivada><LancarNotasM/></RotaPrivada>}/>
             <Route path="/hometeacher" element={<RotaPrivada><HomeTeacher/></RotaPrivada>}/>
             {/* <Route path="/definicoesTeacher" element={<RotaPrivada><DefinicoesTeacher/></RotaPrivada>}/>
             <Route path="/segurancaTeacher" element={<RotaPrivada><SegurancaTeacher/></RotaPrivada>}/> */}

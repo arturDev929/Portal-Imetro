@@ -54,10 +54,10 @@ function Sidebar(){
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
                             {/* <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6> */}
-                            <Link to="#" className={`nav-link active ${Style.Link}`}>
+                            <Link to="/homefuncionarioM" className={`nav-link active ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                            <Link to="/lancarNotasM" className={`nav-link ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
