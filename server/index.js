@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const path = require("path");
-const os = require("os"); // ← ADICIONE ESTA LINHA
+const os = require("os"); 
 require('dotenv').config({quiet: true});
 const RouterGet = require("./routes/RouterGet");
 const RouterPost = require("./routes/RouterPost");
@@ -13,8 +13,6 @@ const RouterPut = require("./routes/RouterPut");
 const port = process.env.PORT || 8080;
 
 const app = express();
-
-// Função para obter o IP local
 function getLocalIP() {
     const nets = os.networkInterfaces();
     for (const name of Object.keys(nets)) {
@@ -33,9 +31,9 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://portal-imetro.vercel.app',
-  `http://${LOCAL_IP}:3000`, // Adiciona automaticamente o IP atual
+  `http://${LOCAL_IP}:3000`,
   /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:3000$/,
-  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/ // Para redes 10.x.x.x
+  /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/
 ];
 
 app.use(cors({
@@ -66,6 +64,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use('/api/img/professores', express.static(path.join(__dirname, '../client/src/img/professores')));
 app.use('/api/img/estudantes', express.static(path.join(__dirname, '../client/src/img/estudantes')));
+app.use('/api/img/estudantes/Pagamento_Inscricao', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Inscricao')));
+app.use('/api/img/estudantes/Pagamento_Matricula', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Matricula')));
+app.use('/api/img/estudantes/documentos', express.static(path.join(__dirname, '../client/src/img/estudantes/documentos')));
 
 app.use(fileUpload({
   useTempFiles: true,

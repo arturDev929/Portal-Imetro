@@ -7,52 +7,39 @@ const fs = require("fs");
 const nodemailer = require("nodemailer");
 require("dotenv").config({ quiet: true });
 
-// ============================================
-// CONFIGURAÇÃO DE EMAIL CORRIGIDA
-// ============================================
-// Configuração do email - Versão corrigida para Gmail
+
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, // Use 465 para SSL
-    secure: true, // true para porta 465
+    port: 465, 
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    // Ignorar certificado self-signed (apenas para desenvolvimento)
     tls: {
         rejectUnauthorized: false
     }
 });
 
-// Verificar conexão com email
 transporter.verify((error, success) => {
     if (error) {
-        console.error("❌ Erro na configuração do email:", error);
+        console.error("Erro na configuração do email:", error);
     } else {
-        console.log("✅ Servidor de email configurado com sucesso");
+        console.log("Servidor de email configurado com sucesso");
     }
 });
 
-// ============================================
-// ARMAZENAMENTO DE CÓDIGOS
-// ============================================
 const codigosVerificacao = new Map();
 
-// Limpar códigos expirados a cada 5 minutos
 setInterval(() => {
     const agora = Date.now();
     for (const [email, dados] of codigosVerificacao.entries()) {
         if (dados.expiracao < agora) {
             codigosVerificacao.delete(email);
-            console.log(`🗑️ Código expirado removido para: ${email}`);
+            console.log(`Código expirado removido para: ${email}`);
         }
     }
 }, 5 * 60 * 1000);
 
-// ============================================
-// FUNÇÕES AUXILIARES
-// ============================================
 const gerarCodigo = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -131,14 +118,11 @@ const salvarArquivos = async (files, numEstudante) => {
     return { nomeDocumento, nomeFoto };
 };
 
-// ============================================
-// FUNÇÕES DE ENVIO DE EMAIL
-// ============================================
 const enviarEmailConfirmacao = async (email, nome, codigo) => {
     const mailOptions = {
         from: `"IPS Metropolitano" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: '🔐 Código de Verificação - IPS Metropolitano',
+        subject: 'Código de Verificação - IPS Metropolitano',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                 <div style="text-align: center; margin-bottom: 30px;">
@@ -158,8 +142,8 @@ const enviarEmailConfirmacao = async (email, nome, codigo) => {
                     ${codigo}
                 </div>
                 
-                <p><strong>⏱️ Prazo de validade:</strong> 10 minutos</p>
-                <p><strong>🔄 Tentativas permitidas:</strong> 3</p>
+                <p><strong>Prazo de validade:</strong> 10 minutos</p>
+                <p><strong>Tentativas permitidas:</strong> 3</p>
                 
                 <p style="color: #666; font-size: 14px;">Se você não solicitou esta inscrição, ignore este email.</p>
                 
@@ -236,9 +220,6 @@ const enviarCredenciais = async (email, nome, numEstudante, senha) => {
     }
 };
 
-// ============================================
-// ROTA: ENVIAR CÓDIGO DE VERIFICAÇÃO
-// ============================================
 router.post('/enviarCodigoVerificacao', async (req, res) => {
     try {
         const { emailEstudante, nomeEstudante } = req.body;
@@ -301,9 +282,6 @@ router.post('/enviarCodigoVerificacao', async (req, res) => {
     }
 });
 
-// ============================================
-// ROTA: VERIFICAR CÓDIGO E COMPLETAR CADASTRO
-// ============================================
 router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
     try {
         const { codigo, email } = req.body;
@@ -523,10 +501,6 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
         });
     }
 });
-
-// ============================================
-// ROTAS ADICIONAIS (MANTIDAS DO CÓDIGO ORIGINAL)
-// ============================================
 
 router.post('/registrercategoria', async (req, res) => {
     const { categoriacurso, idAdm } = req.body;
@@ -1912,5 +1886,6 @@ router.post('/registrarfuncionario', (req, res) => {
         }
     });
 });
+
 
 module.exports = router;

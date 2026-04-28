@@ -14,8 +14,6 @@ function Home() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // const API_URL = process.env.REACT_APP_API_URL;
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -32,7 +30,6 @@ function Home() {
           response.data.mensagem || "Login realizado com sucesso!",
         );
 
-        // Salva os dados do usuário no localStorage
         localStorage.setItem(
           "usuarioLogado",
           JSON.stringify({
@@ -41,7 +38,6 @@ function Home() {
           }),
         );
 
-        // Redireciona baseado no tipo de usuário
         setTimeout(() => {
           if (response.data.tipoUsuario === "adm") {
             navigate("/homeAdm");
