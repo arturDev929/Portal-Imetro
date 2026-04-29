@@ -69,4 +69,21 @@ router.get('/EstatisticasInscricoes', (req, res) => {
     });
 });
 
+router.get('/Topico', async (req, res) => {
+    const sql = "SELECT id_topico, topico FROM topicos LIMIT 1";
+    
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar tópico:", error);
+            return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: "Nenhum tópico encontrado" });
+        }
+
+        res.status(200).json({ success: true, data: result[0] });
+    });
+});
+
 module.exports = router;

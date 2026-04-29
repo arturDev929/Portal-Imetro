@@ -74,6 +74,7 @@ app.use('/api/img/estudantes', express.static(path.join(__dirname, '../client/sr
 app.use('/api/img/estudantes/Pagamento_Inscricao', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Inscricao')));
 app.use('/api/img/estudantes/Pagamento_Matricula', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Matricula')));
 app.use('/api/img/estudantes/documentos', express.static(path.join(__dirname, '../client/src/img/estudantes/documentos')));
+app.use('/api/img/topico', express.static(path.join(__dirname, '../client/src/img/Topicos')));
 
 app.use(fileUpload({
   useTempFiles: true,

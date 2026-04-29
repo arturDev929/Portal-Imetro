@@ -121,4 +121,88 @@ router.put('/estudanteInscritoRecusar/:id', (req, res) => {
     });
 });
 
+router.put('/estudanteInscritoNota/:codigoEstudante', (req, res) => {
+    const { codigoEstudante } = req.params;
+    const { nota } = req.body;
+    
+    // Validações
+    if (!codigoEstudante || isNaN(codigoEstudante) || codigoEstudante <= 0) {
+        return res.status(400).json({ error: "ID do estudante inválido" });
+    }
+
+    if (nota === undefined || isNaN(nota) || nota < 0 || nota > 20) {
+        return res.status(400).json({ error: "Nota inválida. Deve ser entre 0 e 20" });
+    }
+
+    const checkSql = "SELECT * FROM estudanteinscricao WHERE numeroInscricao_estudanteInscricao = ?";
+    
+    conexao.query(checkSql, [codigoEstudante], (checkError, checkResult) => {
+        if (checkError) {
+            console.error("Erro ao verificar estudante:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+
+        if (checkResult.length === 0) {
+            return res.status(404).json({ error: "Estudante não encontrado" });
+        }
+
+        // Verificar se o estudante já está aprovado
+        if (checkResult[0].estado_estdanteInscrito === 'Aprovado') {
+            return res.status(400).json({ error: "Estudante já foi aprovado anteriormente" });
+        }
+
+        // Determinar o novo estado baseado na nota
+        const novoEstado = nota >= 10 ? 'Aprovado' : 'Reprovado';
+        
+        // Atualizar nota e estado do estudante
+        const updateSql = "UPDATE estudanteinscricao SET nota_estudanteInscricao = ?, estado_estudanteInscrito = ? WHERE numeroInscricao_estudanteInscricao = ?";
+        
+        conexao.query(updateSql, [nota, novoEstado, codigoEstudante], (updateError, updateResult) => {
+            if (updateError) {
+                console.error("Erro ao atualizar estudante:", updateError);
+                return res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: updateError.message
+                });
+            }
+
+            // Verificar se alguma linha foi afetada
+            if (updateResult.affectedRows === 0) {
+                return res.status(404).json({ error: "Erro ao atualizar estudante" });
+            }
+
+            // Retornar sucesso
+            res.status(200).json({
+                success: true,
+                message: `Estudante ${novoEstado.toLowerCase()} com sucesso`,
+                data: {
+                    codigoEstudante: codigoEstudante,
+                    nota: nota,
+                    status: novoEstado
+                }
+            });
+        });
+    });
+});
+
+router.delete('/Topico', async (req, res) => {
+    const sql = "DELETE FROM topicos";
+    
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao deletar tópico:", error);
+            return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Nenhum tópico encontrado para deletar" });
+        }
+
+        res.status(200).json({ success: true, message: "Tópico deletado com sucesso" });
+    });
+});
+
 module.exports = router;
