@@ -62,8 +62,9 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use('/api/img/professores', express.static(path.join(__dirname, '../client/src/img/professores')));
-app.use('/api/img/estudantes', express.static(path.join(__dirname, '../client/src/img/estudantes')));
+app.use('/api/img/professores', express.static(path.join(__dirname, '../client/src/img/professores/Perfil')));
+app.use('/api/img/professores/DocBI', express.static(path.join(__dirname, '../client/src/img/professores/Doc BI')));
+app.use('/api/img/estudantes', express.static(path.join(__dirname, '../client/src/img/estudantes/Perfil')));
 app.use('/api/img/estudantes/Pagamento_Inscricao', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Inscricao')));
 app.use('/api/img/estudantes/Pagamento_Matricula', express.static(path.join(__dirname, '../client/src/img/estudantes/Pagamento_Matricula')));
 app.use('/api/img/estudantes/documentos', express.static(path.join(__dirname, '../client/src/img/estudantes/documentos')));
