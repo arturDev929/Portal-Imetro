@@ -167,7 +167,7 @@ function Cadastro() {
     const handleEnviarCodigo = async () => {
         setLoading(true);
         try {
-            const response = await Api.post(`/post/enviarCodigoVerificacao`, {
+            const response = await Api.post(`/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
                 nomeEstudante: valores.nomeEstudante
             });
@@ -230,7 +230,7 @@ function Cadastro() {
             formData.append('fotoEstudante', arquivos.fotoEstudante);
 
             const response = await Api.post(
-                `/post/verificarCodigoECompletarCadastro`, 
+                `/verificarCodigoECompletarCadastro`, 
                 formData,
                 {
                     headers: {
@@ -290,7 +290,7 @@ function Cadastro() {
     const handleReenviarCodigo = async () => {
         setLoading(true);
         try {
-            const response = await Api.post(`/post/enviarCodigoVerificacao`, {
+            const response = await Api.post(`/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
                 nomeEstudante: valores.nomeEstudante
             });

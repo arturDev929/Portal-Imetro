@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const router = Router();
-const conexao = require("../infra/conexao");
+const conexao = require("../../infra/conexao");
 
 router.delete('/categoriaCurso/:id', (req, res) => {
     const { id } = req.params;

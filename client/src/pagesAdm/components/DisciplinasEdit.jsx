@@ -48,7 +48,7 @@ function DisciplinasEdit() {
     const fetchDisciplinas = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await api.get(`/get/Disciplinas`);
+            const response = await api.get(`/Disciplinas`);
             setListaDisciplina(response.data);
             setListaFiltrada(response.data);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -129,7 +129,7 @@ function DisciplinasEdit() {
 
     const AtualizarDisciplina = () => {
         setSalvando(true);
-        api.put(`/put/disciplina/${Editar.iddisciplina}`, {
+        api.put(`/disciplina/${Editar.iddisciplina}`, {
             disciplina: Editar.disciplina,
             iddisciplina: Editar.iddisciplina
         }).then(() => {
@@ -154,7 +154,7 @@ function DisciplinasEdit() {
             `Ao deletar esta disciplina irá desvincular a todos os cursos. Tem a certeza que pretendes deletar "${disciplina.disciplina}"?`,
             async () => {
                 try {
-                    await api.delete(`/delete/disciplina/${disciplina.iddisciplina}`);
+                    await api.delete(`/disciplina/${disciplina.iddisciplina}`);
                     const updatedList = listaDisciplina.filter(
                         item => item.iddisciplina !== disciplina.iddisciplina
                     );
@@ -190,7 +190,7 @@ function DisciplinasEdit() {
         setProfessor(disciplina);
         setIsModalOpenProfessor(true);
 
-        api.get(`/get/professorVinculado/${disciplina.iddisciplina}`)
+        api.get(`/professorVinculado/${disciplina.iddisciplina}`)
             .then((response) => {
                 setProfessoresVinculados(response.data)
             })
@@ -199,7 +199,7 @@ function DisciplinasEdit() {
                 showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
             })
 
-        api.get(`/get/professorDisponivel/${disciplina.iddisciplina}`)
+        api.get(`/professorDisponivel/${disciplina.iddisciplina}`)
             .then((response) => {
                 setProfessoresDisponiveis(response.data)
             })
@@ -210,7 +210,7 @@ function DisciplinasEdit() {
     }
 
     const vincularProfessor = (professorId) => {
-        api.post(`/post/vincularProfessor`, {
+        api.post(`/vincularProfessor`, {
             iddisciplina: professor.iddisciplina,
             idprofessor: professorId
         })
@@ -247,7 +247,7 @@ function DisciplinasEdit() {
             `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da disciplina de ${prof.disciplina}?`,
             async () => {
                 try {
-                    await api.delete(`/delete/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
+                    await api.delete(`/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
                     const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
                     setProfessoresVinculados(updateLista);
                     showSuccessToast(
@@ -309,7 +309,7 @@ function DisciplinasEdit() {
         setSalvando(true);
 
         try {
-            await api.post(`/post/registrardisciplina`, {
+            await api.post(`/registrardisciplina`, {
                 disciplina: nome,
                 idAdm: user.id
             });

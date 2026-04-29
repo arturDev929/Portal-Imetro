@@ -63,7 +63,7 @@ function CategoriaCursoAno({ onChange }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/CategoriaCursosAno`);
+                const response = await api.get(`/CategoriaCursosAno`);
                 setAllData(response.data);
                 setError(null);
             } catch (error) {

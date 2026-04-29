@@ -8,7 +8,7 @@ function SelectCategoriaCurso({onChange, value = ""}) {
 
     useEffect(() => {
         const fetchData = () => {
-            api.get(`/get/categoriaCurso`)
+            api.get(`/categoriaCurso`)
             .then((response) => {
                 setCategorias(response.data);
                 setError(null);

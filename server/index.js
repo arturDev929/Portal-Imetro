@@ -4,11 +4,17 @@ const fileUpload = require("express-fileupload");
 const path = require("path");
 const os = require("os"); 
 require('dotenv').config({quiet: true});
-const RouterGet = require("./routes/RouterGet");
-const RouterPost = require("./routes/RouterPost");
-const RouterLogin = require("./routes/RouteLogin");
-const RouterDelete = require("./routes/RouterDelete");
-const RouterPut = require("./routes/RouterPut");
+const RouterPostHome = require("./routes/Home/RouterPost");
+const RouterLogin = require("./routes/Home/RouteLogin");
+const RouterGetAdm = require("./routes/ADM/RouterGet");
+const RouterPutAdm = require("./routes/ADM/RouterPut");
+const RouterDeleteAdm = require("./routes/ADM/RouterDelete");
+const RouterPostAdm = require("./routes/ADM/RouterPost");
+const RouterGetEmployeeRegistration = require("./routes/employeeRegistration/RouterGet");
+const RouterPutEmployeeRegistration = require("./routes/employeeRegistration/RouterPut");
+const RouterGetStudentsInscript = require("./routes/StudentsInscript/RouterGet");
+const RouterPutStudentsInscript = require("./routes/StudentsInscript/RouterPut");
+const RouterGetTeacher = require("./routes/Teacher/RouterGet");
 
 const port = process.env.PORT || 8080;
 
@@ -77,11 +83,18 @@ app.use(fileUpload({
   abortOnLimit: true
 }));
 
-app.use('/get', RouterGet); 
-app.use('/post', RouterPost);
+app.use('/', RouterPostHome);
 app.use('/login', RouterLogin);
-app.use('/delete', RouterDelete);
-app.use('/put', RouterPut);
+app.use('/', RouterGetAdm);
+app.use('/', RouterPutAdm);
+app.use('/', RouterDeleteAdm);
+app.use('/', RouterPostAdm);
+app.use('/', RouterGetEmployeeRegistration);
+app.use('/', RouterPutEmployeeRegistration);
+app.use('/', RouterGetStudentsInscript);
+app.use('/', RouterPutStudentsInscript);
+app.use('/', RouterGetTeacher);
+
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Servidor funcionando!' });
