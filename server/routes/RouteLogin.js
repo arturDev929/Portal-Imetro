@@ -171,7 +171,7 @@ router.post("/", (req, res) => {
                                     numeroInscricao_estudanteInscricao,
                                     senha_estudanteInscricao,
                                     nome_estudanteInscricao,
-                                    fotostudenteInscricao
+                                    foto_estudanteInscricao
                                 FROM estudanteinscricao 
                                 WHERE numeroInscricao_estudanteInscricao = ?
                             `;
@@ -195,8 +195,8 @@ router.post("/", (req, res) => {
 
                                         if (senhaCorreta) {
                                             const baseUrl = `${req.protocol}://${req.get('host')}`;
-                                            const fotoUrl = usuario.fotoprofessor ?
-                                                `${baseUrl}/api/img/estudantes/${usuario.fotostudenteInscricao}` :
+                                            const fotoUrl = usuario.foto_estudanteInscricao ?
+                                                `${baseUrl}/api/img/estudantes/${usuario.foto_estudanteInscricao}` :
                                                 console.log("Foto do professor não encontrada") ||
                                                 null;
                                             return res.status(200).json({
@@ -205,10 +205,11 @@ router.post("/", (req, res) => {
                                                 titulo: "Login realizado",
                                                 mensagem: "Login realizado com sucesso!",
                                                 tipoUsuario: "estudante",
-                                                rota: "/homestudent",
+                                                rota: "/inscricao",
                                                 dados: {
                                                     numeroInscricao: usuario.numeroInscricao_estudanteInscricao,
-                                                    nome: usuario.nome_estudanteInscricao
+                                                    nome: usuario.nome_estudanteInscricao,
+                                                    fotoUrl:fotoUrl
                                                 }
                                             });
                                         } else {

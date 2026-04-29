@@ -50,7 +50,9 @@ function Home() {
             navigate("/homefuncionario");
           }else if (response.data.tipoUsuario === "professor") {
             navigate("/hometeacher");
-          }else{
+          }else if (response.data.tipoUsuario === "estudante") {
+            navigate("/inscricao");
+           }else{
             navigate("/");
           }
         }, 100);
