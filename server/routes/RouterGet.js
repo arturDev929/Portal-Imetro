@@ -789,7 +789,7 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
             let curriculoUrl = null;
             const baseUrl = `${req.protocol}://${req.get('host')}`;
             if (professor.bipdfprofessor) {
-                curriculoUrl = `${baseUrl}/api/img/professores/${professor.bipdfprofessor}`;
+                curriculoUrl = `${baseUrl}/api/img/professores/DocBI/${professor.bipdfprofessor}`;
             }
             
             const professorCompleto = {
@@ -1054,7 +1054,7 @@ router.get('/cargosDisponiveis', (req, res) => {
 });
 
 router.get('/EstudantesInscritos', (req, res) => {
-    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL AND estado_estdanteInscrito = 'Pendente' ORDER BY ei.nome_estudanteInscricao ASC";
+    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NOT NULL AND estado_estdanteInscrito = 'Pendente' ORDER BY ei.nome_estudanteInscricao ASC";
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores:", error);
@@ -1219,7 +1219,7 @@ router.get('/PerfilProfessor/:codigo', async (req, res) => {
                     `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : 
                     null,
                 curriculoUrl: professor.bipdfprofessor ? 
-                    `${baseUrl}/api/img/professores/${professor.bipdfprofessor}` : 
+                    `${baseUrl}/api/img/professores/DocBI/${professor.bipdfprofessor}` : 
                     null,
                 disciplinas: disciplinasResult
             };

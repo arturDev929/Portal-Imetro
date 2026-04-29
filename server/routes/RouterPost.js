@@ -75,7 +75,7 @@ const salvarArquivos = async (files, numEstudante) => {
     let nomeDocumento = null;
     let nomeFoto = null;
 
-    const pastaEstudantes = path.join(__dirname, '../../client/src/img/estudantes');
+    const pastaEstudantes = path.join(__dirname, '../../client/src/img/estudantes/Perfil');
     const pastaDocumentos = path.join(__dirname, '../../client/src/img/estudantes/documentos');
     
     if (!fs.existsSync(pastaEstudantes)) {
@@ -344,10 +344,8 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
             });
         }
 
-        // Código correto - remover da memória
         codigosVerificacao.delete(email);
 
-        // Preparar dados do estudante
         const dadosEstudante = {
             nomeEstudante: req.body.nomeEstudante,
             contactoEstudante: req.body.contactoEstudante,
@@ -430,7 +428,7 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
             });
         }
 
-        console.log(`📝 Número de inscrição gerado: ${numEstudante}`);
+        console.log(`Número de inscrição gerado: ${numEstudante}`);
 
         // Criptografar senha
         const salt = await bcrypt.genSalt(10);
@@ -483,7 +481,7 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
             tipo: "sucesso",
             titulo: "Inscrição Realizada! 🎉",
             mensagem: `Estudante registrado com sucesso! Nº de Inscrição: ${numEstudante}`,
-            redirect: "/login",
+            redirect: "/",
             dados: {
                 id: resultadoInsercao.insertId,
                 nome: dadosEstudante.nomeEstudante,
@@ -1130,16 +1128,21 @@ router.post('/registrarprofessor', async (req, res) => {
                 let nomeFoto = null;
                 let nomeBIPDF = null;
 
-                const pastaProfessores = path.join(__dirname, '../../client/src/img/professores');
-                if (!fs.existsSync(pastaProfessores)) {
-                    fs.mkdirSync(pastaProfessores, { recursive: true });
+                const pastaPerfil = path.join(__dirname, '../../client/src/img/professores/Perfil');
+                const pastaDocBI = path.join(__dirname, '../../client/src/img/professores/Doc BI');
+
+                if (!fs.existsSync(pastaPerfil)) {
+                    fs.mkdirSync(pastaPerfil, { recursive: true });
+                }
+                if (!fs.existsSync(pastaDocBI)) {
+                    fs.mkdirSync(pastaDocBI, { recursive: true });
                 }
 
                 if (files.fotoprofessor) {
                     const foto = files.fotoprofessor;
                     const extensaoFoto = path.extname(foto.name);
                     nomeFoto = `professor_${codigoProfessor}_foto_${Date.now()}${extensaoFoto}`;
-                    const caminhoFoto = path.join(pastaProfessores, nomeFoto);
+                    const caminhoFoto = path.join(pastaPerfil, nomeFoto);
 
                     await new Promise((resolve, reject) => {
                         foto.mv(caminhoFoto, (err) => {
@@ -1153,7 +1156,7 @@ router.post('/registrarprofessor', async (req, res) => {
                     const pdf = files.bipdfprofessor;
                     const extensaoPDF = path.extname(pdf.name);
                     nomeBIPDF = `professor_${codigoProfessor}_bi_${Date.now()}${extensaoPDF}`;
-                    const caminhoPDF = path.join(pastaProfessores, nomeBIPDF);
+                    const caminhoPDF = path.join(pastaDocBI, nomeBIPDF);
 
                     await new Promise((resolve, reject) => {
                         pdf.mv(caminhoPDF, (err) => {
@@ -1210,11 +1213,11 @@ router.post('/registrarprofessor', async (req, res) => {
                     if (erro) {
                         console.error("Erro ao inserir professor:", erro);
                         
-                        if (nomeFoto && fs.existsSync(path.join(pastaProfessores, nomeFoto))) {
-                            fs.unlinkSync(path.join(pastaProfessores, nomeFoto));
+                        if (nomeFoto && fs.existsSync(path.join(pastaPerfil, nomeFoto))) {
+                            fs.unlinkSync(path.join(pastaPerfil, nomeFoto));
                         }
-                        if (nomeBIPDF && fs.existsSync(path.join(pastaProfessores, nomeBIPDF))) {
-                            fs.unlinkSync(path.join(pastaProfessores, nomeBIPDF));
+                        if (nomeBIPDF && fs.existsSync(path.join(pastaDocBI, nomeBIPDF))) {
+                            fs.unlinkSync(path.join(pastaDocBI, nomeBIPDF));
                         }
                         
                         return res.status(500).json({
