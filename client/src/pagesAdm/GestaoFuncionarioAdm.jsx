@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+eimport { useState, useEffect } from "react";
 import { api } from "../service/api";
 import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
