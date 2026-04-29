@@ -4,7 +4,7 @@ import styleUI from "./components/inputUi.module.css";
 // import style from "./style.module.css";
 
 export default function EstudentIsncription() {
-  const [countdown, setCountdown] = useState(7 * 24 * 60 * 60); // 30 days in seconds
+  const [countdown, setCountdown] = useState(7 * 24 * 60 * 60); // 7 days in seconds
     const [paymentProof, setPaymentProof] = useState(null);
     
      const inputRef = useRef(null);
