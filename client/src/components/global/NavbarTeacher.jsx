@@ -2,12 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { BsListNested } from "react-icons/bs";
 import { FaRegBell } from "react-icons/fa6";
-import { IoPersonCircleOutline } from "react-icons/io5";
-import { IoSettingsOutline } from "react-icons/io5";
+
+import { IoSettingsOutline ,IoPersonCircleOutline} from "react-icons/io5";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { Link } from "react-router-dom";
 import Style from "./Navbar.module.css";
-import imagem from "../../img/logoFundo.png";
 function NavbarTeacher(){
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -34,10 +33,10 @@ function NavbarTeacher(){
                     </button>
                     <div className="dropdown d-inline">
                         <button className="btn dropdown-toggle text-white" type="button" data-bs-toggle="dropdown">
-                            {user && user.nome} <img src={imagem} alt="Foto de Perfil" className={Style.fotoPerfilIcone}/>
+                            {user && user.nome} <img src={user && user.fotoUrl} alt="Foto de Perfil" className={Style.fotoPerfilIcone}/>
                         </button>
                         <ul className={`${Style.dropdownMenu} dropdown-menu dropdown-menu-end`}>
-                            {/* <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoPersonCircleOutline className="me-2 mb-1"/>Perfil</Link></li> */}
+                            <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoPersonCircleOutline className="me-2 mb-1"/>Perfil</Link></li>
                             <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoSettingsOutline className="me-2 mb-1"/>Configurações</Link></li>
                             <li><hr className="dropdown-divider"/></li>
                             <li onClick={handleLogout}><Link className={`dropdown-item ${Style.Link}`} to="#"><RiLogoutCircleRLine className="me-2 mb-1"/>Terminar Sessão</Link></li>

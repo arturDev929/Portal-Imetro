@@ -9,7 +9,7 @@ import { RiContactsBook3Line } from "react-icons/ri";
 import {FaUniversity } from "react-icons/fa";
 import { showSuccessToast, showErrorToast} from "../../components/global/CustomToast";
 
-function Inscricoes() {
+function Inscricoes({ filtroStatus }) {
     const [EstudantesInscritos, setEstudantesInscritos] = useState([]);
     const [modalEstudante, setModalEstudante] = useState(false);
     const [infoEstudante, setInfoEstudante] = useState(null);
@@ -17,7 +17,7 @@ function Inscricoes() {
 
     useEffect(() => {
         const fetchdados = () => {
-            api.get('/get/EstudantesInscritos').then((response) => {
+            api.get(`/get/EstudantesByStatus/${filtroStatus}`).then((response) => {
                 setEstudantesInscritos(response.data);
             }).catch(error => {
                 console.error("Erro ao buscar estudantes:", error);
@@ -125,8 +125,15 @@ function Inscricoes() {
                         <th className="col-2 text-center">Curso</th>
                         <th className="col-1 text-center">Período</th>
                         <th className="col-1 text-center">Info</th>
-                        <th className="col-1 text-center">Aceitar</th>
-                        <th className="col-1 text-center">Recusar</th>
+                        {
+                            filtroStatus === "Pendente" && (
+                                <>
+                                    <th className="col-1 text-center">Aceitar</th>
+                                    <th className="col-1 text-center">Recusar</th>
+                                </>
+                            )
+                        }
+                        
                     </tr>
                 </thead>
                 <tbody>
@@ -155,7 +162,10 @@ function Inscricoes() {
                                         <FaInfoCircle />
                                     </button>
                                 </td>
-                                <td className="text-center">
+                                {
+                                    filtroStatus==="Pendente"?
+                                   <>
+                                    <td className="text-center">
                                     <button 
                                         className={`btn btn-sm ${Style.btnAdd}`}
                                         onClick={() => handleAceitar(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
@@ -175,6 +185,10 @@ function Inscricoes() {
                                         <VscError />
                                     </button>
                                 </td>
+                                   </>
+                                    :<></>
+                                }
+                                
                             </tr>
                         ))
                     ) : (
@@ -339,7 +353,9 @@ function Inscricoes() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="modal-footer border-0">
+                            {
+                                filtroStatus==="Pendente"?
+                                <div className="modal-footer border-0">
                                 <div className="d-flex gap-2">
                                     <button
                                         type="button"
@@ -368,6 +384,9 @@ function Inscricoes() {
                                     </button>
                                 </div>
                             </div>
+                                :<></>
+                            }
+                            
                         </div>
                     </div>
                 </div>

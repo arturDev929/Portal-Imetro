@@ -7,7 +7,6 @@ import {
 import { lazy, Suspense } from "react";
 import Layout from "./layouts/Layout";
 import { useAuth } from "./hooks/global/useAuth";
-// import { EstudentIsncription } from "./pagesEstudentInscrition";
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
 const Home = lazy(() => import("./pages/Home"));
@@ -24,7 +23,6 @@ const GestaoFuncionarioAdm = lazy(
 );
 const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 const HomeTeacher = lazy(() => import("./pagesTeacher/Home"));
-const InscriptionPage = lazy(() => import("./pagesEstudentInscrition"));
 
 const RotaPrivada = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -52,67 +50,16 @@ function App() {
           }
         >
           <Routes>
-            <Route exact path="/" element={<Home />} />
-            <Route exact path="/cadastro" element={<Cadastro />} />
-
-            <Route path="/inscription" element={<InscriptionPage />} />
-
-            <Route
-              path="/homeAdm"
-              element={
-                <RotaPrivada>
-                  <HomeAdm />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/funcionariosAdmRegistrer"
-              element={
-                <RotaPrivada>
-                  <FuncionáriosAdmRegistrer />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/gestaoCursoAdm"
-              element={
-                <RotaPrivada>
-                  <GestaoCursoAdm />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/gestaoProfessorAdm"
-              element={
-                <RotaPrivada>
-                  <GestaoProfessoresAdm />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/gestaoFuncionarioAdm"
-              element={
-                <RotaPrivada>
-                  <GestaoFuncionarioAdm />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/homefuncionarioM"
-              element={
-                <RotaPrivada>
-                  <HomeFuncionarioM />
-                </RotaPrivada>
-              }
-            />
-            <Route
-              path="/hometeacher"
-              element={
-                <RotaPrivada>
-                  <HomeTeacher />
-                </RotaPrivada>
-              }
-            />
+            <Route exact path="/" element={<Home/>}/>
+            <Route exact path="/cadastro" element={<Cadastro/>}/>
+            
+            <Route path="/homeAdm" element={<RotaPrivada><HomeAdm/></RotaPrivada>}/>
+            <Route path="/funcionariosAdmRegistrer" element={<RotaPrivada><FuncionáriosAdmRegistrer/></RotaPrivada>}/>
+            <Route path="/gestaoCursoAdm" element={<RotaPrivada><GestaoCursoAdm/></RotaPrivada>}/>
+            <Route path="/gestaoProfessorAdm" element={<RotaPrivada><GestaoProfessoresAdm/></RotaPrivada>}/>
+            <Route path="/gestaoFuncionarioAdm" element={<RotaPrivada><GestaoFuncionarioAdm/></RotaPrivada>}/>
+            <Route path="/homefuncionarioM" element={<RotaPrivada><HomeFuncionarioM/></RotaPrivada>}/>
+            <Route path="/hometeacher" element={<RotaPrivada><HomeTeacher/></RotaPrivada>}/>
           </Routes>
         </Suspense>
       </Layout>

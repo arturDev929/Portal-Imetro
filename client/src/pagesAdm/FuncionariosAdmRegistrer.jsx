@@ -35,12 +35,12 @@ function FuncionáriosAdmRegistrer() {
     setLoading(true);
     try {
       const response = await api.post(
-        "/post/registrarfuncionarioMatricular",
+        "/post/registrarfuncionario",
         {
-          nome: nome,
-          contacto: contacto,
-          cargo: cargo,
-          nbi: nbi,
+          nome_funcionario: nome,
+          contacto_funcionario: contacto,
+          cargo_funcionario: cargo,
+          bi_funcionario: nbi,
           idAdm: user.id,
         },
         {
@@ -122,14 +122,17 @@ function FuncionáriosAdmRegistrer() {
                       disabled={loading}
                     >
                       <option value="">Selecione um Cargo</option>
-                      <option value="Responsavel por Matricula">
-                        Responsavel por Matricula
+                      <option value="Coordenador de Admissões e Matrículas">
+                        Coordenador de Admissões e Matrículas
                       </option>
-                      <option value="Responsavel por Informacoes">
-                        Responsavel por Informacoes
+                      <option value="Tesoureiro">
+                        Tesoureiro
                       </option>
-                      <option value="Responsavel por Propinas">
-                        Responsavel por Propinas
+                      <option value="Assistente Administrativo">
+                        Assistente Administrativo
+                      </option>
+                      <option value="Oficial de Cartões e Identificações">
+                        Oficial de Cartões e Identificações
                       </option>
                     </select>
                   </div>

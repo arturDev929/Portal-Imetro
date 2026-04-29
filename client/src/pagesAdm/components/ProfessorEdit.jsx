@@ -436,7 +436,7 @@ function ProfessorEdit() {
 
         setSalvando(true);
         try {
-            await Api.put(`/put/atulizarprofessor/${dadosEdicao.idprofessor}`, {
+            await Api.put(`/put/atualizarprofessor/${dadosEdicao.idprofessor}`, {
                 codigoprofessor: dadosEdicao.codigoprofessor,
                 nomeprofessor: dadosEdicao.nomeprofessor,
                 generoprofessor: dadosEdicao.generoprofessor,

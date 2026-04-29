@@ -2,6 +2,7 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../infra/conexao");
 
+
 router.get('/totalcategoriacurso', (req,res)=>{
     const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
     conexao.query(sql,(error,results)=>{
@@ -1074,4 +1075,158 @@ router.get('/EstudantesInscritos', (req, res) => {
         }
     });
 });
+
+router.get('/EstudantesInscritos/:codigoEstudanteInscrito', (req, res) => {
+    const { codigoEstudanteInscrito } = req.params;
+    const sql = "SELECT * FROM estudanteinscricao inner join curso on estudanteinscricao.idcurso = curso.idcurso WHERE estudanteinscricao.numeroInscricao_estudanteInscricao= ?";
+    conexao.query(sql,[codigoEstudanteInscrito], (error, result) => {
+        if(error){
+            console.error("Erro ao buscar professores:", error);
+            res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }else{
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudanteFoto = result.map(estudante =>({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null,
+                docInscricao: estudante.pdf_InscricaoRupe ? `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${estudante.pdf_InscricaoRupe}` : null,
+                docInscricao: estudante.pdf_MatriculaRupe ? `${baseUrl}/api/img/estudantes/Pagamento_Matricula/${estudante.pdf_MatriculaRupe}` : null,
+
+            }))
+        }
+    });
+});
+
+router.get('/EstudantesByStatus/:status', (req, res) => {
+    const { status } = req.params;
+    const sql = `SELECT * FROM estudanteinscricao ei 
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso 
+                 WHERE estado_estdanteInscrito = ? 
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
+    
+    conexao.query(sql, [status], (error, result) => {
+        if(error) {
+            console.error(`Erro ao buscar ${status}:`, error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const estudantesFormatados = result.map(estudante => ({
+                ...estudante,
+                fotoUrl: estudante.foto_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/${estudante.foto_estudanteInscricao}` : null,
+                docUrl: estudante.documento_estudanteInscricao ? 
+                    `${baseUrl}/api/img/estudantes/documentos/${estudante.documento_estudanteInscricao}` : null
+            }));
+            res.status(200).json(estudantesFormatados);
+        }
+    });
+});
+
+router.get('/EstatisticasInscricoes', (req, res) => {
+    const sql = `SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Pendente' THEN 1 ELSE 0 END) as pendentes,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Aprovado' THEN 1 ELSE 0 END) as aprovados,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Reprovado' THEN 1 ELSE 0 END) as reprovados,
+                    SUM(CASE WHEN pdf_InscricaoRupe IS NULL THEN 1 ELSE 0 END) as sem_pagamento
+                 FROM estudanteinscricao`;
+    
+    conexao.query(sql, (error, result) => {
+        if(error) {
+            console.error("Erro ao buscar estatísticas:", error);
+            res.status(500).json({ error: "Erro interno" });
+        } else {
+            res.status(200).json(result[0]);
+        }
+    });
+});
+
+router.get('/PerfilProfessor/:codigo', async (req, res) => {
+   const { codigo } = req.params;
+   
+   const sqlProfessor = `SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.fotoprofessor,
+            p.codigoprofessor,
+            p.generoprofessor,
+            p.nacionalidadeprofessor,
+            p.estadocivilprofessor,
+            p.nomepaiprofessor,
+            p.nomemaeprofessor,
+            p.nbiprofessor,
+            p.datanascimentoprofessor,
+            p.bipdfprofessor,
+            p.residenciaprofessor,
+            p.telefoneprofessor,
+            p.whatsappprofessor,
+            p.emailprofessor,
+            p.anoexperienciaprofessor,
+            p.titulacaoprofessor,
+            p.dataadmissaoprofessor,
+            p.tiposanguineoprofessor,
+            p.ibanprofessor,
+            p.condicoesprofessor,
+            p.contactoemergenciaprofessor,
+            p.estado,
+            p.tipocontratoprofessor
+        FROM professor p 
+        WHERE p.codigoprofessor = ?`;
+    
+    conexao.query(sqlProfessor, [codigo], (error, professorResult) => {
+        if (error) {
+            console.error("Erro ao buscar perfil do professor:", error);
+            return res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: error.message 
+            });
+        }
+        
+        if (professorResult.length === 0) {
+            return res.status(404).json({ error: "Professor não encontrado" });
+        }
+        
+        const professor = professorResult[0];
+        const id = professor.idprofessor;
+        
+        const sqlDisciplinas = `
+            SELECT 
+                disciplina.iddisciplina,
+                disciplina.disciplina
+            FROM disc_prof 
+            INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+            WHERE disc_prof.idprofessor = ?
+            ORDER BY disciplina.disciplina ASC
+        `;
+        
+        conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
+            if (error) {
+                console.error("Erro ao buscar disciplinas:", error);
+                return res.status(500).json({ 
+                    error: "Erro interno do servidor", 
+                    details: error.message 
+                });
+            }
+            
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            
+            const professorCompleto = {
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? 
+                    `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : 
+                    null,
+                curriculoUrl: professor.bipdfprofessor ? 
+                    `${baseUrl}/api/img/professores/${professor.bipdfprofessor}` : 
+                    null,
+                disciplinas: disciplinasResult
+            };
+            
+            return res.status(200).json(professorCompleto);
+        });
+    });
+});
+
 module.exports = router;

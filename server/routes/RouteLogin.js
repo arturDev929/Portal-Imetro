@@ -7,7 +7,7 @@ router.post("/", (req, res) => {
     const { numEstudante, password } = req.body;
 
     if (!numEstudante || !password) {
-        return res.status(400).json({ 
+        return res.status(400).json({
             sucesso: false,
             tipo: "erro",
             titulo: "Campos obrigatórios",
@@ -16,11 +16,11 @@ router.post("/", (req, res) => {
     }
 
     const sqlAdm = "SELECT * FROM admimetro WHERE emailAdm = ?";
-    
+
     conexao.query(sqlAdm, [numEstudante], async (err, resultsAdm) => {
         if (err) {
             console.error("Erro no banco:", err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 sucesso: false,
                 tipo: "erro",
                 titulo: "Erro no servidor",
@@ -35,21 +35,21 @@ router.post("/", (req, res) => {
                 const senhaCorreta = await bcrypt.compare(password, usuario.senhaAdm);
 
                 if (senhaCorreta) {
-                    return res.status(200).json({ 
+                    return res.status(200).json({
                         sucesso: true,
                         tipo: "sucesso",
                         titulo: "Login realizado",
                         mensagem: "Login realizado com sucesso!",
                         tipoUsuario: "adm",
-                        dados: { 
-                            id: usuario.idAdm, 
+                        dados: {
+                            id: usuario.idAdm,
                             nome: usuario.nomeAdm,
                             email: usuario.emailAdm,
                             contacto: usuario.contactoAdm
                         }
                     });
                 } else {
-                    return res.status(401).json({ 
+                    return res.status(401).json({
                         sucesso: false,
                         tipo: "erro",
                         titulo: "Dados Incorretos",
@@ -57,7 +57,7 @@ router.post("/", (req, res) => {
                     });
                 }
             } catch (error) {
-                return res.status(500).json({ 
+                return res.status(500).json({
                     sucesso: false,
                     tipo: "erro",
                     titulo: "Erro ao verificar senha",
@@ -80,11 +80,11 @@ router.post("/", (req, res) => {
                 INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo
                 WHERE f.bi_funcionario = ?
             `;
-            
+
             conexao.query(sqlFuncionario, [numEstudante], async (err, resultsFunc) => {
                 if (err) {
                     console.error("Erro no banco:", err);
-                    return res.status(500).json({ 
+                    return res.status(500).json({
                         sucesso: false,
                         tipo: "erro",
                         titulo: "Erro no servidor",
@@ -101,20 +101,20 @@ router.post("/", (req, res) => {
                         if (senhaCorreta) {
                             let rota = "/homefuncionario";
                             let tipoUsuario = "funcionario";
-                            
+
                             if (usuario.nome_cargo === "Coordenador de Admissões e Matrículas") {
                                 rota = "/homefuncionarioM";
                                 tipoUsuario = "Coordenador de Admissões e Matrículas";
                             }
 
-                            return res.status(200).json({ 
+                            return res.status(200).json({
                                 sucesso: true,
                                 tipo: "sucesso",
                                 titulo: "Login realizado",
                                 mensagem: "Login realizado com sucesso!",
                                 tipoUsuario: tipoUsuario,
                                 rota: rota,
-                                dados: { 
+                                dados: {
                                     id: usuario.id_funcionario,
                                     nome: usuario.nome_funcionario,
                                     bi: usuario.bi_funcionario,
@@ -124,7 +124,7 @@ router.post("/", (req, res) => {
                                 }
                             });
                         } else {
-                            return res.status(401).json({ 
+                            return res.status(401).json({
                                 sucesso: false,
                                 tipo: "erro",
                                 titulo: "Dados Incorretos",
@@ -132,7 +132,7 @@ router.post("/", (req, res) => {
                             });
                         }
                     } catch (error) {
-                        return res.status(500).json({ 
+                        return res.status(500).json({
                             sucesso: false,
                             tipo: "erro",
                             titulo: "Erro ao verificar senha",
@@ -140,19 +140,23 @@ router.post("/", (req, res) => {
                         });
                     }
                 } else {
+
                     const sqlProfessor = `
                         SELECT 
+                            idprofessor,
                             codigoprofessor,
                             nomeprofessor,
-                            senhaprofessor
+                            senhaprofessor,
+                            estado,
+                            fotoprofessor
                         FROM professor 
-                        WHERE codigoprofessor = ?
+                        WHERE codigoprofessor = ? AND estado = 'Ativo'
                     `;
-                    
+
                     conexao.query(sqlProfessor, [numEstudante], async (err, resultsProf) => {
                         if (err) {
                             console.error("Erro no banco:", err);
-                            return res.status(500).json({ 
+                            return res.status(500).json({
                                 sucesso: false,
                                 tipo: "erro",
                                 titulo: "Erro no servidor",
@@ -166,15 +170,16 @@ router.post("/", (req, res) => {
                                 SELECT 
                                     numeroInscricao_estudanteInscricao,
                                     senha_estudanteInscricao,
-                                    nome_estudanteInscricao
+                                    nome_estudanteInscricao,
+                                    fotostudenteInscricao
                                 FROM estudanteinscricao 
                                 WHERE numeroInscricao_estudanteInscricao = ?
                             `;
-                            
+
                             conexao.query(sqlEstudante, [numEstudante], async (err, resultsEstudante) => {
                                 if (err) {
                                     console.error("Erro no banco:", err);
-                                    return res.status(500).json({ 
+                                    return res.status(500).json({
                                         sucesso: false,
                                         tipo: "erro",
                                         titulo: "Erro no servidor",
@@ -189,20 +194,25 @@ router.post("/", (req, res) => {
                                         const senhaCorreta = await bcrypt.compare(password, usuario.senha_estudanteInscricao);
 
                                         if (senhaCorreta) {
-                                            return res.status(200).json({ 
+                                            const baseUrl = `${req.protocol}://${req.get('host')}`;
+                                            const fotoUrl = usuario.fotoprofessor ?
+                                                `${baseUrl}/api/img/estudantes/${usuario.fotostudenteInscricao}` :
+                                                console.log("Foto do professor não encontrada") ||
+                                                null;
+                                            return res.status(200).json({
                                                 sucesso: true,
                                                 tipo: "sucesso",
                                                 titulo: "Login realizado",
                                                 mensagem: "Login realizado com sucesso!",
                                                 tipoUsuario: "estudante",
                                                 rota: "/homestudent",
-                                                dados: { 
+                                                dados: {
                                                     numeroInscricao: usuario.numeroInscricao_estudanteInscricao,
                                                     nome: usuario.nome_estudanteInscricao
                                                 }
                                             });
                                         } else {
-                                            return res.status(401).json({ 
+                                            return res.status(401).json({
                                                 sucesso: false,
                                                 tipo: "erro",
                                                 titulo: "Dados Incorretos",
@@ -210,7 +220,7 @@ router.post("/", (req, res) => {
                                             });
                                         }
                                     } catch (error) {
-                                        return res.status(500).json({ 
+                                        return res.status(500).json({
                                             sucesso: false,
                                             tipo: "erro",
                                             titulo: "Erro ao verificar senha",
@@ -218,8 +228,7 @@ router.post("/", (req, res) => {
                                         });
                                     }
                                 } else {
-                                    // Usuário não encontrado em nenhuma tabela
-                                    return res.status(401).json({ 
+                                    return res.status(401).json({
                                         sucesso: false,
                                         tipo: "erro",
                                         titulo: "Usuário não encontrado",
@@ -234,20 +243,28 @@ router.post("/", (req, res) => {
                                 const senhaCorreta = await bcrypt.compare(password, usuario.senhaprofessor);
 
                                 if (senhaCorreta) {
-                                    return res.status(200).json({ 
+                                    const baseUrl = `${req.protocol}://${req.get('host')}`;
+                                    const fotoUrl = usuario.fotoprofessor ?
+                                        `${baseUrl}/api/img/professores/${usuario.fotoprofessor}` :
+                                        console.log("Foto do professor não encontrada") ||
+                                        null;
+
+                                    return res.status(200).json({
                                         sucesso: true,
                                         tipo: "sucesso",
                                         titulo: "Login realizado",
                                         mensagem: "Login realizado com sucesso!",
                                         tipoUsuario: "professor",
                                         rota: "/hometeacher",
-                                        dados: { 
-                                            id: usuario.codigoprofessor,
-                                            nome: usuario.nomeprofessor
+                                        dados: {
+                                            id: usuario.idprofessor,
+                                            codigo: usuario.codigoprofessor,
+                                            nome: usuario.nomeprofessor,
+                                            fotoUrl: fotoUrl
                                         }
                                     });
                                 } else {
-                                    return res.status(401).json({ 
+                                    return res.status(401).json({
                                         sucesso: false,
                                         tipo: "erro",
                                         titulo: "Dados Incorretos",
@@ -255,7 +272,7 @@ router.post("/", (req, res) => {
                                     });
                                 }
                             } catch (error) {
-                                return res.status(500).json({ 
+                                return res.status(500).json({
                                     sucesso: false,
                                     tipo: "erro",
                                     titulo: "Erro ao verificar senha",
