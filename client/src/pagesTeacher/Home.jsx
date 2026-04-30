@@ -125,7 +125,7 @@ function Home() {
                   e.target.src = '/default-avatar.png';
                 }}
               />
-              <button className="btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle">
+              <button className="btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle bg-success">
                 <MdCameraAlt />
               </button>
             </div>

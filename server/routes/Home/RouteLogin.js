@@ -78,7 +78,7 @@ router.post("/", (req, res) => {
                 FROM funcionario f
                 INNER JOIN cargo_funcionario_relation cfr ON f.id_funcionario = cfr.id_funcionario
                 INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo
-                WHERE f.bi_funcionario = ?
+                WHERE f.bi_funcionario = ? AND f.estado_funcionario = 'Ativo'
             `;
 
             conexao.query(sqlFuncionario, [numEstudante], async (err, resultsFunc) => {
