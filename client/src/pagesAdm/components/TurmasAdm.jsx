@@ -89,7 +89,7 @@ function TurmasAdm() {
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/turmas');
+            const response = await apiClient.get('/turmas');
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -251,7 +251,7 @@ function TurmasAdm() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/put/turma/${dadosEdicao.idperiodo}`, {
+            const response = await apiClient.put(`/turma/${dadosEdicao.idperiodo}`, {
                 turma: dadosEdicao.turma,
                 periodo: dadosEdicao.periodo,
                 anoletivo: dadosEdicao.anoletivo,
@@ -307,7 +307,7 @@ function TurmasAdm() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.post('/post/registrarPeriodo', {
+            const response = await apiClient.post('/registrarPeriodo', {
                 turma: novaTurma.turma,
                 periodo: novaTurma.periodo,
                 anoletivo: novaTurma.anoletivo,
@@ -348,7 +348,7 @@ function TurmasAdm() {
                 try {
                     showInfoToast("Processando", "Excluindo turma...");
 
-                    const response = await apiClient.delete(`/delete/turma/${id}`);
+                    const response = await apiClient.delete(`/turma/${id}`);
 
                     showSuccessToast(
                         "Sucesso",

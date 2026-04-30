@@ -42,7 +42,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await api.post(`/post/registrarAnoCurricular`, {
+            const response = await api.post(`/registrarAnoCurricular`, {
                 anocurricular: anoCurricular,
                 idcurso: idCurso
             }, {
@@ -101,7 +101,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await api.post(`/post/registrarDisciplinaCurso`, {
+            const response = await api.post(`/registrarDisciplinaCurso`, {
                 iddisciplina: formDataDisciplinaCurso.iddisciplina,
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
@@ -166,7 +166,7 @@ function OutrosRegistros() {
         setLoading(true);
 
         try {
-            const response = await api.post(`/post/registrarPeriodo`, {
+            const response = await api.post(`/registrarPeriodo`, {
                 idanocurricular: formDataDisciplinaCurso.idanocurricular,
                 idcurso: formDataDisciplinaCurso.idcurso,
                 idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,

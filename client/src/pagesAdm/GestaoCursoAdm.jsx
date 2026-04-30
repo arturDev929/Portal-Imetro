@@ -64,7 +64,7 @@ function GestaoCursoAdm() {
 
     useEffect(()=>{
         const fetchDataLicenciatura = () =>{
-            api.get(`/get/totallicenciaturas`)
+            api.get(`/totallicenciaturas`)
                 .then(response => {
                     setLicenciatura(response.data[0]?.total_licenciaturas || 0);
                 })
@@ -81,7 +81,7 @@ function GestaoCursoAdm() {
 
     useEffect(()=>{
         const fetchDataDisciplina = () =>{
-            api.get(`/get/totaldisciplina`)
+            api.get(`/totaldisciplina`)
                 .then(response => {
                     setDisciplina(response.data[0]?.total_disciplinas || 0);
                 })
@@ -98,7 +98,7 @@ function GestaoCursoAdm() {
 
     useEffect(() => {
         const fetchDataGraficos = () => {
-            api.get(`/get/dadosGraficosCategoria`)
+            api.get(`/dadosGraficosCategoria`)
                 .then(response => {
                     const dadosFormatados = response.data.map((item) => ({
                         cursos: item.total_cursos,
@@ -132,7 +132,7 @@ function GestaoCursoAdm() {
 
     useEffect(() => {
         const fetchDisciplinasPorCurso = () => {
-            api.get(`/get/totalDisciplinasPorCurso`)
+            api.get(`/totalDisciplinasPorCurso`)
                 .then(response => {
                     setDadosDisciplinasPorCurso(response.data);
                 })

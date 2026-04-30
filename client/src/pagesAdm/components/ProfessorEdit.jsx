@@ -122,7 +122,7 @@ function ProfessorEdit() {
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/get/Professores`, {
+            const response = await Api.get(`/Professores`, {
                 timeout: API_TIMEOUT
             });
             setLista(response.data || []);
@@ -193,7 +193,7 @@ function ProfessorEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
 
-            const response = await Api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
+            const response = await Api.get(`/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
             setDisciplinasProfessor(response.data || []);
@@ -209,7 +209,7 @@ function ProfessorEdit() {
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             setProfessorSelecionadoInfo({
@@ -324,7 +324,7 @@ function ProfessorEdit() {
 
             formData.append('idAdm', user.id);
 
-            const response = await Api.post(`/post/registrarprofessor`, formData, {
+            const response = await Api.post(`/registrarprofessor`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -358,7 +358,7 @@ function ProfessorEdit() {
     const abrirModalEditar = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             const infoCompletas = response.data;
@@ -436,7 +436,7 @@ function ProfessorEdit() {
 
         setSalvando(true);
         try {
-            await Api.put(`/put/atualizarprofessor/${dadosEdicao.idprofessor}`, {
+            await Api.put(`/atualizarprofessor/${dadosEdicao.idprofessor}`, {
                 codigoprofessor: dadosEdicao.codigoprofessor,
                 nomeprofessor: dadosEdicao.nomeprofessor,
                 generoprofessor: dadosEdicao.generoprofessor,
@@ -502,7 +502,7 @@ function ProfessorEdit() {
         setSalvando(true);
 
         try {
-            const response = await Api.post(`/post/registrerDisciplinaProfessor`, {
+            const response = await Api.post(`/registrerDisciplinaProfessor`, {
                 iddisciplina,
                 idprofessor
             }, {
@@ -542,7 +542,7 @@ function ProfessorEdit() {
                     setRemovendoDisciplina(iddisciplina);
                     showInfoToast("Processando", `Removendo disciplina...`);
 
-                    await Api.delete(`/delete/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
+                    await Api.delete(`/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
                         timeout: API_TIMEOUT
                     });
 
@@ -552,7 +552,7 @@ function ProfessorEdit() {
                         { "Disciplina": disciplinaNome }
                     );
 
-                    const response = await Api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
+                    const response = await Api.get(`/professorVinculadoDisciplinas/${idProfessor}`, {
                         timeout: API_TIMEOUT
                     });
                     setDisciplinasProfessor(response.data || []);
@@ -574,7 +574,7 @@ function ProfessorEdit() {
             `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
             async () => {
                 try {
-                    const response = await Api.put(`/put/professor/desativar/${id}`, {}, {
+                    const response = await Api.put(`/professor/desativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
 

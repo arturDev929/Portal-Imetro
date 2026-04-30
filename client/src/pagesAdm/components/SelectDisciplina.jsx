@@ -12,7 +12,7 @@ function SelectDisciplina({ value, onChange, disabled }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/Disciplinas`);
+                const response = await api.get(`/Disciplinas`);
                 setDisciplinas(response.data);
                 setError(null);
             } catch (error) {

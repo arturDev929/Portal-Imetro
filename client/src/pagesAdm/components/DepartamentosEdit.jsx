@@ -65,7 +65,7 @@ function Departamento() {
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/categoriaCurso');
+            const response = await apiClient.get('/categoriaCurso');
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -186,7 +186,7 @@ function Departamento() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/put/categoriaCurso/${dadosEdicao.idcategoriacurso}`, {
+            const response = await apiClient.put(`/categoriaCurso/${dadosEdicao.idcategoriacurso}`, {
                 categoriacurso: nome
             });
 
@@ -221,7 +221,7 @@ function Departamento() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.post('/post/registrercategoria', {
+            const response = await apiClient.post('/registrercategoria', {
                 categoriacurso: nome,
                 idAdm: user.id
             });
@@ -262,7 +262,7 @@ function Departamento() {
                 try {
                     showInfoToast("Processando", "Excluindo departamento...");
 
-                    const response = await apiClient.delete(`/delete/categoriaCurso/${id}`);
+                    const response = await apiClient.delete(`/categoriaCurso/${id}`);
 
                     showSuccessToast(
                         "Sucesso",

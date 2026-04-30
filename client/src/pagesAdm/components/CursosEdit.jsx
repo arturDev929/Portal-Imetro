@@ -77,7 +77,7 @@ function CursosEdit() {
     const fetchCursos = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/cursos');
+            const response = await apiClient.get('/cursos');
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -98,7 +98,7 @@ function CursosEdit() {
 
     const fetchDepartamentos = useCallback(async () => {
         try {
-            const response = await apiClient.get('/get/categoriaCurso');
+            const response = await apiClient.get('/categoriaCurso');
             setDepartamentos(response.data || []);
         } catch (error) {
             console.error("Erro ao buscar departamentos:", error);
@@ -147,7 +147,7 @@ function CursosEdit() {
 
         try {
             setLoadingAnos(true);
-            const response = await apiClient.get(`/get/anoCurricular/${idCurso}`);
+            const response = await apiClient.get(`/anoCurricular/${idCurso}`);
 
             const data = response.data;
 
@@ -178,7 +178,7 @@ function CursosEdit() {
             setCursoSelecionado(nomeCurso);
             setCursoSelecionadoId(idCurso);
 
-            const response = await apiClient.get(`/get/disciplinasPorCurso/${idCurso}`);
+            const response = await apiClient.get(`/disciplinasPorCurso/${idCurso}`);
             console.log('Resposta disciplinas:', response.data);
 
             setDisciplinasCurso(response.data);
@@ -209,7 +209,7 @@ function CursosEdit() {
                     setRemovendoDisciplina(idsemestre);
                     showInfoToast("Processando", `Removendo disciplina "${disciplinaNome}"...`);
 
-                    await apiClient.delete(`/delete/disciplinaSemestre/${idsemestre}`);
+                    await apiClient.delete(`/disciplinaSemestre/${idsemestre}`);
 
                     showSuccessToast(
                         "Sucesso",
@@ -238,7 +238,7 @@ function CursosEdit() {
                 try {
                     showInfoToast("Processando", "Excluindo ano curricular...");
 
-                    await apiClient.delete(`/delete/anocurricular/${idanocurricular}`);
+                    await apiClient.delete(`/anocurricular/${idanocurricular}`);
                     showSuccessToast("Sucesso", "Ano curricular excluído");
 
                     await fetchAnosCurriculares(dadosEdicao.idcurso);
@@ -288,7 +288,7 @@ function CursosEdit() {
 
         setSalvando(true);
         try {
-            await apiClient.post('/post/registrarcurso', {
+            await apiClient.post('/registrarcurso', {
                 curso: nome,
                 idcategoriacurso: departamentoId
             });
@@ -368,7 +368,7 @@ function CursosEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/put/curso/${dadosEdicao.idcurso}`, {
+            const response = await apiClient.put(`/curso/${dadosEdicao.idcurso}`, {
                 curso: nome,
                 idcategoriacurso: departamentoId
             });
@@ -410,7 +410,7 @@ function CursosEdit() {
                 try {
                     showInfoToast("Processando", "Excluindo curso...");
 
-                    const response = await apiClient.delete(`/delete/curso/${id}`);
+                    const response = await apiClient.delete(`/curso/${id}`);
 
                     showSuccessToast(
                         "Sucesso",

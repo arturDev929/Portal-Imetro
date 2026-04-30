@@ -1,4 +1,4 @@
-eimport { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../service/api";
 import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
@@ -70,7 +70,7 @@ function GestaoFuncionariosAdm() {
       setErroDesativados(false);
 
       api
-        .get("/get/estatisticasFuncionarios")
+        .get("/estatisticasFuncionarios")
         .then((response) => {
           setTotalFuncionarios(response.data.totalFuncionarios || 0);
           setUltimaAtualizacao(new Date());
@@ -80,7 +80,7 @@ function GestaoFuncionariosAdm() {
         });
 
       api
-        .get("/get/estatisticasFuncionariosDesativados")
+        .get("/estatisticasFuncionariosDesativados")
         .then((response) => {
           setTotalFuncionariosDesativados(
             response.data.totalFuncionariosDesativados || 0,
@@ -92,7 +92,7 @@ function GestaoFuncionariosAdm() {
         });
 
       api
-        .get("/get/dashboardFuncionarios")
+        .get("/dashboardFuncionarios")
         .then((response) => {
           if (response.data && response.data.dadosGrafico) {
             setDadosGrafico(response.data.dadosGrafico);
@@ -115,7 +115,7 @@ function GestaoFuncionariosAdm() {
         });
 
       api
-        .get("/get/cargosFuncionarios")
+        .get("/cargosFuncionarios")
         .then((response) => {
           setDadosCargos(response.data || []);
         })
@@ -124,7 +124,7 @@ function GestaoFuncionariosAdm() {
         });
 
       api
-        .get("/get/funcionarios")
+        .get("/funcionarios")
         .then((response) => {
           const recentes = response.data
             .sort((a, b) => b.id_funcionario - a.id_funcionario)
@@ -134,7 +134,7 @@ function GestaoFuncionariosAdm() {
         .catch((error) => console.log("Erro funcionários recentes:", error));
 
       api
-        .get("/get/funcionariosDesativados")
+        .get("/funcionariosDesativados")
         .then((response) => {
           setFuncionariosDesativados(response.data || []);
         })
