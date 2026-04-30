@@ -35,7 +35,7 @@ function GestaoCursoAdm() {
 
     useEffect(() => {
         const fetchDepartamento = () => {
-            api.get(`/get/totalcategoriacurso`)
+            api.get(`/totalcategoriacurso`)
                 .then(response => {
                     setDepartamento(response.data[0]?.total_categorias || 0);
                     setUltimaAtualizacao(new Date());
