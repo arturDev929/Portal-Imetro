@@ -75,8 +75,8 @@ const salvarArquivos = async (files, numEstudante) => {
     let nomeDocumento = null;
     let nomeFoto = null;
 
-    const pastaEstudantes = path.join(__dirname, '../../client/src/img/estudantes/Perfil');
-    const pastaDocumentos = path.join(__dirname, '../../client/src/img/estudantes/documentos');
+    const pastaEstudantes = path.join(__dirname, '../../../client/src/img/estudantes/Perfil');
+    const pastaDocumentos = path.join(__dirname, '../../../client/src/img/estudantes/documentos');
     
     if (!fs.existsSync(pastaEstudantes)) {
         fs.mkdirSync(pastaEstudantes, { recursive: true });
@@ -500,6 +500,151 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
     }
 });
 
-
-
 module.exports = router;
+
+/**
+ * @swagger
+ * /enviarCodigoVerificacao:
+ *   post:
+ *     summary: Enviar código de verificação por email
+ *     tags: [Estudante - Cadastro]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - emailEstudante
+ *               - nomeEstudante
+ *             properties:
+ *               emailEstudante:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do estudante
+ *               nomeEstudante:
+ *                 type: string
+ *                 description: Nome completo do estudante
+ *     responses:
+ *       200:
+ *         description: Código enviado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sucesso:
+ *                   type: boolean
+ *                 mensagem:
+ *                   type: string
+ *                 expiraEm:
+ *                   type: integer
+ *                   description: Tempo de expiração em segundos
+ *       400:
+ *         description: Email inválido, já existe ou dados faltando
+ *       500:
+ *         description: Erro ao enviar código
+ */
+
+/**
+ * @swagger
+ * /verificarCodigoECompletarCadastro:
+ *   post:
+ *     summary: Verificar código e completar cadastro do estudante
+ *     tags: [Estudante - Cadastro]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - codigo
+ *               - email
+ *               - nomeEstudante
+ *               - contactoEstudante
+ *               - biEstudante
+ *               - sexoEstudante
+ *               - periodoEstudante
+ *               - idcurso
+ *               - senhaEstudante
+ *               - documentoEstudante
+ *               - fotoEstudante
+ *             properties:
+ *               codigo:
+ *                 type: string
+ *                 description: Código de verificação recebido por email
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do estudante
+ *               nomeEstudante:
+ *                 type: string
+ *                 description: Nome completo do estudante
+ *               contactoEstudante:
+ *                 type: string
+ *                 description: Telefone/contato do estudante
+ *               biEstudante:
+ *                 type: string
+ *                 description: Número do BI do estudante
+ *               sexoEstudante:
+ *                 type: string
+ *                 enum: [M, F]
+ *                 description: Sexo do estudante
+ *               periodoEstudante:
+ *                 type: string
+ *                 description: Período desejado (Manhã/Tarde/Noite)
+ *               idcurso:
+ *                 type: integer
+ *                 description: ID do curso escolhido
+ *               senhaEstudante:
+ *                 type: string
+ *                 format: password
+ *                 minLength: 6
+ *                 description: Senha de acesso (mínimo 6 caracteres)
+ *               documentoEstudante:
+ *                 type: string
+ *                 format: binary
+ *                 description: Documento (BI/Certificado) em PDF ou imagem
+ *               fotoEstudante:
+ *                 type: string
+ *                 format: binary
+ *                 description: Foto 3x4 do estudante
+ *     responses:
+ *       201:
+ *         description: Cadastro realizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sucesso:
+ *                   type: boolean
+ *                 tipo:
+ *                   type: string
+ *                 titulo:
+ *                   type: string
+ *                 mensagem:
+ *                   type: string
+ *                 redirect:
+ *                   type: string
+ *                 dados:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     nome:
+ *                       type: string
+ *                     numEstudante:
+ *                       type: string
+ *       400:
+ *         description: |
+ *           Erros possíveis:
+ *           - Código inválido ou expirado
+ *           - Dados incompletos
+ *           - Senha muito curta
+ *           - Arquivos obrigatórios faltando
+ *           - Dados duplicados (email, contato, BI)
+ *       500:
+ *         description: Erro ao processar cadastro
+ */

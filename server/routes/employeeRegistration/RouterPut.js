@@ -35,7 +35,7 @@ router.put('/estudanteInscritoAceitar/:id', (req, res) => {
         }
 
         // Atualizar o estado do estudante
-        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Aprovado' WHERE id_estudanteInscricao = ?";
+        const updateSql = "UPDATE estudanteinscricao SET estado_estudanteInscrito = 'Aprovado' WHERE id_estudanteInscricao = ?";
         
         conexao.query(updateSql, [id], (updateError, updateResult) => {
             if (updateError) {
@@ -94,7 +94,7 @@ router.put('/estudanteInscritoRecusar/:id', (req, res) => {
         }
 
         // Atualizar o estado do estudante para Recusado
-        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Reprovado' WHERE id_estudanteInscricao = ?";
+        const updateSql = "UPDATE estudanteinscricao SET estado_estudanteInscrito = 'Reprovado' WHERE id_estudanteInscricao = ?";
         
         conexao.query(updateSql, [id], (updateError, updateResult) => {
             if (updateError) {
@@ -188,21 +188,206 @@ router.put('/estudanteInscritoNota/:codigoEstudante', (req, res) => {
     });
 });
 
-router.delete('/Topico', async (req, res) => {
-    const sql = "DELETE FROM topicos";
-    
-    conexao.query(sql, (error, result) => {
-        if (error) {
-            console.error("Erro ao deletar tópico:", error);
-            return res.status(500).json({ error: "Erro interno do servidor" });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Nenhum tópico encontrado para deletar" });
-        }
-
-        res.status(200).json({ success: true, message: "Tópico deletado com sucesso" });
-    });
-});
-
 module.exports = router;
+
+/**
+ * @swagger
+ * /estudanteInscritoAceitar/{id}:
+ *   put:
+ *     summary: Aceitar/Aprovar um estudante inscrito
+ *     tags: [Estudante - Inscrição]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID do estudante (id_estudanteInscricao)
+ *     responses:
+ *       200:
+ *         description: Estudante aprovado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Estudante aprovado com sucesso"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     status:
+ *                       type: string
+ *                       example: "Aprovado"
+ *       400:
+ *         description: ID inválido ou estudante já aprovado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "ID do estudante inválido"
+ *       404:
+ *         description: Estudante não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Estudante não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /estudanteInscritoRecusar/{id}:
+ *   put:
+ *     summary: Recusar/Reprovar um estudante inscrito
+ *     tags: [Estudante - Inscrição]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID do estudante (id_estudanteInscricao)
+ *     responses:
+ *       200:
+ *         description: Estudante recusado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Estudante recusado com sucesso"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     status:
+ *                       type: string
+ *                       example: "Recusado"
+ *       400:
+ *         description: ID inválido ou estudante já recusado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "ID do estudante inválido"
+ *       404:
+ *         description: Estudante não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Estudante não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /estudanteInscritoNota/{codigoEstudante}:
+ *   put:
+ *     summary: Atribuir nota e aprovar/reprovar estudante automaticamente
+ *     tags: [Estudante - Inscrição]
+ *     parameters:
+ *       - in: path
+ *         name: codigoEstudante
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Número de inscrição do estudante (numeroInscricao_estudanteInscricao)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nota
+ *             properties:
+ *               nota:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 20
+ *                 description: Nota do estudante (0 a 20)
+ *                 example: 15
+ *     responses:
+ *       200:
+ *         description: Nota atribuída e status atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Estudante aprovado com sucesso"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     codigoEstudante:
+ *                       type: integer
+ *                       example: 2024123456
+ *                     nota:
+ *                       type: number
+ *                       example: 15
+ *                     status:
+ *                       type: string
+ *                       enum: [Aprovado, Reprovado]
+ *                       example: "Aprovado"
+ *       400:
+ *         description: ID inválido, nota inválida ou estudante já aprovado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Nota inválida. Deve ser entre 0 e 20"
+ *       404:
+ *         description: Estudante não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Estudante não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ */

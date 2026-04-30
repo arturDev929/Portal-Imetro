@@ -288,3 +288,227 @@ router.post("/", (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /:
+ *   post:
+ *     summary: Realizar login no sistema
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - numEstudante
+ *               - password
+ *             properties:
+ *               numEstudante:
+ *                 type: string
+ *                 description: Email (ADM), BI (Funcionário), Código (Professor) ou Número de Inscrição (Estudante)
+ *                 example: "2024123456"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Senha do usuário
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Login realizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/LoginAdmResponse'
+ *                 - $ref: '#/components/schemas/LoginFuncionarioResponse'
+ *                 - $ref: '#/components/schemas/LoginProfessorResponse'
+ *                 - $ref: '#/components/schemas/LoginEstudanteResponse'
+ *       400:
+ *         description: Campos obrigatórios não preenchidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErroResponse'
+ *       401:
+ *         description: Dados incorretos ou usuário não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErroResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErroResponse'
+ *
+ * components:
+ *   schemas:
+ *     LoginAdmResponse:
+ *       type: object
+ *       properties:
+ *         sucesso:
+ *           type: boolean
+ *           example: true
+ *         tipo:
+ *           type: string
+ *           example: "sucesso"
+ *         titulo:
+ *           type: string
+ *           example: "Login realizado"
+ *         mensagem:
+ *           type: string
+ *           example: "Login realizado com sucesso!"
+ *         tipoUsuario:
+ *           type: string
+ *           enum: [adm]
+ *           example: "adm"
+ *         dados:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 1
+ *             nome:
+ *               type: string
+ *               example: "João Silva"
+ *             email:
+ *               type: string
+ *               example: "admin@ips.edu.ao"
+ *             contacto:
+ *               type: string
+ *               example: "+244 923 456 789"
+ *
+ *     LoginFuncionarioResponse:
+ *       type: object
+ *       properties:
+ *         sucesso:
+ *           type: boolean
+ *           example: true
+ *         tipo:
+ *           type: string
+ *           example: "sucesso"
+ *         titulo:
+ *           type: string
+ *           example: "Login realizado"
+ *         mensagem:
+ *           type: string
+ *           example: "Login realizado com sucesso!"
+ *         tipoUsuario:
+ *           type: string
+ *           enum: [funcionario, Coordenador de Admissões e Matrículas]
+ *           example: "funcionario"
+ *         rota:
+ *           type: string
+ *           example: "/homefuncionario"
+ *         dados:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 5
+ *             nome:
+ *               type: string
+ *               example: "Maria Santos"
+ *             bi:
+ *               type: string
+ *               example: "009876543LA042"
+ *             contacto:
+ *               type: string
+ *               example: "+244 923 456 788"
+ *             cargo:
+ *               type: string
+ *               example: "Secretária Académica"
+ *             id_cargo:
+ *               type: integer
+ *               example: 3
+ *
+ *     LoginProfessorResponse:
+ *       type: object
+ *       properties:
+ *         sucesso:
+ *           type: boolean
+ *           example: true
+ *         tipo:
+ *           type: string
+ *           example: "sucesso"
+ *         titulo:
+ *           type: string
+ *           example: "Login realizado"
+ *         mensagem:
+ *           type: string
+ *           example: "Login realizado com sucesso!"
+ *         tipoUsuario:
+ *           type: string
+ *           enum: [professor]
+ *           example: "professor"
+ *         rota:
+ *           type: string
+ *           example: "/hometeacher"
+ *         dados:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 10
+ *             codigo:
+ *               type: string
+ *               example: "PROF2024001"
+ *             nome:
+ *               type: string
+ *               example: "Carlos Eduardo Mendes"
+ *             fotoUrl:
+ *               type: string
+ *               nullable: true
+ *               example: "http://localhost:3000/api/img/professores/foto_prof_123.jpg"
+ *
+ *     LoginEstudanteResponse:
+ *       type: object
+ *       properties:
+ *         sucesso:
+ *           type: boolean
+ *           example: true
+ *         tipo:
+ *           type: string
+ *           example: "sucesso"
+ *         titulo:
+ *           type: string
+ *           example: "Login realizado"
+ *         mensagem:
+ *           type: string
+ *           example: "Login realizado com sucesso!"
+ *         tipoUsuario:
+ *           type: string
+ *           enum: [estudante]
+ *           example: "estudante"
+ *         rota:
+ *           type: string
+ *           example: "/inscricao"
+ *         dados:
+ *           type: object
+ *           properties:
+ *             numeroInscricao:
+ *               type: string
+ *               example: "2024123456"
+ *             nome:
+ *               type: string
+ *               example: "Ana Carolina Ferreira"
+ *
+ *     ErroResponse:
+ *       type: object
+ *       properties:
+ *         sucesso:
+ *           type: boolean
+ *           example: false
+ *         tipo:
+ *           type: string
+ *           example: "erro"
+ *         titulo:
+ *           type: string
+ *           example: "Campos obrigatórios"
+ *         mensagem:
+ *           type: string
+ *           example: "Preencha todos os campos!"
+ */

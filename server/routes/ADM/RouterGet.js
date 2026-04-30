@@ -1054,3 +1054,617 @@ router.get('/cargosDisponiveis', (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /totalcategoriacurso:
+ *   get:
+ *     summary: Total de categorias de curso
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de categorias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_categorias:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /totallicenciaturas:
+ *   get:
+ *     summary: Total de cursos (licenciaturas)
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de cursos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_licenciaturas:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /totaldisciplina:
+ *   get:
+ *     summary: Total de disciplinas
+ *     tags: [Disciplinas - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de disciplinas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_disciplinas:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /dadosGraficosCategoria:
+ *   get:
+ *     summary: Dados para gráfico de categorias com total de cursos
+ *     tags: [Cursos - Gráficos]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias com contagem de cursos
+ */
+
+/**
+ * @swagger
+ * /totalDisciplinasPorCurso:
+ *   get:
+ *     summary: Total de disciplinas por curso
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos com total de disciplinas
+ */
+
+/**
+ * @swagger
+ * /categoriaCurso:
+ *   get:
+ *     summary: Listar todas as categorias de curso
+ *     tags: [Cursos - Categorias]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias
+ */
+
+/**
+ * @swagger
+ * /getcursos:
+ *   get:
+ *     summary: Listar cursos com suas categorias
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos
+ */
+
+/**
+ * @swagger
+ * /Cursos:
+ *   get:
+ *     summary: Listar cursos com suas categorias (alias)
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos
+ */
+
+/**
+ * @swagger
+ * /anosCurriculares:
+ *   get:
+ *     summary: Listar anos curriculares
+ *     tags: [Cursos - Ano Curricular]
+ *     responses:
+ *       200:
+ *         description: Lista de anos curriculares
+ */
+
+/**
+ * @swagger
+ * /Disciplinas:
+ *   get:
+ *     summary: Listar todas as disciplinas
+ *     tags: [Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Lista de disciplinas
+ */
+
+/**
+ * @swagger
+ * /semestres:
+ *   get:
+ *     summary: Listar todos os semestres
+ *     tags: [Semestres]
+ *     responses:
+ *       200:
+ *         description: Lista de semestres
+ */
+
+/**
+ * @swagger
+ * /periodos:
+ *   get:
+ *     summary: Listar todos os períodos/turmas
+ *     tags: [Turmas]
+ *     responses:
+ *       200:
+ *         description: Lista de períodos
+ */
+
+/**
+ * @swagger
+ * /categoriaCurso/{id}:
+ *   get:
+ *     summary: Buscar categoria por ID
+ *     tags: [Cursos - Categorias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Categoria encontrada
+ *       404:
+ *         description: Categoria não encontrada
+ */
+
+/**
+ * @swagger
+ * /curso/{id}:
+ *   get:
+ *     summary: Buscar curso por ID
+ *     tags: [Cursos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Curso encontrado
+ *       404:
+ *         description: Curso não encontrado
+ */
+
+/**
+ * @swagger
+ * /disciplina/{id}:
+ *   get:
+ *     summary: Buscar disciplina por ID
+ *     tags: [Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Disciplina encontrada
+ *       404:
+ *         description: Disciplina não encontrada
+ */
+
+/**
+ * @swagger
+ * /anoCurricular/{id}:
+ *   get:
+ *     summary: Buscar ano curricular por ID do curso
+ *     tags: [Cursos - Ano Curricular]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do curso
+ *     responses:
+ *       200:
+ *         description: Ano curricular encontrado
+ *       404:
+ *         description: Ano curricular não encontrado
+ */
+
+/**
+ * @swagger
+ * /semestre/{id}:
+ *   get:
+ *     summary: Buscar semestre por ID
+ *     tags: [Semestres]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Semestre encontrado
+ *       404:
+ *         description: Semestre não encontrado
+ */
+
+/**
+ * @swagger
+ * /periodo/{id}:
+ *   get:
+ *     summary: Buscar período por ID
+ *     tags: [Turmas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Período encontrado
+ *       404:
+ *         description: Período não encontrado
+ */
+
+/**
+ * @swagger
+ * /Professores:
+ *   get:
+ *     summary: Listar professores ativos
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores com fotos
+ */
+
+/**
+ * @swagger
+ * /ProfessoresDesativados:
+ *   get:
+ *     summary: Listar professores desativados
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores desativados
+ */
+
+/**
+ * @swagger
+ * /CategoriaCursosAno:
+ *   get:
+ *     summary: Dados combinados de categorias, cursos e anos curriculares
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Dados combinados
+ */
+
+/**
+ * @swagger
+ * /disciplinasPorCurso/{idcurso}:
+ *   get:
+ *     summary: Disciplinas agrupadas por ano e semestre de um curso
+ *     tags: [Cursos - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: idcurso
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Disciplinas organizadas por ano e semestre
+ */
+
+/**
+ * @swagger
+ * /professorVinculado/{id}:
+ *   get:
+ *     summary: Professores vinculados a uma disciplina
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     responses:
+ *       200:
+ *         description: Lista de professores
+ */
+
+/**
+ * @swagger
+ * /professorDisponivel/{id}:
+ *   get:
+ *     summary: Professores disponíveis (não vinculados a uma disciplina)
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     responses:
+ *       200:
+ *         description: Lista de professores disponíveis
+ */
+
+/**
+ * @swagger
+ * /estatisticasProfessores:
+ *   get:
+ *     summary: Estatísticas gerais de professores ativos
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total, com foto, com titulação
+ */
+
+/**
+ * @swagger
+ * /distribuicaoTitulacao:
+ *   get:
+ *     summary: Distribuição de professores por titulação (ativos)
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por titulação
+ */
+
+/**
+ * @swagger
+ * /professoresPorDisciplina:
+ *   get:
+ *     summary: Professores por disciplina
+ *     tags: [Professores - Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Disciplinas com total e lista de professores
+ */
+
+/**
+ * @swagger
+ * /disciplinasMaisMinistradas:
+ *   get:
+ *     summary: Top 10 disciplinas com mais professores
+ *     tags: [Disciplinas - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Top 10 disciplinas
+ */
+
+/**
+ * @swagger
+ * /professoresMaisAtivos:
+ *   get:
+ *     summary: Top 10 professores com mais disciplinas
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Top 10 professores
+ */
+
+/**
+ * @swagger
+ * /professoresSemDisciplinas:
+ *   get:
+ *     summary: Professores sem disciplinas vinculadas
+ *     tags: [Professores - Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Lista de professores sem disciplinas
+ */
+
+/**
+ * @swagger
+ * /professorVinculadoDisciplinas/{id}:
+ *   get:
+ *     summary: Disciplinas vinculadas a um professor
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     responses:
+ *       200:
+ *         description: Lista de disciplinas do professor
+ */
+
+/**
+ * @swagger
+ * /InformacoesProfessor/{id}:
+ *   get:
+ *     summary: Informações completas de um professor
+ *     tags: [Professores]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Dados completos do professor
+ *       404:
+ *         description: Professor não encontrado
+ */
+
+/**
+ * @swagger
+ * /turmas:
+ *   get:
+ *     summary: Listar todas as turmas com informações detalhadas
+ *     tags: [Turmas]
+ *     responses:
+ *       200:
+ *         description: Lista de turmas
+ */
+
+/**
+ * @swagger
+ * /estatisticasProfessoresDesativados:
+ *   get:
+ *     summary: Estatísticas de professores desativados
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de professores desativados
+ */
+
+/**
+ * @swagger
+ * /professoresDesativados:
+ *   get:
+ *     summary: Listar professores desativados
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores desativados
+ */
+
+/**
+ * @swagger
+ * /distribuicaoTitulacaoDesativados:
+ *   get:
+ *     summary: Distribuição de titulação de professores desativados
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por titulação (desativados)
+ */
+
+/**
+ * @swagger
+ * /estatisticasFuncionarios:
+ *   get:
+ *     summary: Estatísticas de funcionários ativos
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total funcionários ativos
+ */
+
+/**
+ * @swagger
+ * /estatisticasFuncionariosDesativados:
+ *   get:
+ *     summary: Estatísticas de funcionários desativados
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total funcionários desativados
+ */
+
+/**
+ * @swagger
+ * /funcionarios:
+ *   get:
+ *     summary: Listar funcionários ativos com cargos
+ *     tags: [Funcionários]
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários ativos
+ */
+
+/**
+ * @swagger
+ * /funcionariosDesativados:
+ *   get:
+ *     summary: Listar funcionários desativados com cargos
+ *     tags: [Funcionários]
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários desativados
+ */
+
+/**
+ * @swagger
+ * /funcionario/{id}:
+ *   get:
+ *     summary: Buscar funcionário por ID
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Funcionário encontrado
+ *       404:
+ *         description: Funcionário não encontrado
+ */
+
+/**
+ * @swagger
+ * /funcionariosPorCargo/{id_cargo}:
+ *   get:
+ *     summary: Listar funcionários por cargo
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id_cargo
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários do cargo
+ */
+
+/**
+ * @swagger
+ * /dashboardFuncionarios:
+ *   get:
+ *     summary: Dashboard com estatísticas de funcionários
+ *     tags: [Funcionários - Dashboard]
+ *     responses:
+ *       200:
+ *         description: Estatísticas e dados para gráfico
+ */
+
+/**
+ * @swagger
+ * /cargosFuncionarios:
+ *   get:
+ *     summary: Distribuição de funcionários por cargo
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por cargo
+ */
+
+/**
+ * @swagger
+ * /cargosDisponiveis:
+ *   get:
+ *     summary: Listar todos os cargos disponíveis
+ *     tags: [Funcionários - Cargos]
+ *     responses:
+ *       200:
+ *         description: Lista de cargos
+ */

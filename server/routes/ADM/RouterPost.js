@@ -635,8 +635,8 @@ router.post('/registrarprofessor', async (req, res) => {
                 let nomeFoto = null;
                 let nomeBIPDF = null;
 
-                const pastaPerfil = path.join(__dirname, '../../client/src/img/professores/Perfil');
-                const pastaDocBI = path.join(__dirname, '../../client/src/img/professores/Doc BI');
+                const pastaPerfil = path.join(__dirname, '../../../client/src/img/professores/Perfil');
+                const pastaDocBI = path.join(__dirname, '../../../client/src/img/professores/Doc BI');
 
                 if (!fs.existsSync(pastaPerfil)) {
                     fs.mkdirSync(pastaPerfil, { recursive: true });
@@ -1398,3 +1398,391 @@ router.post('/registrarfuncionario', (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /registrercategoria:
+ *   post:
+ *     summary: Registrar uma nova categoria de curso
+ *     tags: [Cursos - Categorias]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - categoriacurso
+ *               - idAdm
+ *             properties:
+ *               categoriacurso:
+ *                 type: string
+ *                 description: Nome da categoria
+ *               idAdm:
+ *                 type: integer
+ *                 description: ID do administrador
+ *     responses:
+ *       201:
+ *         description: Categoria registrada com sucesso
+ *       400:
+ *         description: Dados incompletos ou categoria já existe
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarcurso:
+ *   post:
+ *     summary: Registrar um novo curso
+ *     tags: [Cursos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - curso
+ *               - idcategoriacurso
+ *             properties:
+ *               curso:
+ *                 type: string
+ *                 description: Nome do curso
+ *               idcategoriacurso:
+ *                 type: integer
+ *                 description: ID da categoria do curso
+ *     responses:
+ *       201:
+ *         description: Curso registrado com sucesso
+ *       400:
+ *         description: Dados incompletos ou curso já existe
+ *       404:
+ *         description: Categoria não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarAnoCurricular:
+ *   post:
+ *     summary: Registrar um novo ano curricular para um curso
+ *     tags: [Cursos - Ano Curricular]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - anocurricular
+ *               - idcurso
+ *             properties:
+ *               anocurricular:
+ *                 type: integer
+ *                 description: Número do ano (1, 2, 3, 4)
+ *               idcurso:
+ *                 type: integer
+ *                 description: ID do curso
+ *     responses:
+ *       201:
+ *         description: Ano curricular registrado com sucesso
+ *       400:
+ *         description: Dados incompletos, curso inválido ou ano duplicado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrardisciplina:
+ *   post:
+ *     summary: Registrar uma nova disciplina
+ *     tags: [Disciplinas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - disciplina
+ *               - idAdm
+ *             properties:
+ *               disciplina:
+ *                 type: string
+ *                 description: Nome da disciplina
+ *               idAdm:
+ *                 type: integer
+ *                 description: ID do administrador
+ *     responses:
+ *       201:
+ *         description: Disciplina registrada com sucesso
+ *       400:
+ *         description: Dados incompletos ou disciplina já existe
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarDisciplinaCurso:
+ *   post:
+ *     summary: Vincular uma disciplina a um curso/ano/semestre
+ *     tags: [Disciplinas - Cursos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - iddisciplina
+ *               - idanocurricular
+ *               - idcurso
+ *               - semestre
+ *               - idcategoriacurso
+ *             properties:
+ *               iddisciplina:
+ *                 type: integer
+ *               idanocurricular:
+ *                 type: integer
+ *               idcurso:
+ *                 type: integer
+ *               semestre:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 2
+ *               idcategoriacurso:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Disciplina atribuída com sucesso
+ *       400:
+ *         description: Dados incompletos, inválidos ou duplicados
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarprofessor:
+ *   post:
+ *     summary: Registrar um novo professor
+ *     tags: [Professores]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nomeprofessore
+ *               - genero
+ *               - biprofessor
+ *               - idAdm
+ *             properties:
+ *               nomeprofessore:
+ *                 type: string
+ *               genero:
+ *                 type: string
+ *                 enum: [M, F]
+ *               biprofessor:
+ *                 type: string
+ *               idAdm:
+ *                 type: integer
+ *               nacionalidadeprofessor:
+ *                 type: string
+ *               estadocivilprofessor:
+ *                 type: string
+ *               nomepaiprofessor:
+ *                 type: string
+ *               nomemaeprofessor:
+ *                 type: string
+ *               datanascimentoprofessor:
+ *                 type: string
+ *                 format: date
+ *               residenciaprofessor:
+ *                 type: string
+ *               telefoneprofessor:
+ *                 type: string
+ *               whatsappprofessor:
+ *                 type: string
+ *               emailprofessor:
+ *                 type: string
+ *                 format: email
+ *               anoexprienciaprofessor:
+ *                 type: string
+ *               titulacaoprofessor:
+ *                 type: string
+ *               dataadmissaprofessor:
+ *                 type: string
+ *                 format: date
+ *               tipocontratoprofessor:
+ *                 type: string
+ *               ibanprofessor:
+ *                 type: string
+ *               tiposanguineoprofessor:
+ *                 type: string
+ *               condicoesprofessor:
+ *                 type: string
+ *               contactoemergenciaprofessor:
+ *                 type: string
+ *               fotoprofessor:
+ *                 type: string
+ *                 format: binary
+ *               bipdfprofessor:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Professor registrado com sucesso
+ *       400:
+ *         description: Campos obrigatórios faltando ou BI já existe
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrerDisciplinaProfessor:
+ *   post:
+ *     summary: Vincular uma disciplina a um professor
+ *     tags: [Professores - Disciplinas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idprofessor
+ *               - iddisciplina
+ *             properties:
+ *               idprofessor:
+ *                 type: integer
+ *               iddisciplina:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Disciplina atribuída ao professor com sucesso
+ *       400:
+ *         description: Dados incompletos, inválidos ou duplicados
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /vincularProfessor:
+ *   post:
+ *     summary: Vincular professor a uma disciplina (alternativo)
+ *     tags: [Professores - Disciplinas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idprofessor
+ *               - iddisciplina
+ *             properties:
+ *               idprofessor:
+ *                 type: integer
+ *               iddisciplina:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Professor vinculado à disciplina com sucesso
+ *       400:
+ *         description: Dados incompletos ou inválidos
+ *       409:
+ *         description: Vínculo já existente
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarPeriodo:
+ *   post:
+ *     summary: Registrar uma nova turma/período
+ *     tags: [Turmas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idanocurricular
+ *               - idcurso
+ *               - idcategoriacurso
+ *               - turma
+ *               - periodo
+ *               - anoletivo
+ *             properties:
+ *               idanocurricular:
+ *                 type: integer
+ *               idcurso:
+ *                 type: integer
+ *               idcategoriacurso:
+ *                 type: integer
+ *               turma:
+ *                 type: string
+ *                 description: Código da turma (ex: A, B, C)
+ *               periodo:
+ *                 type: string
+ *                 description: Período (Manhã, Tarde, Noite)
+ *               anoletivo:
+ *                 type: string
+ *                 description: Ano letivo (ex: 2024/2025)
+ *     responses:
+ *       201:
+ *         description: Turma/Período registrado com sucesso
+ *       400:
+ *         description: Dados incompletos, inválidos ou duplicados
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /registrarfuncionario:
+ *   post:
+ *     summary: Registrar um novo funcionário
+ *     tags: [Funcionários]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome_funcionario
+ *               - contacto_funcionario
+ *               - bi_funcionario
+ *               - cargo_funcionario
+ *               - idAdm
+ *             properties:
+ *               nome_funcionario:
+ *                 type: string
+ *               contacto_funcionario:
+ *                 type: string
+ *               bi_funcionario:
+ *                 type: string
+ *               cargo_funcionario:
+ *                 type: string
+ *                 description: Nome do cargo (ex: Secretário, Coordenador)
+ *               idAdm:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Funcionário registrado com sucesso (senha gerada automaticamente)
+ *       400:
+ *         description: Dados incompletos, contacto/BI já existente ou cargo inválido
+ *       500:
+ *         description: Erro interno do servidor
+ */

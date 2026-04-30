@@ -165,3 +165,99 @@ router.put('/pagamentoMatricula/:codigoEstudanteInscricao', async (req, res) => 
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /pagementoInscricao/{codigoEstudanteInscricao}:
+ *   put:
+ *     summary: Enviar comprovante de pagamento de inscrição
+ *     tags: [Pagamento]
+ *     parameters:
+ *       - in: path
+ *         name: codigoEstudanteInscricao
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Código de inscrição do estudante
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               comprovante:
+ *                 type: string
+ *                 format: binary
+ *                 description: Arquivo PDF do comprovante (máx. 5MB)
+ *     responses:
+ *       200:
+ *         description: Comprovante enviado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 pdfUrl:
+ *                   type: string
+ *                 nomeArquivo:
+ *                   type: string
+ *       400:
+ *         description: Nenhum arquivo enviado, formato inválido ou arquivo muito grande
+ *       404:
+ *         description: Estudante não encontrado
+ *       500:
+ *         description: Erro ao salvar arquivo ou no banco de dados
+ */
+
+/**
+ * @swagger
+ * /pagamentoMatricula/{codigoEstudanteInscricao}:
+ *   put:
+ *     summary: Enviar comprovante de pagamento de matrícula
+ *     tags: [Pagamento]
+ *     parameters:
+ *       - in: path
+ *         name: codigoEstudanteInscricao
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Código de inscrição do estudante
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               comprovante:
+ *                 type: string
+ *                 format: binary
+ *                 description: Arquivo PDF do comprovante (máx. 5MB)
+ *     responses:
+ *       200:
+ *         description: Comprovante de matrícula enviado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 pdfUrl:
+ *                   type: string
+ *                 nomeArquivo:
+ *                   type: string
+ *       400:
+ *         description: Nenhum arquivo enviado, formato inválido ou arquivo muito grande
+ *       404:
+ *         description: Estudante não encontrado
+ *       500:
+ *         description: Erro ao salvar arquivo ou no banco de dados
+ */

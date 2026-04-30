@@ -88,3 +88,42 @@ router.get('/PerfilProfessor/:codigo', async (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /PerfilProfessor/{codigo}:
+ *   get:
+ *     summary: Buscar perfil completo do professor
+ *     tags: [Professor]
+ *     parameters:
+ *       - in: path
+ *         name: codigo
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Código do professor
+ *     responses:
+ *       200:
+ *         description: Perfil do professor encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 idprofessor:
+ *                   type: integer
+ *                 nomeprofessor:
+ *                   type: string
+ *                 fotoUrl:
+ *                   type: string
+ *                 curriculoUrl:
+ *                   type: string
+ *                 disciplinas:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       404:
+ *         description: Professor não encontrado
+ *       500:
+ *         description: Erro no servidor
+ */

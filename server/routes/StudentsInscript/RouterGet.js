@@ -27,3 +27,58 @@ router.get('/EstudantesInscritos/:codigoEstudanteInscrito', (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /EstudantesInscritos/{codigoEstudanteInscrito}:
+ *   get:
+ *     summary: Buscar dados do estudante inscrito
+ *     tags: [Estudante]
+ *     parameters:
+ *       - in: path
+ *         name: codigoEstudanteInscrito
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Número de inscrição do estudante
+ *     responses:
+ *       200:
+ *         description: Dados do estudante encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   numeroInscricao_estudanteInscricao:
+ *                     type: string
+ *                   nome_estudanteInscricao:
+ *                     type: string
+ *                   email_estudanteInscricao:
+ *                     type: string
+ *                   telefone_estudanteInscricao:
+ *                     type: string
+ *                   fotoUrl:
+ *                     type: string
+ *                     nullable: true
+ *                   docUrl:
+ *                     type: string
+ *                     nullable: true
+ *                   docInscricao:
+ *                     type: string
+ *                     nullable: true
+ *                   idcurso:
+ *                     type: integer
+ *                   curso:
+ *                     type: object
+ *                     properties:
+ *                       idcurso:
+ *                         type: integer
+ *                       nomecurso:
+ *                         type: string
+ *       404:
+ *         description: Estudante não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
