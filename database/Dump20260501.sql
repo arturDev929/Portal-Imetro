@@ -58,7 +58,7 @@ CREATE TABLE `anocurricular` (
   PRIMARY KEY (`idanocurricular`),
   KEY `idcurso` (`idcurso`),
   CONSTRAINT `anocurricular_ibfk_1` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=136 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -141,7 +141,7 @@ CREATE TABLE `categoriacurso` (
   PRIMARY KEY (`idcategoriacurso`),
   KEY `idAdm` (`idAdm`),
   CONSTRAINT `categoriacurso_ibfk_1` FOREIGN KEY (`idAdm`) REFERENCES `admimetro` (`idAdm`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -197,7 +197,7 @@ CREATE TABLE `disc_prof` (
   KEY `iddisciplina` (`iddisciplina`),
   CONSTRAINT `disc_prof_ibfk_1` FOREIGN KEY (`idprofessor`) REFERENCES `professor` (`idprofessor`),
   CONSTRAINT `disc_prof_ibfk_2` FOREIGN KEY (`iddisciplina`) REFERENCES `disciplina` (`iddisciplina`)
-) ENGINE=InnoDB AUTO_INCREMENT=209 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=212 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -206,7 +206,7 @@ CREATE TABLE `disc_prof` (
 
 LOCK TABLES `disc_prof` WRITE;
 /*!40000 ALTER TABLE `disc_prof` DISABLE KEYS */;
-INSERT INTO `disc_prof` VALUES (137,10,58),(138,4,58),(141,10,73),(166,13,57),(167,2,57),(168,8,57),(169,10,57),(170,5,57),(171,12,73),(172,11,73),(173,9,73),(175,2,100),(176,10,100),(177,8,100),(178,4,100),(179,14,100),(180,7,100),(181,2,58),(182,7,58),(186,7,269),(187,14,73),(188,2,321),(189,8,321),(190,2,127),(191,8,127),(192,5,127),(193,5,321),(194,5,343),(195,14,232),(196,8,232),(197,11,321),(198,2,223),(199,8,223),(200,3,223),(201,11,223),(202,12,223),(203,7,223),(205,6,343),(206,6,321),(207,6,223),(208,13,223);
+INSERT INTO `disc_prof` VALUES (137,10,58),(138,4,58),(141,10,73),(166,13,57),(167,2,57),(168,8,57),(169,10,57),(170,5,57),(171,12,73),(172,11,73),(173,9,73),(175,2,100),(176,10,100),(177,8,100),(178,4,100),(179,14,100),(180,7,100),(181,2,58),(182,7,58),(186,7,269),(187,14,73),(188,2,321),(189,8,321),(190,2,127),(191,8,127),(192,5,127),(193,5,321),(194,5,343),(195,14,232),(196,8,232),(197,11,321),(198,2,223),(199,8,223),(200,3,223),(201,11,223),(202,12,223),(203,7,223),(205,6,343),(206,6,321),(207,6,223),(208,13,223),(209,16,223),(210,16,57),(211,16,321);
 /*!40000 ALTER TABLE `disc_prof` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -259,13 +259,14 @@ CREATE TABLE `estudanteinscricao` (
   `numeroInscricao_estudanteInscricao` varchar(25) NOT NULL,
   `pdf_InscricaoRupe` varchar(255) DEFAULT NULL,
   `pdf_MatriculaRupe` varchar(255) DEFAULT NULL,
-  `estado_estdanteInscrito` enum('Aprovado','Reprovado','Admitido','Não Admitido','Pendente') NOT NULL DEFAULT 'Pendente',
+  `estado_estudanteInscrito` enum('Aprovado','Reprovado','Admitido','Não Admitido','Pendente') NOT NULL DEFAULT 'Pendente',
+  `nota_estudanteInscricao` float DEFAULT '0',
   PRIMARY KEY (`id_estudanteInscricao`),
   UNIQUE KEY `contacto_estudanteInscricao` (`contacto_estudanteInscricao`),
   UNIQUE KEY `email_estudanteInscricao` (`email_estudanteInscricao`),
   KEY `idcurso` (`idcurso`),
   CONSTRAINT `estudanteinscricao_ibfk_1` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -274,7 +275,7 @@ CREATE TABLE `estudanteinscricao` (
 
 LOCK TABLES `estudanteinscricao` WRITE;
 /*!40000 ALTER TABLE `estudanteinscricao` DISABLE KEYS */;
-INSERT INTO `estudanteinscricao` VALUES (2,'Artur Macumba Paulo','+244 929277043','arturpaulo929@gmail.com','Masculino','Manhã',33,'estudante_2026284708_doc_1773346824606.pdf','estudante_2026284708_foto_1773346824610.jpeg','$2b$10$5LAeJ7EzJB10fEpVE7pRgOo2BztQ29VxLgKsTuNYK5GBNbaViRbJK','008555739LA047','2026284708',NULL,NULL,'Aprovado'),(3,'Nsimba Paula Maniongo Suami','+244 937260507','nsimbapaulas@gmail.com','Feminino','Manhã',33,'estudante_2026378126_doc_1773393048765.pdf','estudante_2026378126_foto_1773393048770.png','$2b$10$M.Q27CslhahDDQI8dCx5be4rfP04FVMMJUw1O4VyB51mGzXRp6YOW','008649051LA049','2026378126',NULL,NULL,'Aprovado'),(5,'Artur M Paulo','+929277044','arturmakumbapaulo@gmail.com','Masculino','Manhã',32,'estudante_2026502058_doc_1776432655551.pdf','estudante_2026502058_foto_1776432655561.png','$2b$10$zeXQnGkx/D9ENtoqyPiP0.zfKmY8vdHnQlgMjaSUoNHXjNA.HlAbq','005558379LA044','2026502058',NULL,NULL,'Aprovado'),(6,'Oneill Baltazar','244 944330672','oneillb399@gmail.com','Masculino','Manhã',33,'estudante_2026199708_doc_1777018310395.pdf','estudante_2026199708_foto_1777018310425.png','$2b$10$hOrMKf1Q.P9W2BlkPN0J9emUB//rMg4dFNItQwcUg2PW8avi2vVxu','007382062LA049','2026199708',NULL,NULL,'Pendente');
+INSERT INTO `estudanteinscricao` VALUES (7,'Artur Macumba Paulo','244 929277043','arturpaulo929@gmail.com','Masculino','Manhã',33,'estudante_2026385796_doc_1777387127995.pdf','estudante_2026385796_foto_1777387127998.jpeg','$2b$10$bTSuILgWcGEWgYYI52iIqe3bD1cT6MLM1Q/necEmO1.NK.HjDONhi','00008555739LA047','2026385796',NULL,NULL,'Aprovado',0),(14,'Artur Paulo','244 929277044','arturmakumbapaulo@gmail.com','Masculino','Noite',31,'estudante_2026841049_doc_1777549585781.pdf','estudante_2026841049_foto_1777549585786.jpeg','$2b$10$c67SU/UJrnnX1RJ3lqFU8er7A8COqtz2L3QI6pPHDIoTgxmDIC6Hm','008555739LA044','2026841049',NULL,NULL,'Reprovado',0);
 /*!40000 ALTER TABLE `estudanteinscricao` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -307,7 +308,7 @@ CREATE TABLE `funcionario` (
 
 LOCK TABLES `funcionario` WRITE;
 /*!40000 ALTER TABLE `funcionario` DISABLE KEYS */;
-INSERT INTO `funcionario` VALUES (6,'Artur Paulo M','929-277-043','008555739LA047','Ativo','$2b$10$bTSuILgWcGEWgYYI52iIqe3bD1cT6MLM1Q/necEmO1.NK.HjDONhi',2),(7,'Nsimba Paula Maniongo Suami','+244 937-250-607','008649051LA049','Ativo','$2b$10$5n.Q.8.F/6DIER62pkBiN.2Nf/V68haj.OYDVt1Jr/x/WSSVSJXE2',2),(9,'Leovigildo João','244935882371','00000000LA000','Desativado','$2b$10$kaXHOjaayLEWNbmxhAS4GuvrVB8dD8WJybklh0DL1Cc3Xr3GREiaS',2);
+INSERT INTO `funcionario` VALUES (6,'Artur Paulo','+244 929-277-043','008555739LA047','Ativo','$2b$10$bTSuILgWcGEWgYYI52iIqe3bD1cT6MLM1Q/necEmO1.NK.HjDONhi',2),(7,'Nsimba Paula Maniongo Suami','+244 937-250-607','008649051LA049','Ativo','$2b$10$5n.Q.8.F/6DIER62pkBiN.2Nf/V68haj.OYDVt1Jr/x/WSSVSJXE2',2),(9,'Leovigildo João','244935882371','00000000LA000','Desativado','$2b$10$kaXHOjaayLEWNbmxhAS4GuvrVB8dD8WJybklh0DL1Cc3Xr3GREiaS',2);
 /*!40000 ALTER TABLE `funcionario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -333,7 +334,7 @@ CREATE TABLE `periodo` (
   CONSTRAINT `periodo_ibfk_1` FOREIGN KEY (`idanocurricular`) REFERENCES `anocurricular` (`idanocurricular`),
   CONSTRAINT `periodo_ibfk_2` FOREIGN KEY (`idcategoriacurso`) REFERENCES `categoriacurso` (`idcategoriacurso`),
   CONSTRAINT `periodo_ibfk_3` FOREIGN KEY (`idcurso`) REFERENCES `curso` (`idcurso`)
-) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=85 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -342,7 +343,7 @@ CREATE TABLE `periodo` (
 
 LOCK TABLES `periodo` WRITE;
 /*!40000 ALTER TABLE `periodo` DISABLE KEYS */;
-INSERT INTO `periodo` VALUES (40,92,27,33,'Manhã','LCC1M','2025-2026'),(41,92,27,33,'Tarde','LCC1T','2025-2026'),(42,92,27,33,'Noite','LCC1N','2025-2026'),(43,93,27,33,'Manhã','LCC2M','2025-2026'),(44,93,27,33,'Tarde','LCC2T','2025-2026'),(45,93,27,33,'Noite','LCC2N','2025-2026'),(46,94,27,33,'Manhã','LCC3M','2025-2026'),(47,94,27,33,'Tarde','LCC3T','2025-2026'),(48,94,27,33,'Noite','LCC3N','2025-2026'),(49,95,27,33,'Manhã','LCC4M','2025-2026'),(50,95,27,33,'Tarde','LCC4T','2025-2026'),(51,95,27,33,'Noite','LCC4N','2025-2026'),(53,78,27,35,'Manhã','LEET1M','2025-2026'),(54,78,27,35,'Tarde','LEET1T','2025-2026'),(55,78,27,35,'Noite','LEET1N','2025-2026'),(56,112,27,32,'Manhã','LEET3M','2025-2026'),(57,79,27,35,'Tarde','LEET2T','2025-2026'),(58,79,27,35,'Noite','LEET2N','2025-2026'),(59,80,27,35,'Manhã','LEET3M','2025-2026'),(60,80,27,35,'Tarde','LEET3T','2025-2026'),(61,80,27,35,'Noite','LEET3N','2025-2026'),(62,81,27,35,'Manhã','LEET4M','2025-2026'),(63,81,27,35,'Tarde','LEET4T','2025-2026'),(64,81,27,35,'Noite','LEET4N','2025-2026'),(65,82,27,35,'Manhã','LEET5M','2025-2026'),(66,82,27,35,'Tarde','LEET5T','2025-2026'),(67,82,27,35,'Noite','LEET5N','2025-2026'),(68,110,27,32,'Manhã','LEC1M','2025-2026'),(70,110,27,32,'Tarde','LEC1T','2025-2026'),(71,110,27,32,'Noite','LEC1N','2025-2026'),(72,112,27,32,'Manhã','LEC3M','2025-2026'),(73,111,27,32,'Tarde','LEC2M','2025-2026'),(74,111,27,32,'Noite','LEC2M','2025-2026'),(75,112,27,32,'Noite','LEC2M','2025-2026'),(76,112,27,32,'Tarde','LEC2M','2025-2026'),(77,112,27,32,'Manhã','LEC2M','2025-2026'),(78,113,27,32,'Manhã','LEC4M','2025-2026'),(79,113,27,32,'Tarde','LEC2M','2025-2026'),(80,113,27,32,'Noite','LEC4M','2025-2026'),(81,114,27,32,'Noite','LEC5N','2025-2026'),(82,114,27,32,'Tarde','LEC5T','2025-2026'),(83,114,27,32,'Manhã','LEC5M','2025-2026');
+INSERT INTO `periodo` VALUES (41,92,27,33,'Tarde','LCC1T','2025-2026'),(42,92,27,33,'Noite','LCC1N','2025-2026'),(43,93,27,33,'Manhã','LCC2M','2025-2026'),(44,93,27,33,'Tarde','LCC2T','2025-2026'),(45,93,27,33,'Noite','LCC2N','2025-2026'),(46,94,27,33,'Manhã','LCC3M','2025-2026'),(47,94,27,33,'Tarde','LCC3T','2025-2026'),(48,94,27,33,'Noite','LCC3N','2025-2026'),(49,95,27,33,'Manhã','LCC4M','2025-2026'),(50,95,27,33,'Tarde','LCC4T','2025-2026'),(51,95,27,33,'Noite','LCC4N','2025-2026'),(53,78,27,35,'Manhã','LEET1M','2025-2026'),(54,78,27,35,'Tarde','LEET1T','2025-2026'),(55,78,27,35,'Noite','LEET1N','2025-2026'),(56,112,27,32,'Manhã','LEET3M','2025-2026'),(57,79,27,35,'Tarde','LEET2T','2025-2026'),(58,79,27,35,'Noite','LEET2N','2025-2026'),(59,80,27,35,'Manhã','LEET3M','2025-2026'),(60,80,27,35,'Tarde','LEET3T','2025-2026'),(61,80,27,35,'Noite','LEET3N','2025-2026'),(62,81,27,35,'Manhã','LEET4M','2025-2026'),(63,81,27,35,'Tarde','LEET4T','2025-2026'),(64,81,27,35,'Noite','LEET4N','2025-2026'),(65,82,27,35,'Manhã','LEET5M','2025-2026'),(66,82,27,35,'Tarde','LEET5T','2025-2026'),(67,82,27,35,'Noite','LEET5N','2025-2026'),(68,110,27,32,'Manhã','LEC1M','2025-2026'),(70,110,27,32,'Tarde','LEC1T','2025-2026'),(71,110,27,32,'Noite','LEC1N','2025-2026'),(72,112,27,32,'Manhã','LEC3M','2025-2026'),(73,111,27,32,'Tarde','LEC2M','2025-2026'),(74,111,27,32,'Noite','LEC2M','2025-2026'),(75,112,27,32,'Noite','LEC2M','2025-2026'),(76,112,27,32,'Tarde','LEC2M','2025-2026'),(77,112,27,32,'Manhã','LEC2M','2025-2026'),(78,113,27,32,'Manhã','LEC4M','2025-2026'),(79,113,27,32,'Tarde','LEC2M','2025-2026'),(80,113,27,32,'Noite','LEC4M','2025-2026'),(81,114,27,32,'Noite','LEC5N','2025-2026'),(82,114,27,32,'Tarde','LEC5T','2025-2026'),(83,114,27,32,'Manhã','LEC5M','2025-2026');
 /*!40000 ALTER TABLE `periodo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -387,7 +388,7 @@ CREATE TABLE `professor` (
   UNIQUE KEY `whatsappprofessor` (`whatsappprofessor`),
   KEY `idAdm` (`idAdm`),
   CONSTRAINT `professor_ibfk_1` FOREIGN KEY (`idAdm`) REFERENCES `admimetro` (`idAdm`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -396,7 +397,7 @@ CREATE TABLE `professor` (
 
 LOCK TABLES `professor` WRITE;
 /*!40000 ALTER TABLE `professor` DISABLE KEYS */;
-INSERT INTO `professor` VALUES (2,'professor_00000002_foto_1772548939531.jpeg','Artur M. Paulo','Masculino','Angolano','Casado(a)','Ndombele Paulo','Senga Macumba Paulo','008555739LA047','2004-04-04','professor_00000002_bi_1773399735491.pdf','Sequele/Bloco 5/Predio 33/Entrada A/101','929277043','929277043','arturpaulo929@gmail.com','4','Doutoramento','2024-09-12','Efetivo','000600000052757230154','A+','Psicopata','928583366',1,'27296897','$2b$10$5w/syExxg.7N0P9Ky5UpFe9gvuF0AGJx4lAQ2EtdSPw3zLN4DD/vy','Ativo'),(3,'professor_39902330_foto_1770626410695.jpeg','Nsimba Paula Maniongo Suami','Feminino','Angolano','Solteiro(a)','Samuel Mango Suami','Mônica Maniongo','008649051LA049','2002-05-10','professor_39902330_bi_1770626410696.pdf','Sequele/Bloco 2/Predio 26/Entrada A/201','937260507','937260507','nsimbapaulas@gmail.com','2','Licenciatura','2026-02-09','Estagiário','004000004866226010168','O-','Maluca','928583366',1,'39902330','$2b$10$5w/syExxg.7N0P9Ky5UpFe9gvuF0AGJx4lAQ2EtdSPw3zLN4DD/vy','Ativo'),(4,'professor_61434104_foto_1771857143904.jpeg','Jose Manuel','Masculino','Cubano','Solteiro','Manuel André','Maria Jose','008649051LA149','2026-02-02','professor_00000004_bi_1771942068599.pdf','Cacuaco','929277044','929277044','manueljose@gmail.com','4','Licenciatura','2026-02-23','Efetivo','004000004866226010168','A+','Alergico a MAnga','928583377',1,'61434100','$2b$10$n0jjKgRWZU.MUeNC3EshyeAxfzaILbEEZE5M2Erlj1QpHBgmvsmgO','Ativo'),(5,'professor_14075701_foto_1771860013494.png','João Carlos Silva','Masculino','Angolana','Casado(a)','António Silva','Maria Silva','007895432LA049','1985-03-15','professor_14075701_bi_1771860013495.pdf','Rua da Paz, 123 - Luanda','923456789','923456789','joao.silva@email.com','12','Mestrado','2015-02-10','Efetivo','AO06 0040 0000 1234 5678 9012 3','0+','Nenhuma','923456789',2,'14075701','$2b$10$K7ijYyhFCSQn6Aw29BVaGe/.TQUnaIX6Hgm1EMRcOZpFTVSFwTqFW','Ativo'),(6,'professor_63770621_foto_1771860579685.png','Ana Paula Fernandes ','Feminino','Angolana','Solteiro(a)','Manuel Fernandes','Teresa Fernandes','008765432LA078','1990-07-22','professor_00000006_bi_1772703246063.pdf','Av. 4 de Fevereiro, 45 - Luanda','934567890','934567890','ana.fernandes@email.com','8','Licenciatura','2018-03-01','Contratado','AO06 0040 0000 2345 6789 0123 4','A+','Nenhuma','923456780',2,'63770622','$2b$10$f/V1C2jP/RgnuwCZ03/M8emE98k2O6hDSEh6KA1EvljSwVXJH5KEW','Ativo'),(7,'professor_83398631_foto_1771860887660.png','Miguel António Costa','Masculino','Angolana','Divorciado(a)','José Costa','Isabel Costa','009876543LA012','1982-11-10','professor_83398631_bi_1771860887661.pdf','Rua do Comércio, 78 - Benguela','945678901','945678901','miguel.costa@email.com','15','Doutoramento','2010-08-05','Efetivo','AO06 0040 0000 3456 7890 1234 5','B+','Hipertensão controlada','934567891',2,'83398631','$2b$10$qCqGb2FFV80N4jx4r3f/TOjvZw9igmeNBSvwZz1uQZuucI/VfGiu2','Ativo'),(8,'professor_15891244_foto_1771861076231.png','Carla Marisa Santos','Feminino','Angolana','Casado(a)','Francisco Santos','Rosa Santos','006543219LA034','1988-09-28','professor_00000008_bi_1772808035318.pdf','Bairro Alvalade, 234 - Luanda','956789012','956789012','carla.santos@email.com','9','Mestrado','2016-04-12','Efetivo','AO06 0040 0000 4567 8901 2345 6','AB-','Asma leve','945678902',2,'15891244','$2b$10$ROh/YWFL16HkwidlEhbsbuPw0alYXunITFUosiPg.huSl2DzL/r9K','Ativo'),(9,'professor_60598906_foto_1771921248451.png','Pedro Miguel Fereeira','Masculino','Angolana','Solteiro(a)','Armando Ferreira','Lúcia Ferreira','005432198LA056','1992-12-03','professor_60598906_bi_1771921248451.pdf','Urbanização Nova Vida, Bloco 3 - Luanda','967890123','967890123','pedro.ferreira@email.com','5','Licenciatura','2019-09-20','Contratado','AO06 0040 0000 5678 9012 3456 7','O-','Nenhuma','956789013',1,'60598906','$2b$10$zKh9BM7MVJ9VospXKrQCD.k8jDYGnPNzt7Zmdsv.8RME23s6tZFR6','Ativo'),(10,'professor_20341261_foto_1771922068136.png','Isabel Maria Gome','Feminino','Angolana ','Viúvo(a)','Carlos Gomes','Fátima Gomes','  004321987LA067','1975-05-15','professor_00000010_bi_1772705182436.pdf','Rua Direita, 56 - Lubango','978901234','978901234','isabel.gomes@email.com','20','Doutoramento','2000-03-13','Efetivo','AO06 0040 0000 6789 0123 4567 8','A-','Diabetes tipo 2','967890124',2,'20341261','$2b$10$NRGzglphXFYbYfcoylwiheoG97AdMnt9OKcY5Q9uwoWFsU6yINUTq','Ativo'),(11,'professor_90060036_foto_1771922358325.png','Rui Manuel Pinto','Masculino','Angolano','Casado(a)','Joaquim Pinto','Albertina Pinto ','003219876LA078','1980-08-07','professor_90060036_bi_1771922358326.pdf','Bairro Benfica, 321 - Luanda','989012345','989012345','rui.pinto@email.com','14','Mestrado','2012-06-15','Efetivo','AO06 0040 0000 7890 1234 5678 9','B-','Nenhuma','978901235',2,'90060036','$2b$10$Ttp.awnHjfvRAaIIlM5RO.Dp/.lvsnrg.oxgutbi5E35nBE5o7kdu','Ativo'),(12,'professor_68777094_foto_1771922690193.png','Sónia Cristina Lopes','Feminino','Angolana','Solteiro(a)','Fernando Lopes','Helena Lopes','002198765LA089','1995-02-19','professor_68777094_bi_1771922690194.pdf','Talatona, Rua 5 - Luanda','990123456','990123456','sonia.lopes@email.com','3','Licenciatura','2021-01-10','Estagiário','AO06 0040 0000 8901 2345 6789 0','AB+','Alergia a pólen','989012346',2,'68777094','$2b$10$sJo8a7psHNrb6HzGQvx7wOSr9nqYlodbtc7WWVj3nTl9HZpa8grz6','Ativo'),(13,'professor_74318650_foto_1771923013007.png','António José Mendes','Masculino','Angolano','Casado(a)','Alberto Mendes','Celeste Mendes','001987654LA090','1978-06-25','professor_74318650_bi_1771923013008.pdf','Rua dos Combatentes, 90 - Huambo','901234567','901234567','antonio.mendes@email.com','18','Doutoramento','2008-09-01','Efetivo','AO06 0040 0000 9012 3456 7890 1','O+','Nenhuma','990123457',2,'74318650','$2b$10$kjPKEWGWwYD30e5.8ofioexpIjnq1Sz7rmzFnON2gr5AlRPV0NtSm','Ativo'),(14,'professor_17430970_foto_1771923201871.png','Maria do Carmo Andrade','Feminino','Angolana','Solteiro(a)','Paulo Andrade','Luísa Andrade','000876543LA101','1987-11-30','professor_17430970_bi_1771923201872.pdf','Ingombotas, Rua da Missão - Luanda','912345678','912345678','maria.andrade@email.com','10','Mestrado','2014-07-10','Efetivo','AO06 0040 0000 0123 4567 8901 2','A+','Nenhuma','901234568',2,'17430970','$2b$10$3wKuP1zeNDiVVQA1TwyOreo3LKvWIuzoaoTcYQXiIuU9vfgmSIU9S','Ativo'),(15,'professor_99383647_foto_1776952127161.png','AAAAA','Masculino','AAAA','Solteiro(a)','AAAA','AAAA','00000000','2026-04-29','professor_99383647_bi_1776952127165.pdf','AAAA','99999','99999','aaaa@gmail.com','3','Licenciatura','2026-04-30','Efetivo','00000000000','A','A','99999',1,'99383647','$2b$10$Zotp0qkiA3IPKY/0SqAyU.GX9hjG1oaWZev1YpvdaSZsy5ZQtrBuu','Desativado');
+INSERT INTO `professor` VALUES (16,'professor_16876963_foto_1777388982771.jpeg','Artur Macumba Paulo','Masculino','Angolano ','Solteiro(a)','Ndombele Paulo','Senga Macumba Paulo','008555739LA047','2004-04-05','professor_16876963_bi_1777388982775.pdf','Icolo e Bengo/Sequele/Rua 3/Bloco 5/Predio 33/A/101','244 929277043','244 929277043','arturmakumbapaulo@gmail.com','5','Doutoramento','2025-09-01','Efetivo','AO06.0006.0000.0052.7572.3015.4','A+','Nenhuma','244 928583366',1,'16876963','$2b$10$bTSuILgWcGEWgYYI52iIqe3bD1cT6MLM1Q/necEmO1.NK.HjDONhi','Ativo');
 /*!40000 ALTER TABLE `professor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -435,6 +436,33 @@ LOCK TABLES `semestre` WRITE;
 INSERT INTO `semestre` VALUES (20,27,33,55,'1',92),(21,27,33,52,'1',92),(22,27,33,56,'1',92),(23,27,33,51,'1',92),(24,27,33,53,'1',92),(25,27,33,50,'1',92),(27,27,33,57,'2',92),(28,27,33,58,'2',92),(29,27,33,62,'2',92),(30,27,33,60,'2',92),(31,27,33,61,'2',92),(32,27,33,59,'2',92),(33,27,33,63,'1',93),(34,27,33,64,'1',93),(35,27,33,65,'1',93),(36,27,33,66,'1',93),(37,27,33,67,'1',93),(38,27,33,68,'1',93),(39,27,33,69,'2',93),(40,27,33,70,'2',93),(41,27,33,71,'2',93),(42,27,33,72,'2',93),(43,27,33,73,'2',93),(44,27,33,74,'2',93),(45,27,33,75,'1',94),(46,27,33,76,'1',94),(47,27,33,77,'1',94),(48,27,33,78,'1',94),(49,27,33,79,'1',94),(50,27,33,80,'1',94),(51,27,33,81,'2',94),(52,27,33,82,'2',94),(53,27,33,83,'2',94),(54,27,33,84,'2',94),(55,27,33,85,'2',94),(56,27,33,86,'2',94),(57,27,33,87,'1',95),(58,27,33,88,'1',95),(59,27,33,89,'1',95),(60,27,33,90,'1',95),(61,27,33,91,'1',95),(62,27,33,92,'1',95),(63,27,33,93,'2',95),(64,27,33,94,'2',95),(66,27,33,83,'2',95),(67,27,33,96,'2',95),(68,27,33,100,'1',92),(74,27,35,109,'1',78),(75,27,35,110,'1',78),(76,27,35,111,'1',78),(77,27,35,100,'1',78),(78,27,35,113,'1',78),(79,27,35,52,'1',78),(80,27,35,114,'2',78),(81,27,35,58,'2',78),(82,27,35,115,'2',78),(83,27,35,116,'2',78),(84,27,35,57,'2',78),(85,27,35,117,'2',78),(86,27,35,112,'1',78),(87,27,35,118,'1',79),(88,27,35,119,'1',79),(89,27,35,120,'1',79),(90,27,35,121,'1',79),(91,27,35,122,'1',79),(92,27,35,67,'1',79),(93,27,35,123,'2',79),(94,27,35,124,'2',79),(95,27,35,125,'2',79),(96,27,35,126,'2',79),(97,27,35,127,'2',79),(98,27,35,69,'2',79),(99,27,35,128,'2',79),(100,27,35,129,'1',80),(101,27,35,130,'1',80),(102,27,35,131,'1',80),(103,27,35,132,'1',80),(104,27,35,133,'1',80),(105,27,35,64,'1',80),(106,27,35,134,'2',80),(107,27,35,135,'2',80),(108,27,35,136,'2',80),(109,27,35,137,'2',80),(110,27,35,138,'2',80),(111,27,35,139,'2',80),(112,27,35,140,'1',81),(113,27,35,141,'1',81),(114,27,35,142,'1',81),(115,27,35,143,'1',81),(116,27,35,144,'1',81),(117,27,35,145,'1',81),(118,27,35,146,'2',81),(119,27,35,147,'2',81),(120,27,35,148,'2',81),(121,27,35,149,'2',81),(122,27,35,150,'2',81),(123,27,35,151,'2',81),(124,27,35,152,'1',82),(125,27,35,153,'1',82),(126,27,35,154,'1',82),(127,27,35,155,'1',82),(128,27,35,156,'1',82),(129,27,35,161,'2',82),(130,27,35,158,'2',82),(131,27,35,159,'2',82),(133,27,35,157,'2',82),(134,27,32,109,'1',110),(135,27,32,162,'1',110),(136,27,32,67,'1',110),(137,27,32,163,'1',110),(138,27,32,100,'1',110),(139,27,32,113,'1',110),(140,27,32,57,'1',110),(141,27,32,125,'2',110),(142,27,32,164,'2',110),(143,27,32,58,'2',110),(144,27,32,165,'2',110),(145,27,32,200,'2',110),(146,27,32,118,'1',111),(147,27,32,119,'1',111),(148,27,32,166,'1',111),(149,27,32,168,'1',111),(150,27,32,169,'1',111),(151,27,32,167,'1',111),(152,27,32,123,'2',111),(153,27,32,170,'2',111),(154,27,32,171,'2',111),(155,27,32,172,'2',111),(156,27,32,189,'2',111),(157,27,32,173,'2',111),(158,27,32,174,'1',112),(159,27,32,177,'1',112),(160,27,32,176,'1',112),(161,27,32,178,'1',112),(162,27,32,179,'2',112),(163,27,32,180,'2',112),(164,27,32,181,'2',112),(165,27,32,201,'2',112),(166,27,32,182,'2',112),(167,27,32,183,'1',113),(168,27,32,184,'1',113),(169,27,32,185,'1',113),(170,27,32,186,'1',113),(171,27,32,187,'1',113),(172,27,32,188,'2',113),(173,27,32,189,'2',113),(174,27,32,190,'2',113),(175,27,32,191,'2',113),(176,27,32,192,'2',113),(177,27,32,193,'1',114),(178,27,32,194,'1',114),(179,27,32,195,'1',114),(180,27,32,196,'1',114),(181,27,32,197,'1',114),(182,27,32,198,'2',114),(183,27,32,199,'2',114),(184,27,32,115,'2',110),(185,27,32,175,'1',112),(186,27,33,199,'2',95),(187,25,26,109,'1',109),(188,25,26,202,'1',109),(189,25,26,203,'1',109),(190,25,26,204,'1',109),(191,25,26,52,'1',109),(192,25,26,206,'1',109),(193,25,26,90,'2',109),(194,25,26,210,'2',109),(195,25,26,211,'2',109),(196,25,26,212,'2',109),(197,25,26,214,'2',109),(198,25,26,215,'2',109),(199,25,26,216,'1',108),(200,25,26,217,'1',108),(201,25,26,219,'1',108),(202,25,26,220,'1',108),(203,25,26,221,'1',108),(204,25,26,223,'1',108),(205,25,26,225,'2',108),(206,25,26,226,'2',108),(207,25,26,228,'2',108),(208,25,26,229,'2',108),(209,25,26,231,'2',108),(210,25,26,232,'2',108),(211,25,26,234,'1',107),(212,25,26,235,'1',107),(213,25,26,236,'1',107),(214,25,26,237,'1',107),(215,25,26,238,'1',107),(216,25,26,239,'1',107),(217,26,28,205,'1',128),(218,26,28,52,'1',128),(219,25,26,240,'2',107),(220,26,28,207,'1',128),(221,25,26,196,'2',107),(222,26,28,204,'1',128),(223,25,26,243,'2',107),(224,26,28,208,'1',128),(225,25,26,244,'2',107),(226,25,26,246,'2',107),(227,25,26,248,'2',107),(228,25,26,249,'1',106),(229,26,28,288,'1',128),(230,25,26,250,'1',106),(231,25,26,252,'1',106),(232,25,26,254,'1',106),(233,25,26,255,'1',106),(234,25,26,257,'1',106),(235,25,26,258,'2',106),(236,26,28,209,'1',128),(237,25,26,198,'2',106),(238,25,26,199,'2',106),(239,26,28,213,'2',128),(241,26,28,212,'2',128),(242,26,28,218,'2',128),(243,26,28,222,'2',128),(244,26,28,224,'2',128),(246,27,35,90,'2',82),(247,26,28,230,'1',129),(248,26,28,227,'1',129),(249,26,28,267,'1',129),(250,26,28,241,'1',129),(251,26,28,242,'1',129),(252,26,28,212,'1',129),(253,26,28,251,'1',129),(254,26,28,253,'2',129),(255,26,28,256,'2',129),(256,26,28,259,'2',129),(257,26,28,261,'2',129),(258,26,28,262,'2',129),(259,26,28,263,'2',129),(260,26,28,264,'2',129),(261,26,28,265,'1',130),(262,26,28,266,'1',130),(263,26,28,267,'1',130),(264,26,28,268,'1',130),(265,26,28,269,'1',130),(266,26,28,156,'1',130),(267,26,28,251,'1',130),(268,26,28,161,'2',130),(269,26,28,270,'2',130),(270,26,28,271,'2',130),(271,26,28,272,'2',130),(272,26,28,273,'2',130),(273,26,28,274,'2',130),(274,26,28,275,'1',131),(275,26,28,276,'1',131),(276,26,28,277,'1',131),(277,26,28,278,'1',131),(278,26,28,279,'1',131),(279,26,28,280,'1',131),(280,26,28,281,'1',131),(281,26,28,287,'2',131),(282,26,28,286,'2',131),(283,26,28,285,'2',131),(284,26,28,279,'2',131),(285,26,28,284,'2',131),(286,26,28,283,'2',131),(287,26,28,282,'2',131);
 /*!40000 ALTER TABLE `semestre` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `topicos`
+--
+
+DROP TABLE IF EXISTS `topicos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `topicos` (
+  `id_topico` int NOT NULL AUTO_INCREMENT,
+  `topico` varchar(255) NOT NULL,
+  `id_funcionario` int NOT NULL,
+  `data_criacao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_topico`),
+  UNIQUE KEY `unique_funcionario_topico` (`id_funcionario`),
+  CONSTRAINT `topicos_ibfk_1` FOREIGN KEY (`id_funcionario`) REFERENCES `funcionario` (`id_funcionario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `topicos`
+--
+
+LOCK TABLES `topicos` WRITE;
+/*!40000 ALTER TABLE `topicos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `topicos` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -445,4 +473,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-27  7:41:01
+-- Dump completed on 2026-05-01  8:57:43
