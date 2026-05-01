@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Layout from "./layouts/Layout";
 import { useAuth } from "./hooks/global/useAuth";
@@ -8,14 +8,12 @@ import EstudentIsncription from "./pagesEstudentInscrition/index.jsx";
 const Cadastro = lazy(() => import("./pages/Cadastro"));
 const Home = lazy(() => import("./pages/Home"));
 const HomeAdm = lazy(() => import("./pagesAdm/HomeAdm"));
-const FuncionáriosAdmRegistrer = lazy(() => import("./pagesAdm/FuncionariosAdmRegistrer"));
+const FuncionariosAdmRegistrer = lazy(() => import("./pagesAdm/FuncionariosAdmRegistrer"));
 const GestaoCursoAdm = lazy(() => import("./pagesAdm/GestaoCursoAdm"));
 const GestaoProfessoresAdm = lazy(() => import("./pagesAdm/GestaoProfessoresAdm"));
 const GestaoFuncionarioAdm = lazy(() => import("./pagesAdm/GestaoFuncionarioAdm"));
 const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 const HomeTeacher = lazy(() => import("./pagesTeacher/Home"));
-// const DefinicoesTeacher = lazy(() => import("./pagesTeacher/Definicoes"));
-// const SegurancaTeacher = lazy(() => import("./pagesTeacher/Seguranca"));
 
 const RotaPrivada = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -43,8 +41,8 @@ function App() {
           }
         >
           <Routes>
-            <Route exact path="/" element={<Home />} />
-            <Route exact path="/cadastro" element={<Cadastro />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/inscricao" element={<EstudentIsncription />} />
 
             <Route
@@ -59,7 +57,7 @@ function App() {
               path="/funcionariosAdmRegistrer"
               element={
                 <RotaPrivada>
-                  <FuncionáriosAdmRegistrer />
+                  <FuncionariosAdmRegistrer />
                 </RotaPrivada>
               }
             />
@@ -96,6 +94,14 @@ function App() {
               }
             />
             <Route
+              path="/homefuncionario"
+              element={
+                <RotaPrivada>
+                  <HomeFuncionarioM />
+                </RotaPrivada>
+              }
+            />
+            <Route
               path="/lancarNotasM"
               element={
                 <RotaPrivada>
@@ -111,8 +117,6 @@ function App() {
                 </RotaPrivada>
               }
             />
-            {/* <Route path="/definicoesTeacher" element={<RotaPrivada><DefinicoesTeacher/></RotaPrivada>}/>
-            <Route path="/segurancaTeacher" element={<RotaPrivada><SegurancaTeacher/></RotaPrivada>}/> */}
           </Routes>
         </Suspense>
       </Layout>
