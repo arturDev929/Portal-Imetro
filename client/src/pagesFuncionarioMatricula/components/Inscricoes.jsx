@@ -20,7 +20,7 @@ function Inscricoes({ filtroStatus }) {
 
     useEffect(() => {
         const fetchdados = () => {
-            api.get(`/get/EstudantesByStatus/${filtroStatus}`).then((response) => {
+            api.get(`/EstudantesByStatus/${filtroStatus}`).then((response) => {
                 setEstudantesInscritos(response.data);
             }).catch(error => {
                 console.error("Erro ao buscar estudantes:", error);
@@ -58,7 +58,7 @@ function Inscricoes({ filtroStatus }) {
     const handleAceitar = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
-            const response = await api.put(`/put/estudanteInscritoAceitar/${estudanteId}`);
+            const response = await api.put(`/estudanteInscritoAceitar/${estudanteId}`);
             
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
@@ -112,7 +112,7 @@ function Inscricoes({ filtroStatus }) {
     const handleRecusar = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
-            const response = await api.put(`/put/estudanteInscritoRecusar/${estudanteId}`);
+            const response = await api.put(`/estudanteInscritoRecusar/${estudanteId}`);
             
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} recusada com sucesso!`);

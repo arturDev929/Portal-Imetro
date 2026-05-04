@@ -57,7 +57,7 @@ function GestaoProfessoresAdm() {
             setLoading(true);
             setErroDesativados(false);
             
-            api.get(`/get/estatisticasProfessores`)
+            api.get(`/estatisticasProfessores`)
                 .then(response => {
                     setTotalProfessores(response.data.totalProfessores || 0);
                     setProfessoresComTitulacao(response.data.professoresComTitulacao || 0);
@@ -68,7 +68,7 @@ function GestaoProfessoresAdm() {
                     console.error('Erro ao buscar estatísticas:', error);
                 });
 
-            api.get(`/get/estatisticasProfessoresDesativados`)
+            api.get(`/estatisticasProfessoresDesativados`)
                 .then(response => {
                     setTotalProfessoresDesativados(response.data.totalProfessoresDesativados || 0);
                     setDesativadosComTitulacao(response.data.desativadosComTitulacao || 0);
@@ -78,7 +78,7 @@ function GestaoProfessoresAdm() {
                     setErroDesativados(true);
                 });
 
-            api.get(`/get/distribuicaoTitulacao`)
+            api.get(`/distribuicaoTitulacao`)
                 .then(response => {
                     const dadosFormatados = response.data.map((item, index) => ({
                         titulacao: item.titulacao || 'Não informado',
@@ -102,7 +102,7 @@ function GestaoProfessoresAdm() {
                     setDadosGrafico([]);
                 });
 
-            api.get(`/get/distribuicaoTitulacaoDesativados`)
+            api.get(`/distribuicaoTitulacaoDesativados`)
                 .then(response => {
                     if (response.data && response.data.length > 0) {
                         const dadosFormatados = response.data.map((item, index) => ({
@@ -120,7 +120,7 @@ function GestaoProfessoresAdm() {
                     setDadosGraficoDesativados([]);
                 });
 
-            api.get(`/get/Professores`)
+            api.get(`/Professores`)
                 .then(response => {
                     const recentes = response.data
                         .sort((a, b) => new Date(b.dataadmissaoprofessor) - new Date(a.dataadmissaoprofessor))
@@ -129,20 +129,20 @@ function GestaoProfessoresAdm() {
                 })
                 .catch(error => console.log("Erro professores recentes:", error));
 
-            api.get(`/get/disciplinasMaisMinistradas`)
+            api.get(`/disciplinasMaisMinistradas`)
                 .then(response => {
                     setDisciplinasMaisMinistradas(response.data || []);
                 })
                 .catch(error => console.log("Erro disciplinas:", error));
 
-            api.get(`/get/professoresSemDisciplinas`)
+            api.get(`/professoresSemDisciplinas`)
                 .then(response => {
                     setProfessoresSemDisciplina(response.data || []);
                     setProfessoresVinculados(totalProfessores - (response.data?.length || 0));
                 })
                 .catch(error => console.log("Erro sem disciplina:", error));
 
-            api.get(`/get/professoresDesativados`)
+            api.get(`/professoresDesativados`)
                 .then(response => {
                     setProfessoresDesativados(response.data || []);
                 })

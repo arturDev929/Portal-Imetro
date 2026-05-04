@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { FaIdCard } from "react-icons/fa";
 import { MdLock } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
@@ -44,8 +44,17 @@ function Home() {
             navigate(response.data.rota);
           } else if (response.data.tipoUsuario === "adm") {
             navigate("/homeAdm");
+          } else if (
+            response.data.tipoUsuario ===
+            "Coordenador de Admissões e Matrículas"
+          ) {
+            navigate("/homefuncionarioM");
+          } else if (response.data.tipoUsuario === "funcionario") {
+            navigate("/homefuncionario");
           } else if (response.data.tipoUsuario === "professor") {
             navigate("/hometeacher");
+          } else if (response.data.tipoUsuario === "estudante") {
+            navigate("/inscricao");
           } else {
             navigate("/");
           }

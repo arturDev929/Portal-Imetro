@@ -4,12 +4,11 @@ import Inscricoes from "./components/Inscricoes";
 import { FaUserCheck, FaUserTimes, FaUserPlus } from 'react-icons/fa';
 import { IoMdPerson } from "react-icons/io";
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
-import axios from "axios";
 import api from "../service/api";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
-    // Estado para controlar qual seção está visível
+
     const [secaoAtiva, setSecaoAtiva] = useState("Pendente"); // inscritos, aprovados, reprovados
     const [inscritos,setInscritos]=useState([])
     useEffect(() => {
@@ -24,8 +23,7 @@ function HomeAdm() {
         RequestData()
     },[inscritos])
     async function  RequestData() {
-        const data=await api.get("/get/EstudantesInscritos")
-        
+        const data=await api.get("/EstudantesInscritos");
         console.log(data.data)
     }
 

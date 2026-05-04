@@ -12,7 +12,7 @@ function SelectProfessor({ value, onChange, disabled }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/Professores`);
+                const response = await api.get(`/Professores`);
                 setProfessores(response.data);
                 setError(null);
             } catch (error) {

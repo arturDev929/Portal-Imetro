@@ -52,7 +52,7 @@ function Home() {
   const fetchProfessorData = async (professorCodigo) => {
     try {
       setLoading(true);
-      const response = await api.get(`/get/PerfilProfessor/${professorCodigo}`);
+      const response = await api.get(`/PerfilProfessor/${professorCodigo}`);
       setProfessor(response.data);
       setError(null);
     } catch (err) {

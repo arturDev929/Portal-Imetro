@@ -35,7 +35,7 @@ function FuncionáriosAdmRegistrer() {
     setLoading(true);
     try {
       const response = await api.post(
-        "/post/registrarfuncionario",
+        "/registrarfuncionario",
         {
           nome_funcionario: nome,
           contacto_funcionario: contacto,

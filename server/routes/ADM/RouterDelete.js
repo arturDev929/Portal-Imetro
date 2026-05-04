@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const router = Router();
-const conexao = require("../infra/conexao");
+const conexao = require("../../infra/conexao");
 
 router.delete('/categoriaCurso/:id', (req, res) => {
     const { id } = req.params;
@@ -454,3 +454,290 @@ router.delete('/funcionario/permanent/:id', (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /categoriaCurso/{id}:
+ *   delete:
+ *     summary: Excluir uma categoria de curso
+ *     tags: [Cursos - Categorias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID da categoria de curso
+ *     responses:
+ *       200:
+ *         description: Categoria excluída com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Categoria 'Tecnologia' excluída com sucesso"
+ *                 nomeExcluido:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       400:
+ *         description: ID inválido ou categoria possui cursos vinculados
+ *       404:
+ *         description: Categoria não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /curso/{id}:
+ *   delete:
+ *     summary: Excluir um curso
+ *     tags: [Cursos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID do curso
+ *     responses:
+ *       200:
+ *         description: Curso excluído com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                 nomeExcluido:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       400:
+ *         description: ID inválido ou curso possui semestres/anos vinculados
+ *       404:
+ *         description: Curso não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /anocurricular/{id}:
+ *   delete:
+ *     summary: Excluir um ano curricular
+ *     tags: [Cursos - Ano Curricular]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID do ano curricular
+ *     responses:
+ *       200:
+ *         description: Ano curricular excluído com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                 anoExcluido:
+ *                   type: string
+ *                 curso:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       400:
+ *         description: ID inválido ou ano possui semestres vinculados
+ *       404:
+ *         description: Ano curricular não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /disciplinaSemestre/{idsemestre}:
+ *   delete:
+ *     summary: Excluir uma disciplina do semestre
+ *     tags: [Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: idsemestre
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do semestre
+ *     responses:
+ *       200:
+ *         description: Disciplina removida do semestre com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       404:
+ *         description: Disciplina não encontrada no semestre
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /disciplina/{id}:
+ *   delete:
+ *     summary: Excluir uma disciplina permanentemente
+ *     tags: [Disciplinas]
+ *     description: Remove a disciplina e todos os semestres relacionados
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     responses:
+ *       200:
+ *         description: Disciplina deletada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 disciplinaAfetada:
+ *                   type: integer
+ *       404:
+ *         description: Disciplina não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /desvincularProfessor/{iddisciplina}/{idprofessor}:
+ *   delete:
+ *     summary: Desvincular um professor de uma disciplina
+ *     tags: [Professor - Disciplina]
+ *     parameters:
+ *       - in: path
+ *         name: iddisciplina
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *       - in: path
+ *         name: idprofessor
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     responses:
+ *       200:
+ *         description: Professor desvinculado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 professoresAfetados:
+ *                   type: integer
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /turma/{id}:
+ *   delete:
+ *     summary: Excluir uma turma (período)
+ *     tags: [Turmas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do período/turma
+ *     responses:
+ *       200:
+ *         description: Turma excluída com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /funcionario/permanent/{id}:
+ *   delete:
+ *     summary: Excluir permanentemente um funcionário desativado
+ *     tags: [Funcionários]
+ *     description: Apenas funcionários com status "Desativado" podem ser excluídos permanentemente
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID do funcionário
+ *     responses:
+ *       200:
+ *         description: Funcionário excluído permanentemente com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                 nomeExcluido:
+ *                   type: string
+ *                 affectedRows:
+ *                   type: integer
+ *       400:
+ *         description: ID inválido ou funcionário não está desativado
+ *       404:
+ *         description: Funcionário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */

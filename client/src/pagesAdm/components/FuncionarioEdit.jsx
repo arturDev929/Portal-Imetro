@@ -65,7 +65,7 @@ function FuncionarioEdit() {
     }, []);
 
     useEffect(() => {
-        Api.get(`/get/cargosDisponiveis`)
+        Api.get(`/cargosDisponiveis`)
             .then(response => {
                 setCargos(response.data || []);
             })
@@ -103,7 +103,7 @@ function FuncionarioEdit() {
     const fetchFuncionarios = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/funcionarios');
+            const response = await apiClient.get('/funcionarios');
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
@@ -207,7 +207,7 @@ function FuncionarioEdit() {
 
         setSalvando(true);
         try {
-            const response = await Api.post(`/post/registrarfuncionario`, {
+            const response = await Api.post(`/registrarfuncionario`, {
                 ...dadosNovoFuncionario,
                 idAdm: user.id
             });
@@ -298,7 +298,7 @@ function FuncionarioEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/put/funcionario/${dadosEdicao.id_funcionario}`, {
+            const response = await apiClient.put(`/funcionario/${dadosEdicao.id_funcionario}`, {
                 nome_funcionario: dadosEdicao.nome_funcionario,
                 contacto_funcionario: dadosEdicao.contacto_funcionario,
                 bi_funcionario: dadosEdicao.bi_funcionario,
@@ -346,7 +346,7 @@ function FuncionarioEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/put/funcionario/senha/${dadosSenha.id_funcionario}`, {
+            const response = await apiClient.put(`/funcionario/senha/${dadosSenha.id_funcionario}`, {
                 senha_funcionario: dadosSenha.nova_senha
             });
 
@@ -374,7 +374,7 @@ function FuncionarioEdit() {
             `Tens a certeza que pretendes desativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await Api.put(`/put/funcionario/desativar/${id}`);
+                    const response = await Api.put(`/funcionario/desativar/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
