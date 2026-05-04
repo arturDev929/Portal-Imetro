@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Style from "../../pagesAdm/components/DepartamentosEdit.module.css";
 import { FaInfoCircle } from "react-icons/fa";
 import { GrStatusGood } from "react-icons/gr";
-import { VscError } from "react-icons/vsc";
+import { VscDebugReverseContinue, VscError } from "react-icons/vsc";
 import { MdPerson, MdLocationOn, MdPhone, MdEmail, MdAttachFile } from "react-icons/md";
 import { RiContactsBook3Line } from "react-icons/ri";
 import {FaUniversity } from "react-icons/fa";
@@ -79,6 +79,33 @@ function Inscricoes({ filtroStatus }) {
         }
     };
 
+    const handleReverter = async (estudanteId, estudanteNome) => {
+        setLoading(true);
+        try {
+            const response = await api.put(`/put/estudanteInscritoReverter/${estudanteId}`);
+            
+            if (response.data.success) {
+                showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
+                // Remover o estudante da lista
+                setEstudantesInscritos(prevEstudantes => 
+                    prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
+                );
+                // Fechar modal se estiver aberto para este estudante
+                if (infoEstudante?.id_estudanteInscricao === estudanteId) {
+                    closeModal();
+                }
+            } else {
+                showErrorToast(response.data.error || "Erro ao aceitar inscrição");
+            }
+        } catch (error) {
+            console.error("Erro ao aceitar estudante:", error);
+            const errorMessage = error.response?.data?.error || "Erro ao processar solicitação";
+            showErrorToast(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    }; 
+
     const handleRecusar = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
@@ -125,12 +152,18 @@ function Inscricoes({ filtroStatus }) {
                         <th className="col-2 text-center">Curso</th>
                         <th className="col-1 text-center">Período</th>
                         <th className="col-1 text-center">Info</th>
+                       
                         {
                             filtroStatus === "Pendente" && (
                                 <>
                                     <th className="col-1 text-center">Aceitar</th>
                                     <th className="col-1 text-center">Recusar</th>
                                 </>
+                            )
+                        }
+                        {    
+                            filtroStatus==="Reprovado"&&(
+                                 <th className="col-1 text-center">Reverter</th>
                             )
                         }
                         
@@ -185,6 +218,19 @@ function Inscricoes({ filtroStatus }) {
                                         <VscError />
                                     </button>
                                 </td>
+                                   </>
+                                    :filtroStatus==="Reprovado"?
+                                    <>
+                                    <td className="text-center">
+                                        <button 
+                                            className={`btn btn-sm ${Style.btnReverter}`}
+                                            onClick={() => handleReverter(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
+                                            title="Reverter Reprovação"
+                                            disabled={loading}
+                                        >
+                                            <VscDebugReverseContinue />
+                                        </button>
+                                    </td>
                                    </>
                                     :<></>
                                 }
