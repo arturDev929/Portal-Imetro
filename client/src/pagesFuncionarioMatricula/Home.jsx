@@ -84,7 +84,7 @@ function HomeAdm() {
                         </div>
                         <div className="col-md-2">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "aprovados" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Aprovado")}
                             >
                                 <FaUserCheck className="me-2 mb-1" />
@@ -93,7 +93,7 @@ function HomeAdm() {
                         </div>
                         <div className="col-md-2">
                             <button 
-                                className={`btn w-100 ${secaoAtiva === "reprovados" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Reprovado")}
                             >
                                 <FaUserTimes className="me-2 mb-1" />

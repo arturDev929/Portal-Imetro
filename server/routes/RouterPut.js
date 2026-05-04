@@ -1417,6 +1417,66 @@ router.put('/estudanteInscritoAceitar/:id', (req, res) => {
     });
 });
 
+router.put('/estudanteInscritoReverter/:id', (req, res) => {
+    const { id } = req.params;
+    
+    // Validação do ID
+    if (!id || isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: "ID do estudante inválido" });
+    }
+
+    // Verificar se o estudante existe antes de atualizar
+    const checkSql = "SELECT * FROM estudanteinscricao WHERE id_estudanteInscricao = ?";
+    
+    conexao.query(checkSql, [id], (checkError, checkResult) => {
+        if (checkError) {
+            console.error("Erro ao verificar estudante:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+
+        if (checkResult.length === 0) {
+            return res.status(404).json({ error: "Estudante não encontrado" });
+        }
+
+        // Verificar se o estudante já está oendente
+        if (checkResult[0].estado_estdanteInscrito === 'Pendente') {
+            return res.status(400).json({ error: "Estudante já esta oendente anteriormente" });
+        }
+
+        // Atualizar o estado do estudante
+        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Pendente' WHERE id_estudanteInscricao = ?";
+        
+        conexao.query(updateSql, [id], (updateError, updateResult) => {
+            if (updateError) {
+                console.error("Erro ao aprovar estudante da inscrição:", updateError);
+                return res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: updateError.message
+                });
+            }
+
+            // Verificar se alguma linha foi afetada
+            if (updateResult.affectedRows === 0) {
+                return res.status(404).json({ error: "Estudante não encontrado ou já oendente" });
+            }
+
+            // Retornar sucesso
+            res.status(200).json({
+                success: true,
+                message: `Estudante reversão com sucesso`,
+                data: {
+                    id: id,
+                    status: 'Revertido'
+                }
+            });
+        });
+    });
+});
+
+
 router.put('/estudanteInscritoRecusar/:id', (req, res) => {
     const { id } = req.params;
     
