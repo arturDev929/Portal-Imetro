@@ -1732,13 +1732,13 @@ module.exports = router;
  *                 type: integer
  *               turma:
  *                 type: string
- *                 description: Código da turma (ex: A, B, C)
+ *                 description: "Código da turma (ex: A, B, C)"
  *               periodo:
  *                 type: string
  *                 description: Período (Manhã, Tarde, Noite)
  *               anoletivo:
  *                 type: string
- *                 description: Ano letivo (ex: 2024/2025)
+ *                 description: "Ano letivo (ex: 2024/2025)"
  *     responses:
  *       201:
  *         description: Turma/Período registrado com sucesso
@@ -1775,7 +1775,7 @@ module.exports = router;
  *                 type: string
  *               cargo_funcionario:
  *                 type: string
- *                 description: Nome do cargo (ex: Secretário, Coordenador)
+ *                 description: "Nome do cargo (ex: Secretário, Coordenador)"
  *               idAdm:
  *                 type: integer
  *     responses:

@@ -4,10 +4,11 @@ import { VscError } from "react-icons/vsc";
 import { GrStatusGood } from "react-icons/gr";
 import { MdAttachFile, MdEmail, MdPerson, MdPhone } from "react-icons/md";
 import { FaInfoCircle, FaUniversity } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 export const ModalDetail=({closeModal,infoEstudante,handleAceitar,handleRecusar,handleReverter,filtroStatus,loading})=>{
     return <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-xl">
+                    <motion.div animate={{ opacity: 1 ,transition: { duration: 0.5 } }} initial={{ opacity: 0 }} className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content shadow-lg border-0">
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
@@ -180,7 +181,7 @@ export const ModalDetail=({closeModal,infoEstudante,handleAceitar,handleRecusar,
                                         <VscError className="me-2" />
                                         Recusar Inscrição
                                     </button>
-                                    
+
                                     <button
                                         type="button"
                                         className={`btn ${Style.btnCancelar}`}
@@ -196,7 +197,7 @@ export const ModalDetail=({closeModal,infoEstudante,handleAceitar,handleRecusar,
                                 filtroStatus==="Reprovado"&&(
                                 <div className="modal-footer border-0">
                                 <div className="d-flex gap-2">
-                                   
+
                                      <button
                                         type="button"
                                         className={`btn ${Style.btnReverter}`}
@@ -206,12 +207,12 @@ export const ModalDetail=({closeModal,infoEstudante,handleAceitar,handleRecusar,
                                         <VscError className="me-2" />
                                         Reverter Reprovacao
                                     </button>
-                                   
+
                                 </div>
                             </div>
                                 )
                             }
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
 }

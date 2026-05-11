@@ -11,10 +11,12 @@ import { showSuccessToast, showErrorToast} from "../../components/global/CustomT
 import { ModalDetail } from "./ModalDetail";
 import { FaBackward } from "react-icons/fa6";
 import { IoBackspace, IoLinkSharp, IoReturnDownBack, IoReturnDownBackSharp } from "react-icons/io5";
+import { ModalAlert } from "./ModalAlert";
 
 function Inscricoes({ filtroStatus }) {
     const [EstudantesInscritos, setEstudantesInscritos] = useState([]);
     const [modalEstudante, setModalEstudante] = useState(false);
+    const [modalAlert, setModalAlert] = useState(false);
     const [infoEstudante, setInfoEstudante] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -227,7 +229,7 @@ function Inscricoes({ filtroStatus }) {
                                     <td className="text-center">
                                         <button 
                                             className={`btn btn-sm ${Style.btnReverter}`}
-                                            onClick={() => handleReverter(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
+                                            onClick={() => setModalAlert(true)}
                                             title="Reverter Reprovação"
                                             disabled={loading}
                                         >
@@ -254,6 +256,15 @@ function Inscricoes({ filtroStatus }) {
                     closeModal={closeModal}
                     handleAceitar={handleAceitar} 
                     handleRecusar={handleRecusar}
+                    handleReverter={handleReverter}
+                    loading={loading}
+                    filtroStatus={filtroStatus}
+                    infoEstudante={infoEstudante}
+                />
+            )}
+             {modalAlert && infoEstudante && (
+                <ModalAlert 
+                    closeModal={closeModal}
                     handleReverter={handleReverter}
                     loading={loading}
                     filtroStatus={filtroStatus}
