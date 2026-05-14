@@ -6,11 +6,11 @@ router.get('/EstudantesInscritos/:codigoEstudanteInscrito', (req, res) => {
     const { codigoEstudanteInscrito } = req.params;
     const sql = "SELECT * FROM estudanteinscricao inner join curso on estudanteinscricao.idcurso = curso.idcurso WHERE estudanteinscricao.numeroInscricao_estudanteInscricao= ?";
     conexao.query(sql,[codigoEstudanteInscrito], (error, result) => {
-        if(error){
+        if(error){ 
             console.error("Erro ao buscar professores:", error);
-            res.status(500).json({ 
-                error: "Erro interno do servidor", 
-                details: error.message 
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
             });
         }else{
             const baseUrl = `${req.protocol}://${req.get('host')}`;
