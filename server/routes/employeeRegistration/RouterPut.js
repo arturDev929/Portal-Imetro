@@ -35,7 +35,7 @@ router.put('/estudanteInscritoAceitar/:id', (req, res) => {
         }
 
         // Atualizar o estado do estudante
-        const updateSql = "UPDATE estudanteinscricao SET estado_estudanteInscrito = 'Aprovado' WHERE id_estudanteInscricao = ?";
+        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Aprovado' WHERE id_estudanteInscricao = ?";
         
         conexao.query(updateSql, [id], (updateError, updateResult) => {
             if (updateError) {
@@ -94,7 +94,7 @@ router.put('/estudanteInscritoRecusar/:id', (req, res) => {
         }
 
         // Atualizar o estado do estudante para Recusado
-        const updateSql = "UPDATE estudanteinscricao SET estado_estudanteInscrito = 'Reprovado' WHERE id_estudanteInscricao = ?";
+        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Reprovado' WHERE id_estudanteInscricao = ?";
         
         conexao.query(updateSql, [id], (updateError, updateResult) => {
             if (updateError) {
@@ -158,7 +158,7 @@ router.put('/estudanteInscritoNota/:codigoEstudante', (req, res) => {
         const novoEstado = nota >= 10 ? 'Aprovado' : 'Reprovado';
         
         // Atualizar nota e estado do estudante
-        const updateSql = "UPDATE estudanteinscricao SET nota_estudanteInscricao = ?, estado_estudanteInscrito = ? WHERE numeroInscricao_estudanteInscricao = ?";
+        const updateSql = "UPDATE estudanteinscricao SET nota_estudanteInscricao = ?, estado_estdanteInscrito = ? WHERE numeroInscricao_estudanteInscricao = ?";
         
         conexao.query(updateSql, [nota, novoEstado, codigoEstudante], (updateError, updateResult) => {
             if (updateError) {

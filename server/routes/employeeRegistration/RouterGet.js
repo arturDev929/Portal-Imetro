@@ -3,7 +3,11 @@ const router = Router();
 const conexao = require("../../infra/conexao");
 
 router.get('/EstudantesInscritos', (req, res) => {
-    const sql = "SELECT * FROM estudanteinscricao ei INNER JOIN curso c ON ei.idcurso = c.idcurso WHERE pdf_InscricaoRupe IS NULL AND estado_estudanteInscrito = 'Pendente' ORDER BY ei.nome_estudanteInscricao ASC";
+    const sql = `SELECT ei.*, c.*, ei.estado_estdanteInscrito AS estado_estudanteInscrito
+                 FROM estudanteinscricao ei
+                 INNER JOIN curso c ON ei.idcurso = c.idcurso
+                 WHERE pdf_InscricaoRupe IS NULL AND estado_estdanteInscrito = 'Pendente'
+                 ORDER BY ei.nome_estudanteInscricao ASC`;
     conexao.query(sql, (error, result) => {
         if(error){
             console.error("Erro ao buscar professores:", error);
@@ -27,9 +31,10 @@ router.get('/EstudantesInscritos', (req, res) => {
 
 router.get('/EstudantesByStatus/:status', (req, res) => {
     const { status } = req.params;
-    const sql = `SELECT * FROM estudanteinscricao ei 
+    const sql = `SELECT ei.*, c.*, ei.estado_estdanteInscrito AS estado_estudanteInscrito
+                 FROM estudanteinscricao ei 
                  INNER JOIN curso c ON ei.idcurso = c.idcurso 
-                 WHERE estado_estudanteInscrito = ? 
+                 WHERE estado_estdanteInscrito = ? 
                  ORDER BY ei.nome_estudanteInscricao ASC`;
     
     conexao.query(sql, [status], (error, result) => {
@@ -53,9 +58,9 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
 router.get('/EstatisticasInscricoes', (req, res) => {
     const sql = `SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN estado_estudanteInscrito = 'Pendente' THEN 1 ELSE 0 END) as pendentes,
-                    SUM(CASE WHEN estado_estudanteInscrito = 'Aprovado' THEN 1 ELSE 0 END) as aprovados,
-                    SUM(CASE WHEN estado_estudanteInscrito = 'Reprovado' THEN 1 ELSE 0 END) as reprovados,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Pendente' THEN 1 ELSE 0 END) as pendentes,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Aprovado' THEN 1 ELSE 0 END) as aprovados,
+                    SUM(CASE WHEN estado_estdanteInscrito = 'Reprovado' THEN 1 ELSE 0 END) as reprovados,
                     SUM(CASE WHEN pdf_InscricaoRupe IS NULL THEN 1 ELSE 0 END) as sem_pagamento
                  FROM estudanteinscricao`;
     
