@@ -255,7 +255,7 @@ router.post("/", (req, res) => {
                                         titulo: "Login realizado",
                                         mensagem: "Login realizado com sucesso!",
                                         tipoUsuario: "professor",
-                                        rota: "/hometeacher",
+                                        rota: "/painelGeralTeacher",
                                         dados: {
                                             id: usuario.idprofessor,
                                             codigo: usuario.codigoprofessor,

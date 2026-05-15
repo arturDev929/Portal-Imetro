@@ -9,6 +9,7 @@ import Layout from "./layouts/Layout";
 import { useAuth } from "./hooks/global/useAuth";
 import LancarNotasM from "./pagesFuncionarioMatricula/LancarNotas";
 import EstudentIsncription from "./pagesEstudentInscrition/index.jsx";
+import TurmasTeacher from "./pagesTeacher/TurmasTeacher.jsx";
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
 const Home = lazy(() => import("./pages/Home"));
@@ -25,6 +26,7 @@ const GestaoFuncionarioAdm = lazy(
 );
 const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 const HomeTeacher = lazy(() => import("./pagesTeacher/Home"));
+const PainelGeral = lazy(() => import("./pagesTeacher/PainelGeral"));
 // const DefinicoesTeacher = lazy(() => import("./pagesTeacher/Definicoes"));
 // const SegurancaTeacher = lazy(() => import("./pagesTeacher/Seguranca"));
 
@@ -125,6 +127,8 @@ function App() {
             <Route path="/segurancaTeacher" element={<RotaPrivada><SegurancaTeacher/></RotaPrivada>}/> */}
 
             <Route path="/inscricao" element={<RotaPrivada><EstudentIsncription /></RotaPrivada>} />
+            <Route path="/turmasTeacher" element={<RotaPrivada><TurmasTeacher /></RotaPrivada>} />
+            <Route path="/painelGeralTeacher" element={<RotaPrivada><PainelGeral /></RotaPrivada>} />
           </Routes>
         </Suspense>
       </Layout>

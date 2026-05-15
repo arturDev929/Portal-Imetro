@@ -3,8 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import imetro from "../../img/logoFundo.png";
 import Style from "./Sidebar.module.css";
 import { IoPersonCircleOutline } from "react-icons/io5";
-import { IoSettingsOutline } from "react-icons/io5";
-import { MdTopic } from "react-icons/md";
+import { IoSettingsOutline,IoTime } from "react-icons/io5";
+import { FaRegNewspaper, FaPen, FaCalendarAlt } from "react-icons/fa";
+import { MdTopic, MdClass,MdChatBubble } from "react-icons/md";
 import { PiStudentDuotone, PiNotePencilLight } from "react-icons/pi";
 import { GrSecure } from "react-icons/gr";
 
@@ -62,17 +63,29 @@ function SidebarTeacher() {
                     </div>
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
+                            <Link to="/painelGeralTeacher" className={`nav-link active ${Style.Link}`}>
+                                <FaRegNewspaper className="me-2" /> Painel Geral
+                            </Link>
                             <Link to="/hometeacher" className={`nav-link active ${Style.Link}`}>
                                 <IoPersonCircleOutline className="me-2" /> Perfil
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiNotePencilLight className="me-2" />Lançamento de Notas
+                            <Link to="/turmasTeacher" className={`nav-link ${Style.Link}`}>
+                                <MdClass className="me-2" />Minhas Turmas
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="me-2" />Alunos Admitidos
+                                <FaPen  className="me-2" />Avaliações e Notas
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <MdTopic className="me-2" />Add. Tópicos
+                                <MdChatBubble className="me-2" />Chat
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <MdTopic className="me-2" />Conteúdos e Tópicos
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <IoTime className="me-2" />Horários
+                            </Link>
+                            <Link to="#" className={`nav-link ${Style.Link}`}>
+                                <FaCalendarAlt className="me-2" />Minhas Agendas
                             </Link>
                         </div>
                         <div className="mb-3">
@@ -131,17 +144,29 @@ function SidebarTeacher() {
                 <div className="offcanvas-body p-0">
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
-                            <Link to="/hometeacher" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
+                            <Link to="/painelGeralTeacher" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
+                                <FaRegNewspaper className="me-2" /> Painel Geral
+                            </Link>
+                            <Link to="/hometeacher" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
                                 <IoPersonCircleOutline className="me-2" /> Perfil
                             </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <PiNotePencilLight className="me-2" />Lançamento de Notas
+                            <Link to="/turmasTeacher" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
+                                <MdClass className="me-2" />Minhas Turmas
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="me-2" />Alunos Admitidos
+                                <FaPen  className="me-2" />Avaliações e Notas
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <MdTopic className="me-2" />Add. Tópicos
+                                <MdChatBubble className="me-2" />Chat
+                            </Link>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
+                                <MdTopic className="me-2" />Conteúdos e Tópicos
+                            </Link>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
+                                <IoTime className="me-2" />Horários
+                            </Link>
+                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
+                                <FaCalendarAlt className="me-2" />Minhas Agendas
                             </Link>
                         </div>
 

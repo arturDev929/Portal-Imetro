@@ -1,4 +1,5 @@
-import { useState} from "react";
+// OutrosRegistros.jsx
+import { useState, useEffect } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../service/api";
 import SelectCurso from "./selectCursos";
@@ -6,18 +7,16 @@ import CategoriaCursoAno from "./CategoriaCursoAno";
 import SelectDisciplina from "./SelectDisciplina";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { showSuccessToast, showErrorToast } from "../../components/global/CustomToast";
-import Style from "./DepartamentosEdit.module.css"
+import Style from "./DepartamentosEdit.module.css";
+import style from "../../pages/Cadastro.module.css";
 import { Fa0 } from "react-icons/fa6";
-import style from "../../pages/Cadastro.module.css"
 
 function OutrosRegistros() {
+    // Estados para Ano Curricular
     const [anoCurricular, setAnoCurricular] = useState("");
     const [idCurso, setIdCurso] = useState("");
-    const [turma, setTurma] = useState("");
-    const [anoletivo, setAnoLetivo] = useState("");
-    const [periodo, setPeriodo] = useState("")
-    const [loading, setLoading] = useState(false);
     
+    // Estados para Disciplina ao Curso
     const [formDataDisciplinaCurso, setFormDataDisciplinaCurso] = useState({
         idcategoriacurso: "",
         idcurso: "",
@@ -26,6 +25,17 @@ function OutrosRegistros() {
     });
     const [semestre, setSemestre] = useState("");
     
+    // Estados para Turmas
+    const [turma, setTurma] = useState("");
+    const [anoletivo, setAnoLetivo] = useState("");
+    const [periodo, setPeriodo] = useState("");
+    
+    // Estado global de loading
+    const [loading, setLoading] = useState(false);
+
+    // ==================== HANDLERS ====================
+    
+    // Handler para Ano Curricular
     const handleSubmitAnoCurricular = async (e) => {
         e.preventDefault();
         
@@ -73,6 +83,7 @@ function OutrosRegistros() {
         }
     };
 
+    // Handler para Disciplina ao Curso
     const handleFormDataChange = (newData) => {
         setFormDataDisciplinaCurso(prev => ({
             ...prev,
@@ -119,6 +130,11 @@ function OutrosRegistros() {
                     response.data.mensagem || "Disciplina atribuída ao curso com sucesso"
                 );
                 setSemestre("");
+                // Resetar disciplina selecionada
+                setFormDataDisciplinaCurso(prev => ({
+                    ...prev,
+                    iddisciplina: ""
+                }));
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -135,6 +151,7 @@ function OutrosRegistros() {
         }
     };
 
+    // Handler para Turmas
     const handleSubmitPeriodo = async (e) => {
         e.preventDefault();
         
@@ -160,6 +177,11 @@ function OutrosRegistros() {
 
         if (!formDataDisciplinaCurso.idcategoriacurso) {
             showErrorToast('Categoria não selecionada', 'Selecione uma categoria primeiro');
+            return;
+        }
+
+        if (!anoletivo.trim()) {
+            showErrorToast('Ano letivo vazio', 'Por favor, insira o ano letivo');
             return;
         }
 
@@ -203,12 +225,15 @@ function OutrosRegistros() {
         }
     };
 
+    // ==================== RENDER ====================
+    
     return (
         <div className="row mb-4">
             <div className="col-12">
                 <div className="row">
+                    {/* CARD 1 - Anos Curriculares */}
                     <div className="col-12 col-lg-4 mb-3">
-                        <div className="shadow-sm rounded-3 p-4 border">
+                        <div className="shadow-sm rounded-3 p-4 border h-100">
                             <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Anos Curriculares
@@ -250,15 +275,16 @@ function OutrosRegistros() {
                                             Processando...
                                         </>
                                     ) : (
-                                        "Adicionar"
+                                        "Adicionar Ano"
                                     )}
                                 </button>
                             </form>
                         </div>
                     </div>
                     
+                    {/* CARD 2 - Adicionar Disciplina ao Curso */}
                     <div className="col-12 col-lg-4 mb-3">
-                        <div className="shadow-sm rounded-3 p-4 border">
+                        <div className="shadow-sm rounded-3 p-4 border h-100">
                             <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Adicionar Disciplina ao Curso
@@ -309,8 +335,9 @@ function OutrosRegistros() {
                         </div>
                     </div>
                     
+                    {/* CARD 3 - Adicionar Novas Turmas */}
                     <div className="col-12 col-lg-4 mb-3">
-                        <div className="shadow-sm rounded-3 p-4 border">
+                        <div className="shadow-sm rounded-3 p-4 border h-100">
                             <h5 className="mb-3">
                                 <IoMdAddCircleOutline className="me-2 mb-1" />
                                 Adicionar Novas Turmas
@@ -325,7 +352,7 @@ function OutrosRegistros() {
                                         name="turma" 
                                         className={`${style.inputHome} form-control`}
                                         value={turma} 
-                                        placeholder="Turma..." 
+                                        placeholder="Turma (ex: LCC1M)" 
                                         onChange={(e)=>setTurma(e.target.value)}
                                         disabled={loading}
                                         required
@@ -339,7 +366,7 @@ function OutrosRegistros() {
                                         name="anoletivo" 
                                         className={`${style.inputHome} form-control`}
                                         value={anoletivo} 
-                                        placeholder="Ano Lectivo..." 
+                                        placeholder="Ano Lectivo (ex: 2025-2026)" 
                                         onChange={(e)=>setAnoLetivo(e.target.value)}
                                         disabled={loading}
                                         required
@@ -356,7 +383,7 @@ function OutrosRegistros() {
                                         name="periodo"
                                         required
                                     >
-                                        <option value="">Selecione o periodo</option>
+                                        <option value="">Selecione o período</option>
                                         <option value="Manhã">Manhã</option>
                                         <option value="Tarde">Tarde</option>
                                         <option value="Noite">Noite</option>

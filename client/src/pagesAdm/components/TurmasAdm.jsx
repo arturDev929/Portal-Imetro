@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons/md";
+import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd, MdPersonAdd } from "react-icons/md";
 import { MdFlightClass } from "react-icons/md";
 import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
@@ -15,6 +15,8 @@ function TurmasAdm() {
     const [termoPesquisa, setTermoPesquisa] = useState('');
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
+    
+    // Estado para edição de turma
     const [dadosEdicao, setDadosEdicao] = useState({
         idperiodo: '',
         turma: '',
@@ -27,6 +29,17 @@ function TurmasAdm() {
         nomeCategoria: '',
         anoCurricular: ''
     });
+    
+    // Estado para atribuição de professor
+    const [modalProfessorAberto, setModalProfessorAberto] = useState(false);
+    const [professorSelecionado, setProfessorSelecionado] = useState("");
+    const [disciplinasTurma, setDisciplinasTurma] = useState([]);
+    const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
+    const [turmaSelecionada, setTurmaSelecionada] = useState(null);
+    const [carregandoDisciplinas, setCarregandoDisciplinas] = useState(false);
+    const [carregandoProfessores, setCarregandoProfessores] = useState(false);
+    const [professoresDisciplina, setProfessoresDisciplina] = useState([]);
+    
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
@@ -108,6 +121,45 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    const fetchDisciplinasTurma = useCallback(async (idperiodo, anocurricular) => {
+        setCarregandoDisciplinas(true);
+        try {
+            const response = await apiClient.get(`/disciplinasPorTurma/${idperiodo}/${anocurricular}`);
+            if (response.data && response.data.length > 0) {
+                setDisciplinasTurma(response.data);
+            } else {
+                setDisciplinasTurma([]);
+                showInfoToast("Info", "Esta turma não possui disciplinas cadastradas para este ano");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar disciplinas:", error);
+            setDisciplinasTurma([]);
+            showErrorToast("Erro", "Não foi possível carregar as disciplinas da turma");
+        } finally {
+            setCarregandoDisciplinas(false);
+        }
+    }, [apiClient]);
+
+    const fetchProfessoresPorDisciplina = useCallback(async (iddisciplina) => {
+        setCarregandoProfessores(true);
+        setProfessorSelecionado("");
+        try {
+            const response = await apiClient.get(`/professoresPorDisciplina/${iddisciplina}`);
+            if (response.data && response.data.length > 0) {
+                setProfessoresDisciplina(response.data);
+            } else {
+                setProfessoresDisciplina([]);
+                showInfoToast("Info", "Esta disciplina não possui professores vinculados");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar professores da disciplina:", error);
+            setProfessoresDisciplina([]);
+            showErrorToast("Erro", "Não foi possível carregar os professores da disciplina");
+        } finally {
+            setCarregandoProfessores(false);
+        }
+    }, [apiClient]);
+
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -171,8 +223,6 @@ function TurmasAdm() {
     }, []);
 
     const abrirModalEditar = useCallback((item) => {
-        console.log("Item para edição:", item);
-
         setDadosEdicao({
             idperiodo: item.idperiodo,
             turma: item.turma || '',
@@ -203,6 +253,37 @@ function TurmasAdm() {
                 nomeCategoria: '',
                 anoCurricular: ''
             });
+        }
+    }, [salvando]);
+
+    const abrirModalProfessor = useCallback(async (item) => {
+        setTurmaSelecionada(item);
+        setProfessorSelecionado("");
+        setDisciplinaSelecionada("");
+        setProfessoresDisciplina([]);
+        await fetchDisciplinasTurma(item.idperiodo, item.anocurricular);
+        setModalProfessorAberto(true);
+    }, [fetchDisciplinasTurma]);
+
+    const handleDisciplinaChange = useCallback(async (e) => {
+        const iddisciplina = e.target.value;
+        setDisciplinaSelecionada(iddisciplina);
+        setProfessorSelecionado("");
+        if (iddisciplina) {
+            await fetchProfessoresPorDisciplina(iddisciplina);
+        } else {
+            setProfessoresDisciplina([]);
+        }
+    }, [fetchProfessoresPorDisciplina]);
+
+    const fecharModalProfessor = useCallback(() => {
+        if (!salvando) {
+            setModalProfessorAberto(false);
+            setTurmaSelecionada(null);
+            setProfessorSelecionado("");
+            setDisciplinaSelecionada("");
+            setDisciplinasTurma([]);
+            setProfessoresDisciplina([]);
         }
     }, [salvando]);
 
@@ -260,8 +341,6 @@ function TurmasAdm() {
                 idcategoriacurso: dadosEdicao.idcategoriacurso
             });
 
-            console.log("Resposta:", response.data);
-
             showSuccessToast(
                 "Sucesso",
                 response.data.mensagem || "Turma atualizada com sucesso"
@@ -286,6 +365,57 @@ function TurmasAdm() {
             setSalvando(false);
         }
     }, [dadosEdicao, apiClient, fetchData, fecharModalEditar]);
+
+    const salvarAtribuicaoProfessor = useCallback(async (e) => {
+        e?.preventDefault();
+
+        if (!turmaSelecionada) {
+            showErrorToast("Erro", "Nenhuma turma selecionada");
+            return;
+        }
+
+        if (!disciplinaSelecionada) {
+            showErrorToast("Validação", "Selecione uma disciplina");
+            return;
+        }
+
+        if (!professorSelecionado) {
+            showErrorToast("Validação", "Selecione um professor");
+            return;
+        }
+
+        setSalvando(true);
+        try {
+            const response = await apiClient.post('/atribuirProfessorTurma', {
+                idperiodo: turmaSelecionada.idperiodo,
+                iddisciplina: disciplinaSelecionada,
+                idprofessor: professorSelecionado
+            });
+
+            showSuccessToast(
+                "Sucesso",
+                response.data.message || "Professor atribuído com sucesso"
+            );
+
+            fecharModalProfessor();
+            await fetchData(false);
+        } catch (error) {
+            console.error("Erro ao atribuir professor:", error);
+
+            if (error.response?.data?.message) {
+                showErrorToast("Erro", error.response.data.message);
+            } else if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            } else {
+                showErrorToast(
+                    "Erro ao atribuir professor",
+                    "Não foi possível atribuir o professor. Tente novamente."
+                );
+            }
+        } finally {
+            setSalvando(false);
+        }
+    }, [turmaSelecionada, disciplinaSelecionada, professorSelecionado, apiClient, fecharModalProfessor, fetchData]);
 
     const salvarNovaTurma = useCallback(async (e) => {
         e?.preventDefault();
@@ -325,7 +455,11 @@ function TurmasAdm() {
             await fetchData(false);
             fecharModalAdicionar();
         } catch (error) {
-
+            if (error.response?.data?.mensagem) {
+                showErrorToast("Erro", error.response.data.mensagem);
+            } else {
+                showErrorToast("Erro", "Não foi possível adicionar a turma");
+            }
         } finally {
             setSalvando(false);
         }
@@ -384,7 +518,7 @@ function TurmasAdm() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
-    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Editar', 'Excluir'];
+    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Professor', 'Editar', 'Excluir'];
 
     const renderRow = (item) => (
         <tr key={item.idperiodo}>
@@ -394,6 +528,16 @@ function TurmasAdm() {
             <td className="text-center align-middle fw-semibold">{item.turma}</td>
             <td className="text-center align-middle">{item.periodo}</td>
             <td className="text-center align-middle">{item.anoletivo}</td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnProfessor}`}
+                    onClick={() => abrirModalProfessor(item)}
+                    disabled={loading || salvando || isConfirming}
+                    title={`Atribuir professor para ${item.turma}`}
+                >
+                    <MdPersonAdd size={18} />
+                </button>
+            </td>
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnEditar}`}
@@ -561,6 +705,7 @@ function TurmasAdm() {
                 {renderConteudo()}
             </div>
 
+            {/* Modal de Edição */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -685,6 +830,130 @@ function TurmasAdm() {
                 </div>
             )}
 
+            {/* Modal de Atribuição de Professor */}
+            {modalProfessorAberto && turmaSelecionada && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5 className="modal-title mb-0">
+                                    <MdPersonAdd className="me-2 mb-1" />
+                                    Atribuir Professor - {turmaSelecionada.turma}
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalProfessor}
+                                    disabled={salvando || isConfirming}
+                                />
+                            </div>
+
+                            <div className="bg-light p-3 border-bottom">
+                                <div className="row">
+                                    <div className="col-md-6">
+                                        <small className="text-muted d-block">Turma</small>
+                                        <strong>{turmaSelecionada.turma}</strong>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <small className="text-muted d-block">Curso</small>
+                                        <strong>{turmaSelecionada.curso}</strong>
+                                    </div>
+                                    <div className="col-md-6 mt-2">
+                                        <small className="text-muted d-block">Período</small>
+                                        <strong>{turmaSelecionada.periodo}</strong>
+                                    </div>
+                                    <div className="col-md-6 mt-2">
+                                        <small className="text-muted d-block">Ano Letivo</small>
+                                        <strong>{turmaSelecionada.anoletivo}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={salvarAtribuicaoProfessor}>
+                                <div className="modal-body">
+                                    <div className="mb-3">
+                                        <label className="form-label">1. Selecione a Disciplina</label>
+                                        <select
+                                            className="form-select"
+                                            value={disciplinaSelecionada}
+                                            onChange={handleDisciplinaChange}
+                                            disabled={salvando || carregandoDisciplinas}
+                                            required
+                                        >
+                                            <option value="">Selecione uma disciplina</option>
+                                            {carregandoDisciplinas && (
+                                                <option value="" disabled>Carregando disciplinas...</option>
+                                            )}
+                                            {disciplinasTurma.length > 0 && disciplinasTurma.map((disc) => (
+                                                <option key={disc.iddisciplina} value={disc.iddisciplina}>
+                                                    {disc.disciplina} - {disc.semestre}º Semestre
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {disciplinasTurma.length === 0 && !carregandoDisciplinas && (
+                                            <small className="text-danger d-block mt-1">
+                                                Nenhuma disciplina cadastrada para esta turma.
+                                            </small>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">2. Selecione o Professor</label>
+                                        <select
+                                            className="form-select"
+                                            value={professorSelecionado}
+                                            onChange={(e) => setProfessorSelecionado(e.target.value)}
+                                            disabled={salvando || carregandoProfessores || !disciplinaSelecionada}
+                                            required
+                                        >
+                                            <option value="">Selecione um professor</option>
+                                            {carregandoProfessores && (
+                                                <option value="" disabled>Carregando professores...</option>
+                                            )}
+                                            {professoresDisciplina.length > 0 && professoresDisciplina.map((prof) => (
+                                                <option key={prof.idprofessor} value={prof.idprofessor}>
+                                                    {prof.nome} - {prof.especialidade || 'Sem especialidade'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {disciplinaSelecionada && !carregandoProfessores && professoresDisciplina.length === 0 && (
+                                            <small className="text-warning d-block mt-1">
+                                                Nenhum professor vinculado a esta disciplina.
+                                            </small>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button
+                                        type="button"
+                                        className={`btn ${Style.btnCancelar}`}
+                                        onClick={fecharModalProfessor}
+                                        disabled={salvando || isConfirming}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className={`btn px-4 ${Style.btnSubmit}`}
+                                        disabled={salvando || !disciplinaSelecionada || !professorSelecionado || disciplinasTurma.length === 0}
+                                    >
+                                        {salvando ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Atribuindo...
+                                            </>
+                                        ) : (
+                                            'Atribuir Professor'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Adicionar Turma */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -714,7 +983,7 @@ function TurmasAdm() {
                                                 name="turma"
                                                 value={novaTurma.turma}
                                                 onChange={handleNovaTurmaChange}
-                                                placeholder="LCC1M,LCC2M,LCC3M..."
+                                                placeholder="Ex: LCC1M, LCC2M..."
                                                 disabled={salvando || isConfirming}
                                                 required
                                             />

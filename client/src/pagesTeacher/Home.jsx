@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../service/api";
 import TeacherLayout from "../layouts/TeacherLayout";
-
+import { IoLogoWhatsapp } from "react-icons/io";
 import {
   MdBook,
   MdPerson,
@@ -201,6 +201,7 @@ function Home() {
                       {professor.whatsappprofessor && (
                         <>
                           <p className="mb-2">
+                            <IoLogoWhatsapp className="me-2 text-primary" />
                             <strong>WhatsApp:</strong>
                           </p>
                           <p className="mb-3 ms-4">{professor.whatsappprofessor}</p>

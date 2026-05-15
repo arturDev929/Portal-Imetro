@@ -49,7 +49,7 @@ function Home() {
           } else if (response.data.tipoUsuario === "funcionario") {
             navigate("/homefuncionario");
           }else if (response.data.tipoUsuario === "professor") {
-            navigate("/hometeacher");
+            navigate("/painelGeralTeacher");
           }else if (response.data.tipoUsuario === "estudante"){
             navigate("/inscricao");
           }else{

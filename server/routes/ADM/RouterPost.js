@@ -1397,6 +1397,66 @@ router.post('/registrarfuncionario', (req, res) => {
     });
 });
 
+router.post('/atribuirProfessorTurma', (req, res) => {
+    const { idperiodo, iddisciplina, idprofessor } = req.body;
+    
+    // Validações
+    if (!idprofessor || !iddisciplina || !idperiodo) {
+        return res.status(400).json({
+            success: false,
+            message: 'Todos os campos são obrigatórios: idprofessor, iddisciplina, idperiodo'
+        });
+    }
+    
+    // Verificar se já existe esta atribuição
+    const queryVerificar = `
+        SELECT *FROM professor_turma_disciplina 
+        WHERE idprofessor = ? AND iddisciplina = ? AND idperiodo = ?
+    `;
+    
+    conexao.query(queryVerificar, [idprofessor, iddisciplina, idperiodo], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar atribuição:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao verificar atribuição',
+                error: error.message
+            });
+        }
+        
+        if (results.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Este professor já está atribuído a esta disciplina na turma'
+            });
+        }
+        
+        // Inserir nova atribuição com data automática
+        const queryInserir = `
+            INSERT INTO professor_turma_disciplina (idprofessor, iddisciplina, idperiodo, data_atribuicao) 
+            VALUES (?, ?, ?, NOW())
+        `;
+        
+        conexao.query(queryInserir, [idprofessor, iddisciplina, idperiodo], (error, result) => {
+            if (error) {
+                console.error('Erro ao atribuir professor:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Erro ao atribuir professor',
+                    error: error.message
+                });
+            }
+            
+            res.status(201).json({
+                success: true,
+                message: 'Professor atribuído com sucesso',
+                id: result.insertId,
+                data_atribuicao: new Date().toISOString()
+            });
+        });
+    });
+});
+
 module.exports = router;
 
 /**
