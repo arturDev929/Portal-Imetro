@@ -7,6 +7,7 @@ import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
 import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
 import { api } from "../service/api";
+
 function Home() {
   const navigate = useNavigate();
 
@@ -20,8 +21,8 @@ function Home() {
 
     try {
       const response = await api.post("/login", {
-        numEstudante: numEstudante,
-        password: password,
+        numEstudante,
+        password,
       });
 
       if (response.data.sucesso) {
@@ -39,7 +40,9 @@ function Home() {
         );
 
         setTimeout(() => {
-          if (response.data.tipoUsuario === "adm") {
+          if (response.data.rota) {
+            navigate(response.data.rota);
+          } else if (response.data.tipoUsuario === "adm") {
             navigate("/homeAdm");
           } else if (
             response.data.tipoUsuario ===
@@ -48,11 +51,12 @@ function Home() {
             navigate("/homefuncionarioM");
           } else if (response.data.tipoUsuario === "funcionario") {
             navigate("/homefuncionario");
+
           }else if (response.data.tipoUsuario === "professor") {
             navigate("/painelGeralTeacher");
           }else if (response.data.tipoUsuario === "estudante"){
             navigate("/inscricao");
-          }else{
+          } else {
             navigate("/");
           }
         }, 100);
@@ -70,8 +74,8 @@ function Home() {
         );
       } else {
         showErrorToast(
-          "Erro de conexão",
-          "Não foi possível conectar ao servidor.",
+          "Erro de conexao",
+          "Nao foi possivel conectar ao servidor.",
         );
       }
     } finally {
@@ -93,9 +97,7 @@ function Home() {
                     alt="Logotipo Imetro"
                     className={`${Style.logoImetro} mb-4`}
                   />
-                  <h3 className="mb-4 text-white">
-                    Vamos começar? Faça o login
-                  </h3>
+                  <h3 className="mb-4 text-white">Vamos comecar? Faca o login</h3>
 
                   <form onSubmit={handleLogin}>
                     <div className="mb-3">
@@ -107,7 +109,7 @@ function Home() {
                           type="text"
                           className={`${Style.inputHome} form-control`}
                           id="numEstudante"
-                          placeholder="Insira o seu código ou BI"
+                          placeholder="Insira o seu codigo ou BI"
                           value={numEstudante}
                           onChange={(e) => setNumEstudante(e.target.value)}
                           required
@@ -135,9 +137,7 @@ function Home() {
                     <button
                       type="submit"
                       className={`${Style.ButtonHome} btn w-100 py-2`}
-                      disabled={
-                        loading || !numEstudante.trim() || !password.trim()
-                      }
+                      disabled={loading || !numEstudante.trim() || !password.trim()}
                     >
                       {loading ? (
                         <>
@@ -153,9 +153,9 @@ function Home() {
                       )}
                     </button>
                     <p className="mt-3 text-white">
-                      Ainda não tens uma conta?{" "}
+                      Ainda nao tens uma conta?{" "}
                       <Link to="/cadastro" className={Style.LinkHome}>
-                        Fazer Inscrição
+                        Fazer Inscricao
                       </Link>
                     </p>
                   </form>

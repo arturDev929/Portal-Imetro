@@ -1118,6 +1118,144 @@ router.get('/professoresPorDisciplina/:iddisciplina', (req, res) => {
     });
 });
 
+router.get('/turmasProfessor/:idprofessor', (req, res) => {
+    const { idprofessor } = req.params;
+
+    if (!idprofessor) {
+        return res.status(400).json({
+            error: 'ID do professor não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            pr.turma,
+            pr.periodo,
+            pr.anoletivo,
+            d.disciplina,
+            d.iddisciplina,
+            ptd.idperiodo,
+            COUNT(DISTINCT e.id_estudante) AS total_estudantes
+        FROM periodo pr
+        INNER JOIN professor_turma_disciplina ptd ON ptd.idperiodo = pr.idperiodo
+        INNER JOIN professor p ON p.idprofessor = ptd.idprofessor
+        INNER JOIN disciplina d ON d.iddisciplina = ptd.iddisciplina
+        LEFT JOIN estudante_matriculado e ON e.idperiodo = pr.idperiodo 
+            AND e.idperiodo = ptd.idperiodo
+        WHERE p.codigoprofessor = ?
+        GROUP BY pr.turma, pr.periodo, pr.anoletivo, d.disciplina, d.iddisciplina, ptd.idperiodo
+        ORDER BY pr.turma, d.disciplina 
+        LIMIT 100
+    `;
+
+    conexao.query(query, [idprofessor], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar turmas do professor:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results,
+            total: results.length
+        });
+    });
+});
+
+router.get('/estudantesPorTurmaDisciplina/:idperiodo/:iddisciplina', (req, res) => {
+    const { idperiodo, iddisciplina } = req.params;
+
+    if (!idperiodo || !iddisciplina) {
+        return res.status(400).json({
+            error: 'Parâmetros inválidos'
+        });
+    }
+
+    const query = `
+        SELECT DISTINCT
+            e.id_estudante,
+            e.numero_estudante,
+            e.nome_estudante as nome,
+            e.email_estudante as email,
+            e.contacto_estudante as contacto,
+            e.genero_estudante as genero,
+            e.estado_estudante as situacao,
+            DATE_FORMAT(em.data_matricula, '%d/%m/%Y') as data_matricula
+        FROM estudante_matriculado
+        WHERE em.idperiodo = ? 
+            AND em.iddisciplina = ?
+            AND e.estado_estudante = 'Ativo'
+        ORDER BY e.nome_estudante ASC
+    `;
+
+    conexao.query(query, [idperiodo, iddisciplina], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar estudantes:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results,
+            total: results.length
+        });
+    });
+});
+
+// Rota para buscar detalhes da turma
+router.get('/detalhesTurma/:idperiodo', (req, res) => {
+    const { idperiodo } = req.params;
+
+    if (!idperiodo) {
+        return res.status(400).json({
+            error: 'ID do período não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            pr.idperiodo,
+            pr.turma,
+            pr.periodo,
+            pr.anoletivo,
+            c.nome_curso as curso,
+            cc.nome_categoria as categoria,
+            ac.ano_curricular as ano_curricular
+        FROM periodo pr
+        INNER JOIN curso c ON c.idcurso = pr.idcurso
+        INNER JOIN categoria_curso cc ON cc.idcategoriacurso = pr.idcategoriacurso
+        INNER JOIN ano_curricular ac ON ac.idanocurricular = pr.idanocurricular
+        WHERE pr.idperiodo = ?
+    `;
+
+    conexao.query(query, [idperiodo], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar detalhes da turma:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                error: "Turma não encontrada"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results[0]
+        });
+    });
+});
+
 module.exports = router;
 
 /**

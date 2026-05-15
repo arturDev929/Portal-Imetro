@@ -38,8 +38,24 @@
     color: var(--danger);
     background-color: var(--branco);
 }
+
+.btnReverter{
+    border: 1px solid var(--azul-escuro);
+    color: var(--azul-escuro);
+    background-color: var(--branco);
+}
 .btnDeletar:hover{
     background-color: var(--danger);
+    color: var(--branco);
+}
+
+.btnReverter{
+    border: 1px solid var(--azul-escuro);
+    color: var(--azul-escuro);
+    background-color: var(--branco);
+}
+.btnReverter:hover{
+    background-color: var(--azul-escuro);
     color: var(--branco);
 }
 .btnOutros{

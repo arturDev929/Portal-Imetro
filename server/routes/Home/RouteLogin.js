@@ -208,7 +208,8 @@ router.post("/", (req, res) => {
                                                 rota: "/inscricao",
                                                 dados: {
                                                     numeroInscricao: usuario.numeroInscricao_estudanteInscricao,
-                                                    nome: usuario.nome_estudanteInscricao
+                                                    nome: usuario.nome_estudanteInscricao,
+                                                    fotoUrl:fotoUrl
                                                 }
                                             });
                                         } else {
