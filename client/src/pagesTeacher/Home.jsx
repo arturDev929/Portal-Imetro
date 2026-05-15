@@ -52,7 +52,7 @@ function Home() {
   const fetchProfessorData = async (professorCodigo) => {
     try {
       setLoading(true);
-      const response = await api.get(`/get/PerfilProfessor/${professorCodigo}`);
+      const response = await api.get(`/PerfilProfessor/${professorCodigo}`);
       setProfessor(response.data);
       setError(null);
     } catch (err) {
@@ -125,7 +125,7 @@ function Home() {
                   e.target.src = '/default-avatar.png';
                 }}
               />
-              <button className="btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle">
+              <button className="btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle bg-success">
                 <MdCameraAlt />
               </button>
             </div>

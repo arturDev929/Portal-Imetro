@@ -42,7 +42,7 @@ function ProfessorRemovidosEdit() {
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await api.get(`/get/ProfessoresDesativados`, {
+            const response = await api.get(`/ProfessoresDesativados`, {
                 timeout: API_TIMEOUT
             });
             setLista(response.data || []);
@@ -102,7 +102,7 @@ function ProfessorRemovidosEdit() {
             setLoadingDisciplinas(true);
             setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
 
-            const response = await api.get(`/get/professorVinculadoDisciplinas/${idProfessor}`, {
+            const response = await api.get(`/professorVinculadoDisciplinas/${idProfessor}`, {
                 timeout: API_TIMEOUT
             });
             setDisciplinasProfessor(response.data || []);
@@ -118,7 +118,7 @@ function ProfessorRemovidosEdit() {
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await api.get(`/get/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await api.get(`/InformacoesProfessor/${professor.idprofessor}`, {
                 timeout: API_TIMEOUT
             });
             setProfessorSelecionadoInfo({
@@ -139,7 +139,7 @@ function ProfessorRemovidosEdit() {
             `Tens a certeza que pretendes Ativar o professor ${nome}?`,
             async () => {
                 try {
-                    const response = await api.put(`/put/professor/ativar/${id}`, {}, {
+                    const response = await api.put(`/professor/ativar/${id}`, {}, {
                         timeout: API_TIMEOUT
                     });
 

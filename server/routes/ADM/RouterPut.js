@@ -1,10 +1,9 @@
 const { Router } = require("express");
 const router = Router();
-const conexao = require("../infra/conexao");
+const conexao = require("../../infra/conexao");
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require("bcryptjs");
-const authMiddleware = require("../middleware/authMiddleware");
 
 router.put('/categoriaCurso/:id', (req, res) => {
     const { id } = req.params;
@@ -352,10 +351,15 @@ router.put('/atualizarprofessor/:id', (req, res) => {
     } = req.body;
     
     const numeroProfessor = id.toString().padStart(8, '0').slice(-8);
-    const pastaDestino = path.join(__dirname, '../../client/src/img/professores');
+    const pastaDestinoPerfil = path.join(__dirname, '../../../client/src/img/professores/Perfil');
+    const pastaDestinoDocumentos = path.join(__dirname, '../../../client/src/img/professores/Doc BI');
 
-    if (!fs.existsSync(pastaDestino)) {
-        fs.mkdirSync(pastaDestino, { recursive: true });
+    if (!fs.existsSync(pastaDestinoPerfil)) {
+        fs.mkdirSync(pastaDestinoPerfil, { recursive: true });
+    }
+    
+    if (!fs.existsSync(pastaDestinoDocumentos)) {
+        fs.mkdirSync(pastaDestinoDocumentos, { recursive: true });
     }
     
     if (!nomeprofessor || !nomeprofessor.trim()) {
@@ -471,7 +475,7 @@ router.put('/atualizarprofessor/:id', (req, res) => {
                             const extensao = matches ? matches[1] : 'jpg';
                             const timestamp = Date.now().toString().slice(-13);
                             const nomeArquivo = `professor_${numeroProfessor}_foto_${timestamp}.${extensao}`;
-                            const caminhoCompleto = path.join(pastaDestino, nomeArquivo);
+                            const caminhoCompleto = path.join(pastaDestinoPerfil, nomeArquivo);
                             
                             const base64Data = foto.split(',')[1];
                             
@@ -525,7 +529,7 @@ router.put('/atualizarprofessor/:id', (req, res) => {
                             extensao = partesExtensao[partesExtensao.length - 1];
                         }
                         
-                        const caminhoArquivoExistente = path.join(pastaDestino, nomeArquivoOriginal);
+                        const caminhoArquivoExistente = path.join(pastaDestinoDocumentos, nomeArquivoOriginal);
                         
                         if (fs.existsSync(caminhoArquivoExistente)) {
                             buffer = fs.readFileSync(caminhoArquivoExistente);
@@ -534,7 +538,7 @@ router.put('/atualizarprofessor/:id', (req, res) => {
                     
                     if (buffer) {
                         const novoNomeArquivo = `professor_${numeroProfessor}_bi_${timestamp}.${extensao}`;
-                        const novoCaminho = path.join(pastaDestino, novoNomeArquivo);
+                        const novoCaminho = path.join(pastaDestinoDocumentos, novoNomeArquivo);
                         
                         try {
                             fs.writeFileSync(novoCaminho, buffer);
@@ -542,8 +546,8 @@ router.put('/atualizarprofessor/:id', (req, res) => {
                             
                             if (nomeArquivoOriginal && 
                                 nomeArquivoOriginal !== novoNomeArquivo && 
-                                fs.existsSync(path.join(pastaDestino, nomeArquivoOriginal))) {
-                                fs.unlinkSync(path.join(pastaDestino, nomeArquivoOriginal));
+                                fs.existsSync(path.join(pastaDestinoDocumentos, nomeArquivoOriginal))) {
+                                fs.unlinkSync(path.join(pastaDestinoDocumentos, nomeArquivoOriginal));
                             }
                             
                         } catch (error) {
@@ -1358,279 +1362,431 @@ router.put('/funcionario/ativar/:id', (req, res) => {
     });
 });
 
-router.put('/estudanteInscritoAceitar/:id', (req, res) => {
-    const { id } = req.params;
-    
-    // Validação do ID
-    if (!id || isNaN(id) || id <= 0) {
-        return res.status(400).json({ error: "ID do estudante inválido" });
-    }
-
-    // Verificar se o estudante existe antes de atualizar
-    const checkSql = "SELECT * FROM estudanteinscricao WHERE id_estudanteInscricao = ?";
-    
-    conexao.query(checkSql, [id], (checkError, checkResult) => {
-        if (checkError) {
-            console.error("Erro ao verificar estudante:", checkError);
-            return res.status(500).json({
-                error: "Erro interno do servidor",
-                details: checkError.message
-            });
-        }
-
-        if (checkResult.length === 0) {
-            return res.status(404).json({ error: "Estudante não encontrado" });
-        }
-
-        // Verificar se o estudante já está aprovado
-        if (checkResult[0].estado_estdanteInscrito === 'Aprovado') {
-            return res.status(400).json({ error: "Estudante já foi aprovado anteriormente" });
-        }
-
-        // Atualizar o estado do estudante
-        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Aprovado' WHERE id_estudanteInscricao = ?";
-        
-        conexao.query(updateSql, [id], (updateError, updateResult) => {
-            if (updateError) {
-                console.error("Erro ao aprovar estudante da inscrição:", updateError);
-                return res.status(500).json({
-                    error: "Erro interno do servidor",
-                    details: updateError.message
-                });
-            }
-
-            // Verificar se alguma linha foi afetada
-            if (updateResult.affectedRows === 0) {
-                return res.status(404).json({ error: "Estudante não encontrado ou já aprovado" });
-            }
-
-            // Retornar sucesso
-            res.status(200).json({
-                success: true,
-                message: `Estudante aprovado com sucesso`,
-                data: {
-                    id: id,
-                    status: 'Aprovado'
-                }
-            });
-        });
-    });
-});
-
-router.put('/estudanteInscritoRecusar/:id', (req, res) => {
-    const { id } = req.params;
-    
-    // Validação do ID
-    if (!id || isNaN(id) || id <= 0) {
-        return res.status(400).json({ error: "ID do estudante inválido" });
-    }
-
-    // Verificar se o estudante existe
-    const checkSql = "SELECT * FROM estudanteinscricao WHERE id_estudanteInscricao = ?";
-    
-    conexao.query(checkSql, [id], (checkError, checkResult) => {
-        if (checkError) {
-            console.error("Erro ao verificar estudante:", checkError);
-            return res.status(500).json({
-                error: "Erro interno do servidor",
-                details: checkError.message
-            });
-        }
-
-        if (checkResult.length === 0) {
-            return res.status(404).json({ error: "Estudante não encontrado" });
-        }
-
-        // Verificar se o estudante já está recusado
-        if (checkResult[0].estado_estdanteInscrito === 'Reprovado') {
-            return res.status(400).json({ error: "Estudante já foi recusado anteriormente" });
-        }
-
-        // Atualizar o estado do estudante para Recusado
-        const updateSql = "UPDATE estudanteinscricao SET estado_estdanteInscrito = 'Reprovado' WHERE id_estudanteInscricao = ?";
-        
-        conexao.query(updateSql, [id], (updateError, updateResult) => {
-            if (updateError) {
-                console.error("Erro ao recusar estudante da inscrição:", updateError);
-                return res.status(500).json({
-                    error: "Erro interno do servidor",
-                    details: updateError.message
-                });
-            }
-
-            if (updateResult.affectedRows === 0) {
-                return res.status(404).json({ error: "Estudante não encontrado ou já recusado" });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: `Estudante recusado com sucesso`,
-                data: {
-                    id: id,
-                    status: 'Recusado'
-                }
-            });
-        });
-    });
-});
-
-router.put('/pagementoInscricao/:codigoEstudanteInscricao', async (req, res) => {
-    const { codigoEstudanteInscricao } = req.params;
-    const { files } = req.body;
-
-    if (!files || !files.comprovante) {
-        return res.status(400).json({ 
-            error: "Nenhum arquivo enviado",
-            message: "É necessário enviar o comprovante de pagamento em PDF"
-        });
-    }
-
-    const comprovante = files.comprovante;
-    
-    const extensao = comprovante.name.split('.').pop().toLowerCase();
-    
-    if (extensao !== 'pdf') {
-        return res.status(400).json({
-            error: "Formato inválido",
-            message: "Apenas arquivos PDF são permitidos"
-        });
-    }
-
-    if (comprovante.size > 5 * 1024 * 1024) {
-        return res.status(400).json({
-            error: "Arquivo muito grande",
-            message: "Tamanho máximo permitido: 5MB"
-        });
-    }
-
-    const timestamp = Date.now();
-    const nomeArquivo = `${codigoEstudanteInscricao}_${timestamp}.pdf`;
-    
-    const uploadDir = path.join(__dirname, '../../client/src/img/estudantes/Pagamento_Inscricao');
-    const caminhoArquivo = path.join(uploadDir, nomeArquivo);
-    
-    if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    try {
-
-        await comprovante.mv(caminhoArquivo);
-
-        const sql = "UPDATE estudanteinscricao SET pdf_InscricaoRupe = ? WHERE numeroInscricao_estudanteInscricao = ?";
-        
-        conexao.query(sql, [nomeArquivo, codigoEstudanteInscricao], (error, result) => {
-            if (error) {
-                console.error("Erro ao atualizar banco de dados:", error);
-                // Remove o arquivo se falhou no banco
-                fs.unlinkSync(caminhoArquivo);
-                return res.status(500).json({ 
-                    error: "Erro ao salvar no banco de dados", 
-                    details: error.message 
-                });
-            }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ 
-                    error: "Estudante não encontrado",
-                    message: `Nenhum estudante com o código ${codigoEstudanteInscricao} foi encontrado`
-                });
-            }
-
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            const pdfUrl = `${baseUrl}/api/img/estudantes/Pagamento_Inscricao/${nomeArquivo}`;
-
-            res.status(200).json({ 
-                success: true, 
-                message: "Comprovante de pagamento enviado com sucesso",
-                pdfUrl: pdfUrl,
-                nomeArquivo: nomeArquivo
-            });
-        });
-        
-    } catch (error) {
-        console.error("Erro ao salvar arquivo:", error);
-        res.status(500).json({ 
-            error: "Erro ao salvar o arquivo", 
-            details: error.message 
-        });
-    }
-});
-
-router.put('/pagamentoMatricula/:codigoEstudanteInscricao', async (req, res) => {
-    const { codigoEstudanteInscricao } = req.params;
-    const { files } = req.body;
-    
-    if (!files || !files.comprovante) {
-        return res.status(400).json({ 
-            error: "Nenhum arquivo enviado",
-            message: "É necessário enviar o comprovante de matrícula em PDF"
-        });
-    }
-
-    const comprovante = files.comprovante;
-    const extensao = comprovante.name.split('.').pop().toLowerCase();
-    
-    if (extensao !== 'pdf') {
-        return res.status(400).json({
-            error: "Formato inválido",
-            message: "Apenas arquivos PDF são permitidos"
-        });
-    }
-
-    if (comprovante.size > 5 * 1024 * 1024) {
-        return res.status(400).json({
-            error: "Arquivo muito grande",
-            message: "Tamanho máximo permitido: 5MB"
-        });
-    }
-
-    const timestamp = Date.now();
-    const nomeArquivo = `matricula_${codigoEstudanteInscricao}_${timestamp}.pdf`;
-    const uploadDir = path.join(__dirname, '../../client/src/img/estudantes/Pagamento_Matricula');
-    const caminhoArquivo = path.join(uploadDir, nomeArquivo);
-    
-    if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    try {
-        await comprovante.mv(caminhoArquivo);
-
-        const sql = "UPDATE estudanteinscricao SET pdf_MatriculaRupe = ? WHERE numeroInscricao_estudanteInscricao = ?";
-        
-        conexao.query(sql, [nomeArquivo, codigoEstudanteInscricao], (error, result) => {
-            if (error) {
-                fs.unlinkSync(caminhoArquivo);
-                return res.status(500).json({ 
-                    error: "Erro ao salvar no banco de dados", 
-                    details: error.message 
-                });
-            }
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ 
-                    error: "Estudante não encontrado"
-                });
-            }
-
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            const pdfUrl = `${baseUrl}/api/img/estudantes/Pagamento_Matricula/${nomeArquivo}`;
-
-            res.status(200).json({ 
-                success: true, 
-                message: "Comprovante de matrícula enviado com sucesso",
-                pdfUrl: pdfUrl,
-                nomeArquivo: nomeArquivo
-            });
-        });
-        
-    } catch (error) {
-        res.status(500).json({ 
-            error: "Erro ao salvar o arquivo", 
-            details: error.message 
-        });
-    }
-});
-
 module.exports = router;
+
+/**
+ * @swagger
+ * /categoriaCurso/{id}:
+ *   put:
+ *     summary: Atualizar uma categoria de curso
+ *     tags: [Cursos - Categorias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da categoria
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - categoriacurso
+ *             properties:
+ *               categoriacurso:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *                 description: Novo nome da categoria
+ *     responses:
+ *       200:
+ *         description: Categoria atualizada com sucesso
+ *       400:
+ *         description: Dados inválidos ou categoria já existe
+ *       404:
+ *         description: Categoria não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /Curso/{id}:
+ *   put:
+ *     summary: Atualizar um curso
+ *     tags: [Cursos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do curso
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - curso
+ *               - idcategoriacurso
+ *             properties:
+ *               curso:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *               idcategoriacurso:
+ *                 type: integer
+ *                 minimum: 1
+ *     responses:
+ *       200:
+ *         description: Curso atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos ou curso já existe
+ *       404:
+ *         description: Curso ou departamento não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /disciplina/{id}:
+ *   put:
+ *     summary: Atualizar uma disciplina
+ *     tags: [Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - disciplina
+ *             properties:
+ *               disciplina:
+ *                 type: string
+ *                 description: Novo nome da disciplina
+ *     responses:
+ *       200:
+ *         description: Disciplina atualizada com sucesso
+ *       400:
+ *         description: ID inválido, nome obrigatório ou disciplina já existe
+ *       404:
+ *         description: Disciplina não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /atualizarprofessor/{id}:
+ *   put:
+ *     summary: Atualizar dados de um professor
+ *     tags: [Professores]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nomeprofessor
+ *               - nacionalidadeprofessor
+ *               - codigoprofessor
+ *               - generoprofessor
+ *             properties:
+ *               nomeprofessor:
+ *                 type: string
+ *               generoprofessor:
+ *                 type: string
+ *                 enum: [M, F]
+ *               nacionalidadeprofessor:
+ *                 type: string
+ *               codigoprofessor:
+ *                 type: string
+ *               estadocivilprofessor:
+ *                 type: string
+ *               nomepaiprofessor:
+ *                 type: string
+ *               nomemaeprofessor:
+ *                 type: string
+ *               nbiprofessor:
+ *                 type: string
+ *               datanascimentoprofessor:
+ *                 type: string
+ *                 format: date
+ *               residenciaprofessor:
+ *                 type: string
+ *               telefoneprofessor:
+ *                 type: string
+ *               whatsappprofessor:
+ *                 type: string
+ *               emailprofessor:
+ *                 type: string
+ *                 format: email
+ *               anoexperienciaprofessor:
+ *                 type: string
+ *               titulacaoprofessor:
+ *                 type: string
+ *               dataadmissaoprofessor:
+ *                 type: string
+ *                 format: date
+ *               tipocontratoprofessor:
+ *                 type: string
+ *               ibanprofessor:
+ *                 type: string
+ *               tiposanguineoprofessor:
+ *                 type: string
+ *               condicoesprofessor:
+ *                 type: string
+ *               contactoemergenciaprofessor:
+ *                 type: string
+ *               curriculo:
+ *                 type: string
+ *                 description: Base64 ou nome do arquivo do currículo
+ *               foto:
+ *                 type: string
+ *                 description: Base64 ou nome do arquivo da foto
+ *     responses:
+ *       200:
+ *         description: Professor atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos ou duplicados
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /turma/{id}:
+ *   put:
+ *     summary: Atualizar uma turma/período
+ *     tags: [Turmas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da turma/período
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idanocurricular
+ *               - idcurso
+ *               - idcategoriacurso
+ *               - turma
+ *               - periodo
+ *               - anoletivo
+ *             properties:
+ *               idanocurricular:
+ *                 type: integer
+ *               idcurso:
+ *                 type: integer
+ *               idcategoriacurso:
+ *                 type: integer
+ *               turma:
+ *                 type: string
+ *               periodo:
+ *                 type: string
+ *               anoletivo:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Turma atualizada com sucesso
+ *       400:
+ *         description: Dados incompletos, inválidos ou duplicados
+ *       404:
+ *         description: Turma não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /professor/desativar/{id}:
+ *   put:
+ *     summary: Desativar um professor
+ *     tags: [Professores]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     responses:
+ *       200:
+ *         description: Professor desativado com sucesso
+ *       404:
+ *         description: Professor não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /professor/ativar/{id}:
+ *   put:
+ *     summary: Ativar um professor
+ *     tags: [Professores]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     responses:
+ *       200:
+ *         description: Professor ativado com sucesso
+ *       404:
+ *         description: Professor não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /funcionario/{id}:
+ *   put:
+ *     summary: Atualizar dados de um funcionário
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do funcionário
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome_funcionario
+ *               - contacto_funcionario
+ *               - bi_funcionario
+ *               - cargo_funcionario
+ *               - idAdm
+ *             properties:
+ *               nome_funcionario:
+ *                 type: string
+ *               contacto_funcionario:
+ *                 type: string
+ *               bi_funcionario:
+ *                 type: string
+ *               cargo_funcionario:
+ *                 type: string
+ *               idAdm:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Funcionário atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos ou duplicados
+ *       404:
+ *         description: Funcionário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /funcionario/senha/{id}:
+ *   put:
+ *     summary: Alterar senha de um funcionário
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do funcionário
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - senha_funcionario
+ *             properties:
+ *               senha_funcionario:
+ *                 type: string
+ *                 minLength: 4
+ *                 description: Nova senha (mínimo 4 caracteres)
+ *     responses:
+ *       200:
+ *         description: Senha alterada com sucesso
+ *       400:
+ *         description: Senha inválida
+ *       404:
+ *         description: Funcionário não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /funcionario/desativar/{id}:
+ *   put:
+ *     summary: Desativar um funcionário
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do funcionário
+ *     responses:
+ *       200:
+ *         description: Funcionário desativado com sucesso
+ *       400:
+ *         description: ID inválido
+ *       404:
+ *         description: Funcionário não encontrado ou já desativado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
+/**
+ * @swagger
+ * /funcionario/ativar/{id}:
+ *   put:
+ *     summary: Ativar um funcionário
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do funcionário
+ *     responses:
+ *       200:
+ *         description: Funcionário ativado com sucesso
+ *       400:
+ *         description: ID inválido
+ *       404:
+ *         description: Funcionário não encontrado ou já ativo
+ *       500:
+ *         description: Erro interno do servidor
+ */

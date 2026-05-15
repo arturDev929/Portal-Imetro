@@ -12,7 +12,7 @@ function SelectCategoriaCurso({ value, onChange, disabled }) {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const response = await api.get(`/get/Cursos`);
+                const response = await api.get(`/Cursos`);
                 setCategorias(response.data);
                 setError(null);
             } catch (error) {

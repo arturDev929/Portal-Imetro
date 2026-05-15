@@ -52,7 +52,7 @@ function FuncionarioRemovidosEdit() {
     const fetchFuncionarios = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/get/funcionariosDesativados');
+            const response = await apiClient.get('/funcionariosDesativados');
             setLista(response.data || []);
             setListaFiltrada(response.data || []);
             
@@ -98,7 +98,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes ativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await Api.put(`/put/funcionario/ativar/${id}`);
+                    const response = await Api.put(`/funcionario/ativar/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
@@ -125,7 +125,7 @@ function FuncionarioRemovidosEdit() {
             `Tens a certeza que pretendes EXCLUIR PERMANENTEMENTE o funcionário ${nome}? Esta ação não pode ser desfeita.`,
             async () => {
                 try {
-                    const response = await Api.delete(`/delete/funcionario/permanent/${id}`);
+                    const response = await Api.delete(`/funcionario/permanent/${id}`);
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
