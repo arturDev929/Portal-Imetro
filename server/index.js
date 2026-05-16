@@ -20,8 +20,6 @@ const RouterDeleteEmployeeRegistration = require("./routes/employeeRegistration/
 const RouterGetStudentsInscript = require("./routes/StudentsInscript/RouterGet");
 const RouterPutStudentsInscript = require("./routes/StudentsInscript/RouterPut");
 const RouterGetTeacher = require("./routes/Teacher/RouterGet");
-const RouterDeleteTeacher = require("./routes/Teacher/RouterDelete");
-const RouterPostTeacher = require("./routes/Teacher/RouterPost");
 
 const port = process.env.PORT || 8080;
 
@@ -228,8 +226,6 @@ app.use('/', RouterPostEmployeeRegistration);
 app.use('/', RouterGetStudentsInscript);
 app.use('/', RouterPutStudentsInscript);
 app.use('/', RouterGetTeacher);
-app.use('/', RouterDeleteTeacher);
-app.use('/', RouterPostTeacher);
 
 // Health check
 app.get('/health', (req, res) => {
