@@ -10,7 +10,7 @@ require("dotenv").config({ quiet: true });
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, 
+    port: 465,   
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -63,7 +63,7 @@ const verificarDuplicata = (campo, valor) => {
 const garantirNumeroUnico = async (numEstudante) => {
     return new Promise((resolve, reject) => {
         const verificarNumeroSQL = "SELECT id_estudanteInscricao FROM estudanteInscricao WHERE numeroInscricao_estudanteInscricao = ?";
-        
+
         conexao.query(verificarNumeroSQL, [numEstudante], (erro, resultados) => {
             if (erro) reject(erro);
             else resolve(resultados.length === 0);
@@ -77,7 +77,7 @@ const salvarArquivos = async (files, numEstudante) => {
 
     const pastaEstudantes = path.join(__dirname, '../../../client/src/img/estudantes/Perfil');
     const pastaDocumentos = path.join(__dirname, '../../../client/src/img/estudantes/documentos');
-    
+
     if (!fs.existsSync(pastaEstudantes)) {
         fs.mkdirSync(pastaEstudantes, { recursive: true });
     }
@@ -129,26 +129,26 @@ const enviarEmailConfirmacao = async (email, nome, codigo) => {
                     <h1 style="color: #FFD700; margin: 0;">IPS METROPOLITANO</h1>
                     <p style="color: #666; font-size: 14px;">Instituto Politécnico Superior Metropolitano de Angola</p>
                 </div>
-                
+
                 <h2 style="color: #333; text-align: center;">Confirme seu Email</h2>
-                
+
                 <p>Olá <strong>${nome}</strong>,</p>
-                
+
                 <p>Recebemos uma solicitação de inscrição no Sistema de Gestão Acadêmica do <strong>IPS Metropolitano</strong>.</p>
-                
+
                 <p>Para confirmar seu email e completar a sua inscrição, utilize o seguinte código de verificação:</p>
-                
+
                 <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 5px; margin: 20px 0; color: #333; border: 2px solid #FFD700;">
                     ${codigo}
                 </div>
-                
+
                 <p><strong>Prazo de validade:</strong> 10 minutos</p>
                 <p><strong>Tentativas permitidas:</strong> 3</p>
-                
+
                 <p style="color: #666; font-size: 14px;">Se você não solicitou esta inscrição, ignore este email.</p>
-                
+
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-                
+
                 <p style="color: #999; font-size: 12px; text-align: center;">
                     IPS Metropolitano - Instituto Politécnico Superior Metropolitano de Angola<br>
                     Este é um email automático, por favor não responda.
@@ -178,30 +178,30 @@ const enviarCredenciais = async (email, nome, numEstudante, senha) => {
                     <h1 style="color: #FFD700; margin: 0;">IPS METROPOLITANO</h1>
                     <p style="color: #666; font-size: 14px;">Instituto Politécnico Superior Metropolitano de Angola</p>
                 </div>
-                
+
                 <h2 style="color: #333; text-align: center;">Inscrição Confirmada com Sucesso! 🎉</h2>
-                
+
                 <p>Olá <strong>${nome}</strong>,</p>
-                
+
                 <p>A sua inscrição no <strong>Sistema de Gestão Acadêmica do IPS Metropolitano</strong> foi realizada com sucesso!</p>
-                
+
                 <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #FFD700;">
                     <p style="margin: 5px 0;"><strong>📚 Número de Inscrição:</strong></p>
                     <p style="font-size: 24px; color: #FFD700; margin: 5px 0; font-weight: bold;">${numEstudante}</p>
-                    
+
                     <p style="margin: 15px 0 5px 0;"><strong>⚠️ Importante:</strong></p>
                     <p style="color: #666; font-size: 14px;">Guarde seu número de inscrição. Ele será necessário para acessar o sistema.</p>
                 </div>
-                
+
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" 
+                    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}"
                        style="background-color: #FFD700; color: #000; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                         Acessar o Sistema
                     </a>
                 </div>
-                
+
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-                
+
                 <p style="color: #999; font-size: 12px; text-align: center;">
                     IPS Metropolitano - Instituto Politécnico Superior Metropolitano de Angola<br>
                     Este é um email automático, por favor não responda.
@@ -285,7 +285,7 @@ router.post('/enviarCodigoVerificacao', async (req, res) => {
 router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
     try {
         const { codigo, email } = req.body;
-        
+
         if (!email || !codigo) {
             return res.status(400).json({
                 sucesso: false,
@@ -335,7 +335,7 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
             codigosVerificacao.set(email, dadosVerificacao);
 
             const tentativasRestantes = 3 - dadosVerificacao.tentativas;
-            
+
             return res.status(400).json({
                 sucesso: false,
                 tipo: "erro",
@@ -440,16 +440,16 @@ router.post('/verificarCodigoECompletarCadastro', async (req, res) => {
         // Inserir no banco
         const inserirSQL = `
             INSERT INTO estudanteInscricao (
-                nome_estudanteInscricao, 
-                contacto_estudanteInscricao, 
+                nome_estudanteInscricao,
+                contacto_estudanteInscricao,
                 email_estudanteInscricao,
                 bi_estudanteInscricao,
                 numeroInscricao_estudanteInscricao,
-                sexo_estudanteInscricao, 
-                periodo_estudanteInscricao, 
-                idcurso, 
-                documento_estudanteInscricao, 
-                foto_estudanteInscricao, 
+                sexo_estudanteInscricao,
+                periodo_estudanteInscricao,
+                idcurso,
+                documento_estudanteInscricao,
+                foto_estudanteInscricao,
                 senha_estudanteInscricao
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;

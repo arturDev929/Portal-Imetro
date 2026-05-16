@@ -19,9 +19,9 @@ function HomeAdm() {
     }, []);
 
     useEffect(()=>{
-       
         RequestData()
     },[inscritos])
+
     async function  RequestData() {
         const data=await api.get("/EstudantesInscritos");
         console.log(data.data)
@@ -72,7 +72,7 @@ function HomeAdm() {
 
                     <div className="row mb-4 g-2">
                         <div className="col-md-2">
-                            <button 
+                            <button
                                 className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Pendente")}
                             >
@@ -81,7 +81,7 @@ function HomeAdm() {
                             </button>
                         </div>
                         <div className="col-md-2">
-                            <button 
+                            <button
                                 className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Aprovado")}
                             >
@@ -90,7 +90,7 @@ function HomeAdm() {
                             </button>
                         </div>
                         <div className="col-md-2">
-                            <button 
+                            <button
                                 className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Reprovado")}
                             >
@@ -116,7 +116,7 @@ function HomeAdm() {
                                 </div>
                             )
                         ))}
-                            
+
                         </div>
                     </div>
         </FuncionarioLayout>

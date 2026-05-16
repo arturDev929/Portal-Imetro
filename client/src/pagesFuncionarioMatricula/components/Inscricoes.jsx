@@ -61,11 +61,11 @@ function Inscricoes({ filtroStatus }) {
         setLoading(true);
         try {
             const response = await api.put(`/estudanteInscritoAceitar/${estudanteId}`);
-            
+
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
                 // Remover o estudante da lista
-                setEstudantesInscritos(prevEstudantes => 
+                setEstudantesInscritos(prevEstudantes =>
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -87,12 +87,12 @@ function Inscricoes({ filtroStatus }) {
     const handleReverter = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
-            const response = await api.put(`/put/estudanteInscritoReverter/${estudanteId}`);
-            
+            const response = await api.put(`/estudanteInscritoReverter/${estudanteId}`);
+
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
                 // Remover o estudante da lista
-                setEstudantesInscritos(prevEstudantes => 
+                setEstudantesInscritos(prevEstudantes =>
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -109,17 +109,17 @@ function Inscricoes({ filtroStatus }) {
         } finally {
             setLoading(false);
         }
-    }; 
+    };
 
     const handleRecusar = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
             const response = await api.put(`/estudanteInscritoRecusar/${estudanteId}`);
-            
+
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} recusada com sucesso!`);
 
-                setEstudantesInscritos(prevEstudantes => 
+                setEstudantesInscritos(prevEstudantes =>
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -147,7 +147,7 @@ function Inscricoes({ filtroStatus }) {
                     </div>
                 </div>
             )}
-            
+
             <table className="table table-hover table-striped border">
                 <thead style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--branco)' }}>
                     <tr>
@@ -157,7 +157,7 @@ function Inscricoes({ filtroStatus }) {
                         <th className="col-2 text-center">Curso</th>
                         <th className="col-1 text-center">Período</th>
                         <th className="col-1 text-center">Info</th>
-                       
+
                         {
                             filtroStatus === "Pendente" && (
                                 <>
@@ -166,12 +166,12 @@ function Inscricoes({ filtroStatus }) {
                                 </>
                             )
                         }
-                        {    
+                        {
                             filtroStatus==="Reprovado"&&(
                                  <th className="col-1 text-center">Reverter</th>
                             )
                         }
-                        
+
                     </tr>
                 </thead>
                 <tbody>
@@ -191,9 +191,9 @@ function Inscricoes({ filtroStatus }) {
                                 <td className="text-center">{estudante.curso}</td>
                                 <td className="text-center">{estudante.periodo_estudanteInscricao}</td>
                                 <td className="text-center">
-                                    <button 
-                                        className={`btn btn-sm ${Style.btnOutros}`} 
-                                        onClick={() => openModal(estudante)} 
+                                    <button
+                                        className={`btn btn-sm ${Style.btnOutros}`}
+                                        onClick={() => openModal(estudante)}
                                         title="Informações"
                                         disabled={loading}
                                     >
@@ -204,7 +204,7 @@ function Inscricoes({ filtroStatus }) {
                                     filtroStatus==="Pendente"?
                                    <>
                                     <td className="text-center">
-                                    <button 
+                                    <button
                                         className={`btn btn-sm ${Style.btnAdd}`}
                                         onClick={() => handleAceitar(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
                                         title="Aceitar inscrição"
@@ -214,7 +214,7 @@ function Inscricoes({ filtroStatus }) {
                                     </button>
                                 </td>
                                 <td className="text-center">
-                                    <button 
+                                    <button
                                         className={`btn btn-sm ${Style.btnDeletar}`}
                                         onClick={() => handleRecusar(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
                                         title="Recusar inscrição"
@@ -227,7 +227,7 @@ function Inscricoes({ filtroStatus }) {
                                     :filtroStatus==="Reprovado"?
                                     <>
                                     <td className="text-center">
-                                        <button 
+                                        <button
                                             className={`btn btn-sm ${Style.btnReverter}`}
                                             onClick={() => setModalAlert(true)}
                                             title="Reverter Reprovação"
@@ -239,7 +239,7 @@ function Inscricoes({ filtroStatus }) {
                                    </>
                                     :<></>
                                 }
-                                
+
                             </tr>
                         ))
                     ) : (
@@ -252,9 +252,9 @@ function Inscricoes({ filtroStatus }) {
 
             {/* Modal de informações do estudante */}
             {modalEstudante && infoEstudante && (
-                <ModalDetail 
+                <ModalDetail
                     closeModal={closeModal}
-                    handleAceitar={handleAceitar} 
+                    handleAceitar={handleAceitar}
                     handleRecusar={handleRecusar}
                     handleReverter={handleReverter}
                     loading={loading}
@@ -263,7 +263,7 @@ function Inscricoes({ filtroStatus }) {
                 />
             )}
              {modalAlert && infoEstudante && (
-                <ModalAlert 
+                <ModalAlert
                     closeModal={closeModal}
                     handleReverter={handleReverter}
                     loading={loading}
