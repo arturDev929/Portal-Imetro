@@ -36,15 +36,15 @@ function HomeAdm() {
         },
         {
             cor: "#28a745",
-            titulo: "Estudantes Aprovados",
+            titulo: "Estudantes Admitidos",
             icone: FaUserCheck,
-            status: "Aprovado"
+            status: "Admitido"
         },
         {
             cor: "#dc3545",
-            titulo: "Estudantes Reprovados",
+            titulo: "Estudantes Não Admitido",
             icone: FaUserTimes,
-            status: "Reprovado"
+            status: "Não Admitido"
         }
     ];
 
@@ -81,21 +81,33 @@ function HomeAdm() {
                             </button>
                         </div>
                         <div className="col-md-2">
+<<<<<<< Updated upstream
                             <button
                                 className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Aprovado")}
+=======
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "Admitido" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                onClick={() => setSecaoAtiva("Admitido")}
+>>>>>>> Stashed changes
                             >
                                 <FaUserCheck className="me-2 mb-1" />
-                                E. Aprovados
+                                E. Admitidos
                             </button>
                         </div>
                         <div className="col-md-2">
+<<<<<<< Updated upstream
                             <button
                                 className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Reprovado")}
+=======
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "Não Admitido" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                onClick={() => setSecaoAtiva("Não Admitido")}
+>>>>>>> Stashed changes
                             >
                                 <FaUserTimes className="me-2 mb-1" />
-                                E. Reprovados
+                                E. Não Admitidos
                             </button>
                         </div>
                     </div>

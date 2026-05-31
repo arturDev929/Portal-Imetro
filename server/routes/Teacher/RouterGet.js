@@ -87,6 +87,27 @@ router.get('/PerfilProfessor/:codigo', async (req, res) => {
     });
 });
 
+router.get('/TurmasProfessor/:codigo', async (req, res) => {
+    const { codigo } = req.params;
+    console.log(`Buscando turmas para professor com código: ${codigo}`);
+    const sql = `SELECT data_atribuicao, periodo, turma, anoletivo, professor.codigoprofessor 
+                 FROM professor_turma_disciplina 
+                 INNER JOIN periodo ON professor_turma_disciplina.idperiodo = periodo.idperiodo 
+                 INNER JOIN professor ON professor_turma_disciplina.idprofessor = professor.idprofessor 
+                 WHERE codigoprofessor = ?`;
+    
+    try {
+        const results = await conexao.query(sql, [codigo]);
+        return res.status(200).json(results);
+    } catch (error) {
+        console.error("Erro ao buscar turmas do professor:", error);
+        return res.status(500).json({ 
+            error: "Erro interno do servidor", 
+            details: error.message 
+        });
+    }
+});
+
 module.exports = router;
 
 /**
