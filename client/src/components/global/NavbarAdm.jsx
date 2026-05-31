@@ -7,19 +7,24 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { Link } from "react-router-dom";
 import Style from "./NavbarAdm.module.css";
+
 function NavbarAdm(){
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
-        useEffect(() => {
-            const usuarioSalvo = localStorage.getItem("usuarioLogado");
-            if (usuarioSalvo) {
-                setUser(JSON.parse(usuarioSalvo));
-            }
-        }, []);
+    
+    useEffect(() => {
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            setUser(JSON.parse(usuarioSalvo));
+        }
+    }, []);
+    
     const handleLogout = () => {
         localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("token");
         navigate("/");
     };
+    
     return(
         <nav className={`${Style.navbar} navbar navbar-expand-lg border-bottom z-1 sticky-top`}>
             <div className="container-fluid p-2">
@@ -36,7 +41,6 @@ function NavbarAdm(){
                             {user && user.nome} <IoPersonCircleOutline className="mb-1 text-white"/>
                         </button>
                         <ul className={`${Style.dropdownMenu} dropdown-menu dropdown-menu-end`}>
-                            {/* <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoPersonCircleOutline className="me-2 mb-1"/>Perfil</Link></li> */}
                             <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoSettingsOutline className="me-2 mb-1"/>Configurações</Link></li>
                             <li><hr className="dropdown-divider"/></li>
                             <li onClick={handleLogout}><Link className={`dropdown-item ${Style.Link}`} to="#"><RiLogoutCircleRLine className="me-2 mb-1"/>Terminar Sessão</Link></li>
@@ -48,4 +52,4 @@ function NavbarAdm(){
     )
 }
 
-export default NavbarAdm
+export default NavbarAdm;

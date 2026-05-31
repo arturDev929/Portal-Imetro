@@ -1,18 +1,44 @@
 import AdminLayout from "../layouts/AdminLayout";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { showErrorToast } from "../components/global/CustomToast";
 import { api } from "../service/api";
-import { showSuccessToast } from "../components/global/CustomToast"; // Missing import
+import { showSuccessToast } from "../components/global/CustomToast";
 
 function FuncionáriosAdmRegistrer() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const usuarioSalvo = localStorage.getItem("usuarioLogado");
-    if (usuarioSalvo) {
-      setUser(JSON.parse(usuarioSalvo));
+
+    if (!token || !usuarioSalvo) {
+      showErrorToast("Acesso negado", "Faça login para acessar esta página.");
+      navigate("/");
+      return;
     }
-  }, []);
+
+    try {
+      const usuario = JSON.parse(usuarioSalvo);
+      if (usuario.tipoUsuario !== "adm") {
+        showErrorToast("Acesso negado", "Você não tem permissão para acessar esta página.");
+        navigate("/");
+        return;
+      }
+      setUser(usuario);
+    } catch (error) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuarioLogado");
+      navigate("/");
+      return;
+    } finally {
+      setLoadingAuth(false);
+    }
+  }, [navigate]);
+
   const [nome, setNome] = useState("");
   const [contacto, setContacto] = useState("");
   const [nbi, setNBI] = useState("");
@@ -29,6 +55,7 @@ function FuncionáriosAdmRegistrer() {
 
     if (!user || !user.id) {
       showErrorToast("Usuário não autenticado", "Faça login novamente");
+      navigate("/");
       return;
     }
 
@@ -46,6 +73,7 @@ function FuncionáriosAdmRegistrer() {
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         },
       );
@@ -54,6 +82,10 @@ function FuncionáriosAdmRegistrer() {
           response.data.titulo || "Sucesso",
           response.data.mensagem || "Funcionário registrado com sucesso",
         );
+        setNome("");
+        setContacto("");
+        setNBI("");
+        setCargo("");
       } else {
         showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
       }
@@ -75,6 +107,17 @@ function FuncionáriosAdmRegistrer() {
       setLoading(false);
     }
   };
+
+  if (loadingAuth) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="row h-100">
@@ -84,94 +127,95 @@ function FuncionáriosAdmRegistrer() {
             Registrar Funcionários
           </h3>
         </div>
-            <div className="col-12 col-lg-6 mb-3">
-              <div className="shadow-sm rounded-3 p-4 bg-light border">
-                <h5 className="text-primary mb-3">
-                  <IoMdAddCircleOutline className="me-2 mb-1" />
-                  Funcionário Responsável por Inscrições e Matrículas dos alunos
-                </h5>
-                <form className="row g-2" onSubmit={handleSubmitFuncionario}>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Nome Funcionário..."
-                      className="form-control form-control-sm"
-                      name="nomefuncionario"
-                      onChange={(e) => setNome(e.target.value)}
-                      value={nome}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Contacto..."
-                      className="form-control form-control-sm"
-                      name="contactofuncionario"
-                      onChange={(e) => setContacto(e.target.value)}
-                      value={contacto}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <select
-                      className="form-control form-control-sm"
-                      name="cargo"
-                      value={cargo}
-                      onChange={(e) => setCargo(e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="">Selecione um Cargo</option>
-                      <option value="Coordenador de Admissões e Matrículas">
-                        Coordenador de Admissões e Matrículas
-                      </option>
-                      <option value="Tesoureiro">
-                        Tesoureiro
-                      </option>
-                      <option value="Assistente Administrativo">
-                        Assistente Administrativo
-                      </option>
-                      <option value="Oficial de Cartões e Identificações">
-                        Oficial de Cartões e Identificações
-                      </option>
-                    </select>
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Nº do B.I..."
-                      className="form-control form-control-sm"
-                      name="nbifuncionario"
-                      onChange={(e) => setNBI(e.target.value)}
-                      value={nbi}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <button
-                      type="submit"
-                      className="btn btn-sm btn-primary w-100"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                          Processando...
-                        </>
-                      ) : (
-                        "Registrar"
-                      )}
-                    </button>
-                  </div>
-                </form>
+        <div className="col-12 col-lg-6 mb-3">
+          <div className="shadow-sm rounded-3 p-4 bg-light border">
+            <h5 className="text-primary mb-3">
+              <IoMdAddCircleOutline className="me-2 mb-1" />
+              Funcionário Responsável por Inscrições e Matrículas dos alunos
+            </h5>
+            <form className="row g-2" onSubmit={handleSubmitFuncionario}>
+              <div className="col-12">
+                <input
+                  type="text"
+                  placeholder="Nome Funcionário..."
+                  className="form-control form-control-sm"
+                  name="nomefuncionario"
+                  onChange={(e) => setNome(e.target.value)}
+                  value={nome}
+                  disabled={loading}
+                />
               </div>
-            </div>
+              <div className="col-12">
+                <input
+                  type="text"
+                  placeholder="Contacto..."
+                  className="form-control form-control-sm"
+                  name="contactofuncionario"
+                  onChange={(e) => setContacto(e.target.value)}
+                  value={contacto}
+                  disabled={loading}
+                />
+              </div>
+              <div className="col-12">
+                <select
+                  className="form-control form-control-sm"
+                  name="cargo"
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="">Selecione um Cargo</option>
+                  <option value="Coordenador de Admissões e Matrículas">
+                    Coordenador de Admissões e Matrículas
+                  </option>
+                  <option value="Tesoureiro">
+                    Tesoureiro
+                  </option>
+                  <option value="Assistente Administrativo">
+                    Assistente Administrativo
+                  </option>
+                  <option value="Oficial de Cartões e Identificações">
+                    Oficial de Cartões e Identificações
+                  </option>
+                </select>
+              </div>
+              <div className="col-12">
+                <input
+                  type="text"
+                  placeholder="Nº do B.I..."
+                  className="form-control form-control-sm"
+                  name="nbifuncionario"
+                  onChange={(e) => setNBI(e.target.value)}
+                  value={nbi}
+                  disabled={loading}
+                />
+              </div>
+              <div className="col-12">
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-primary w-100"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Processando...
+                    </>
+                  ) : (
+                    "Registrar"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
+      </div>
     </AdminLayout>
   );
 }
+
 export default FuncionáriosAdmRegistrer;

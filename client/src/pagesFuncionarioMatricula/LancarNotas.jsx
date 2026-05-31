@@ -1,15 +1,12 @@
 import FuncionarioLayout from "../layouts/FuncionarioLayout";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaSave, FaEdit, FaCheckCircle, FaChartLine } from 'react-icons/fa';
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
-import api from "../service/api";
 
 function LancarNotasM() {
     const [user, setUser] = useState(null);
     const [cursos, setCursos] = useState([]);
     const [cursoSelecionado, setCursoSelecionado] = useState("");
-    const [numeroEstudante,setNumeroEstudante]=useState("")
-    const [notaEstudante,setNotaEstudante]=useState("")
     const [estudantes, setEstudantes] = useState([]);
     const [notas, setNotas] = useState({});
     const [modoEdicao, setModoEdicao] = useState({});
@@ -17,23 +14,24 @@ function LancarNotasM() {
     const [mensagem, setMensagem] = useState({ texto: "", tipo: "" });
 
     useEffect(() => {
-      carregarEstudantes()
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            setUser(JSON.parse(usuarioSalvo));
+        }
+        // Sem requisição - cursos vazio
     }, []);
 
-    async function carregarEstudantes() {
-        // Sem requisição - apenas simulando loading
-        setLoading(true);
-        const resp=await api.get("/EstudantesByStatus/Aprovado")
-        setEstudantes(resp.data)
-        setLoading(false);
-
+    async function carregarCursos() {
+        // Sem requisição
     }
 
-    const filtroEstudante=useMemo(()=>
-        estudantes.filter(estudante=>
-            estudante.numeroInscricao_estudanteInscricao==numeroEstudante).
-            map(estud=> estud)
-    ,[estudantes,numeroEstudante])
+    async function carregarEstudantes(cursoId) {
+        // Sem requisição - apenas simulando loading
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+        }, 500);
+    }
 
     const handleCursoChange = (e) => {
         const cursoId = e.target.value;
@@ -60,28 +58,29 @@ function LancarNotasM() {
         setModoEdicao(prev => ({ ...prev, [estudanteId]: true }));
     };
 
-    const salvarNota = async () => {
-        const estudante=filtroEstudante.at(0)
-
-        if (notaEstudante === "" || notaEstudante === null) {
+    const salvarNota = async (estudanteId) => {
+        const nota = notas[estudanteId];
+        
+        if (nota === "" || nota === null) {
             setMensagem({ texto: "Por favor, insira uma nota válida (0 a 10)", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             return;
         }
 
-        const notaNum = parseFloat(notaEstudante);
-        if (isNaN(notaNum) || notaNum < 0 || notaNum > 20) {
+        const notaNum = parseFloat(nota);
+        if (isNaN(notaNum) || notaNum < 0 || notaNum > 10) {
             setMensagem({ texto: "Nota inválida. Use valores entre 0 e 10", tipo: "error" });
+            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             return;
         }
 
         setLoading(true);
-
+        
         // Simular salvamento
         setTimeout(() => {
             setModoEdicao(prev => ({ ...prev, [estudanteId]: false }));
             setMensagem({ texto: "Nota lançada com sucesso!", tipo: "success" });
-            api.put("/estudanteInscritoNota/"+numeroEstudante,{"nota":notaEstudante})
+            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             setLoading(false);
         }, 500);
     };
@@ -93,11 +92,6 @@ function LancarNotasM() {
         if (notaNum >= 5) return { texto: "Recuperação", cor: "#ffc107" };
         return { texto: "Reprovado", cor: "#dc3545" };
     };
-
-
-
-
-
 
     return (
         <FuncionarioLayout>
@@ -134,20 +128,28 @@ function LancarNotasM() {
 
             {/* Seleção de Curso */}
             <div className="row mb-4">
-                <div className="col-md-6 ">
+                <div className="col-md-6">
                     <label className="form-label fw-bold" style={{ color: 'var(--azul-escuro)' }}>
-                        Adiciona cada numero correspondente a sua lista
+                        Selecione o Curso
                     </label>
-                   <div className="">
-                        <input type="text" value={numeroEstudante} placeholder="Inisira o numero de inscrição do candidato" onChange={(e)=> {setNumeroEstudante(e.target.value)}}/>
-                        <input disabled={filtroEstudante&&filtroEstudante.length==0} type="number" value={notaEstudante} onChange={(e)=> setNotaEstudante(e.target.value)} placeholder="Insira nota do candidato"/>
-                        <button disabled={filtroEstudante&&filtroEstudante.length==0} onClick={salvarNota}>Lancar nota</button>
-                   </div>
+                    <select 
+                        className="form-select"
+                        value={cursoSelecionado}
+                        onChange={handleCursoChange}
+                        style={{ borderColor: 'var(--azul-escuro)' }}
+                    >
+                        <option value="">-- Selecione um curso --</option>
+                        {cursos.map(curso => (
+                            <option key={curso.id} value={curso.id}>
+                                {curso.nome}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
             {/* Lista de Estudantes */}
-            {filtroEstudante.length>0 && (
+            {cursoSelecionado && (
                 <div className="row">
                     <div className="col-12">
                         <div className="d-flex align-items-center gap-2 mb-3">
@@ -175,19 +177,17 @@ function LancarNotasM() {
                                             <th>#</th>
                                             <th>Nome do Estudante</th>
                                             <th>Nota Atual</th>
-                                            <th>BI number</th>
                                             <th>Status</th>
-
+                                            <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-
-                                        {filtroEstudante.map((estudante, index) => {
+                                        {estudantes.map((estudante, index) => {
                                             const status = getStatusNota(notas[estudante.id]);
                                             return (
-                                                <tr key={estudante.id_estudanteInscricao}>
+                                                <tr key={estudante.id}>
                                                     <td>{index + 1}</td>
-                                                    <td className="fw-bold">{estudante.nome_estudanteInscricao}</td>
+                                                    <td className="fw-bold">{estudante.nome}</td>
                                                     <td style={{ width: "150px" }}>
                                                         {modoEdicao[estudante.id] ? (
                                                             <input
@@ -208,14 +208,28 @@ function LancarNotasM() {
                                                         )}
                                                     </td>
                                                     <td>
-                                                    estudante.bi_estudanteInscricao
-                                                    </td>
-                                                    <td>
                                                         <span className="badge" style={{ backgroundColor: status.cor }}>
                                                             {status.texto}
                                                         </span>
                                                     </td>
-
+                                                    <td>
+                                                        {!modoEdicao[estudante.id] ? (
+                                                            <button
+                                                                className={`btn btn-sm ${Style.botoesGestaoCurso}`}
+                                                                onClick={() => habilitarEdicao(estudante.id)}
+                                                            >
+                                                                <FaEdit className="me-1" /> Editar
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                className={`btn btn-sm ${Style.botoesGestaoCurso}`}
+                                                                onClick={() => salvarNota(estudante.id)}
+                                                                disabled={loading}
+                                                            >
+                                                                <FaSave className="me-1" /> Salvar
+                                                            </button>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
@@ -228,12 +242,12 @@ function LancarNotasM() {
             )}
 
             {/* Instruções */}
-            {filtroEstudante.length==0 && (
+            {!cursoSelecionado && (
                 <div className="row">
                     <div className="col-12">
                         <div className="alert alert-info text-center">
                             <FaCheckCircle size={20} className="me-2" />
-                            Escreva o numero do estudante e ca em baixo confirmara se existe ou nao so depois disso adicione a nota e clique em lancar
+                            Selecione um curso para começar a lançar as notas
                         </div>
                     </div>
                 </div>

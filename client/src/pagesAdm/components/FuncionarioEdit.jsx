@@ -7,7 +7,10 @@ import {
     MdAdd,
     MdPerson,
     MdPhone,
-    MdLock
+    MdLock,
+    MdPhotoCamera,
+    MdEmail,
+    MdAttachFile
 } from "react-icons/md";
 import { FaIdCard, FaUserTie } from "react-icons/fa";
 import { IoMdPersonAdd } from "react-icons/io";
@@ -29,27 +32,34 @@ function FuncionarioEdit() {
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
     const [modalSenhaAberto, setModalSenhaAberto] = useState(false);
     const [cargos, setCargos] = useState([]);
+    const [fotoPreview, setFotoPreview] = useState(null);
+    const [fotoArquivo, setFotoArquivo] = useState(null);
+    const [documentos, setDocumentos] = useState([]);
+    const [documentosPreview, setDocumentosPreview] = useState([]);
     
     const [dadosNovoFuncionario, setDadosNovoFuncionario] = useState({
         nome_funcionario: "",
         contacto_funcionario: "",
         bi_funcionario: "",
         cargo_funcionario: "",
+        email_funcionario: "",
         idAdm: ""
     });
     
     const [dadosEdicao, setDadosEdicao] = useState({
-        id_funcionario: '',
-        nome_funcionario: '',
-        contacto_funcionario: '',
-        bi_funcionario: '',
-        cargo_funcionario: '',
-        idAdm: ''
+        id_func: '',
+        nome: '',
+        contacto: '',
+        bi: '',
+        cargo: '',
+        idAdm: '',
+        email: '',
+        foto: null
     });
 
     const [dadosSenha, setDadosSenha] = useState({
-        id_funcionario: '',
-        nome_funcionario: '',
+        id_func: '',
+        nome: '',
         nova_senha: '',
         confirmar_senha: ''
     });
@@ -59,13 +69,19 @@ function FuncionarioEdit() {
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        const token = localStorage.getItem("token");
         if (usuarioSalvo) {
             setUser(JSON.parse(usuarioSalvo));
+        }
+        if (!token) {
+            showErrorToast("Acesso negado", "Faça login para acessar esta página.");
         }
     }, []);
 
     useEffect(() => {
-        Api.get(`/cargosDisponiveis`)
+        Api.get(`/cargosDisponiveis`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
             .then(response => {
                 setCargos(response.data || []);
             })
@@ -77,12 +93,20 @@ function FuncionarioEdit() {
     const apiClient = useMemo(() => {
         const client = Api.create({
             timeout: API_TIMEOUT,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
         });
 
         client.interceptors.response.use(
             (response) => response,
             (error) => {
+                if (error.response?.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("usuarioLogado");
+                    window.location.href = "/";
+                }
                 if (error.response?.data?.error) {
                     showErrorToast("Erro", error.response.data.error);
                 } else if (error.response?.data?.message) {
@@ -104,15 +128,26 @@ function FuncionarioEdit() {
         try {
             setLoading(true);
             const response = await apiClient.get('/funcionarios');
-            setLista(response.data || []);
-            setListaFiltrada(response.data || []);
+            const dados = response.data.map(func => ({
+                id_func: func.id_func,
+                nome: func.nome,
+                contacto: func.contacto,
+                bi: func.bi,
+                email: func.email,
+                cargo: func.cargo,
+                status: func.status,
+                foto: func.foto,
+                foto_url: func.foto_url
+            }));
+            setLista(dados);
+            setListaFiltrada(dados);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
             
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
+            if (mostrarNotificacao && dados && dados.length > 0) {
                 showSuccessToast(
                     "Sucesso",
                     "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} funcionário(s)` }
+                    { "Quantidade": `${dados.length} funcionário(s)` }
                 );
             } 
         } catch (error) {
@@ -137,9 +172,10 @@ function FuncionarioEdit() {
             setListaFiltrada(lista);
         } else {
             const filtrados = lista.filter(item => 
-                item.nome_funcionario?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
-                (item.bi_funcionario && item.bi_funcionario.toLowerCase().includes(termoPesquisa.toLowerCase())) ||
-                (item.contacto_funcionario && item.contacto_funcionario.includes(termoPesquisa))
+                item.nome?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                (item.bi && item.bi.toLowerCase().includes(termoPesquisa.toLowerCase())) ||
+                (item.contacto && item.contacto.includes(termoPesquisa)) ||
+                (item.email && item.email.toLowerCase().includes(termoPesquisa.toLowerCase()))
             );
             setListaFiltrada(filtrados);
         }
@@ -151,8 +187,13 @@ function FuncionarioEdit() {
             contacto_funcionario: "",
             bi_funcionario: "",
             cargo_funcionario: "",
+            email_funcionario: "",
             idAdm: user?.id || ""
         });
+        setFotoPreview(null);
+        setFotoArquivo(null);
+        setDocumentos([]);
+        setDocumentosPreview([]);
         setModalAdicionarAberto(true);
     }, [user]);
 
@@ -164,8 +205,13 @@ function FuncionarioEdit() {
                 contacto_funcionario: "",
                 bi_funcionario: "",
                 cargo_funcionario: "",
+                email_funcionario: "",
                 idAdm: ""
             });
+            setFotoPreview(null);
+            setFotoArquivo(null);
+            setDocumentos([]);
+            setDocumentosPreview([]);
         }
     }, [salvando]);
 
@@ -175,6 +221,43 @@ function FuncionarioEdit() {
             ...prev,
             [name]: value
         }));
+    }, []);
+
+    const handleFotoChange = useCallback((e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                showErrorToast("Erro", "A foto deve ser uma imagem (JPEG, PNG)");
+                return;
+            }
+            setFotoArquivo(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setFotoPreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    }, []);
+
+    const handleDocumentosChange = useCallback((e) => {
+        const files = Array.from(e.target.files);
+        const novosDocumentos = [];
+        const novosPreviews = [];
+        
+        for (const file of files) {
+            if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+                novosDocumentos.push(file);
+                novosPreviews.push({ name: file.name, type: file.type });
+            } else {
+                showErrorToast("Erro", `Formato inválido: ${file.name}. Use PDF ou imagens.`);
+            }
+        }
+        
+        setDocumentos(prev => [...prev, ...novosDocumentos]);
+        setDocumentosPreview(prev => [...prev, ...novosPreviews]);
+    }, []);
+
+    const removerDocumento = useCallback((index) => {
+        setDocumentos(prev => prev.filter((_, i) => i !== index));
+        setDocumentosPreview(prev => prev.filter((_, i) => i !== index));
     }, []);
 
     const adicionarFuncionario = useCallback(async (e) => {
@@ -205,11 +288,32 @@ function FuncionarioEdit() {
             return;
         }
 
+        if (!dadosNovoFuncionario.email_funcionario?.trim()) {
+            showErrorToast("Validação", "Preencha o email do funcionário");
+            return;
+        }
+
         setSalvando(true);
         try {
-            const response = await Api.post(`/registrarfuncionario`, {
-                ...dadosNovoFuncionario,
-                idAdm: user.id
+            const formData = new FormData();
+            formData.append('nome_funcionario', dadosNovoFuncionario.nome_funcionario);
+            formData.append('contacto_funcionario', dadosNovoFuncionario.contacto_funcionario);
+            formData.append('bi_funcionario', dadosNovoFuncionario.bi_funcionario);
+            formData.append('cargo_funcionario', dadosNovoFuncionario.cargo_funcionario);
+            formData.append('email_funcionario', dadosNovoFuncionario.email_funcionario);
+            formData.append('idAdm', user.id);
+            if (fotoArquivo) {
+                formData.append('foto', fotoArquivo);
+            }
+            documentos.forEach(doc => {
+                formData.append('documentos', doc);
+            });
+
+            const response = await Api.post(`/registrarfuncionario`, formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
             });
 
             if (response.data.sucesso) {
@@ -219,6 +323,7 @@ function FuncionarioEdit() {
                     {
                         "Nome": response.data.dados?.nome,
                         "Cargo": response.data.dados?.cargo,
+                        "Email": response.data.dados?.email,
                         "Senha": response.data.dados?.senha_original
                     }
                 );
@@ -234,29 +339,33 @@ function FuncionarioEdit() {
         } finally {
             setSalvando(false);
         }
-    }, [dadosNovoFuncionario, user, fetchFuncionarios, fecharModalAdicionar]);
+    }, [dadosNovoFuncionario, user, fetchFuncionarios, fecharModalAdicionar, fotoArquivo, documentos]);
 
     const abrirModalEditar = useCallback(async (funcionario) => {
         try {
             setDadosEdicao({
-                id_funcionario: funcionario.id_funcionario,
-                nome_funcionario: funcionario.nome_funcionario || '',
-                contacto_funcionario: funcionario.contacto_funcionario || '',
-                bi_funcionario: funcionario.bi_funcionario || '',
-                cargo_funcionario: funcionario.cargo || '',
-                idAdm: funcionario.idAdm || ''
+                id_func: funcionario.id_func,
+                nome: funcionario.nome || '',
+                contacto: funcionario.contacto || '',
+                bi: funcionario.bi || '',
+                email: funcionario.email || '',
+                cargo: funcionario.cargo || '',
+                idAdm: user?.id || '',
+                foto: funcionario.foto
             });
+            setFotoPreview(funcionario.foto_url);
+            setFotoArquivo(null);
             setModalEditarAberto(true);
         } catch (error) {
             console.error("Erro ao preparar edição:", error);
             showErrorToast("Erro", "Não foi possível carregar os dados para edição");
         }
-    }, []);
+    }, [user]);
 
     const abrirModalSenha = useCallback((funcionario) => {
         setDadosSenha({
-            id_funcionario: funcionario.id_funcionario,
-            nome_funcionario: funcionario.nome_funcionario,
+            id_func: funcionario.id_func,
+            nome: funcionario.nome,
             nova_senha: '',
             confirmar_senha: ''
         });
@@ -266,8 +375,8 @@ function FuncionarioEdit() {
     const fecharModalSenha = useCallback(() => {
         setModalSenhaAberto(false);
         setDadosSenha({
-            id_funcionario: '',
-            nome_funcionario: '',
+            id_func: '',
+            nome: '',
             nova_senha: '',
             confirmar_senha: ''
         });
@@ -283,34 +392,53 @@ function FuncionarioEdit() {
         setDadosEdicao(prev => ({ ...prev, [name]: value }));
     }, []);
 
+    const handleEdicaoFotoChange = useCallback((e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFotoArquivo(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setFotoPreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    }, []);
+
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
         
-        if (!dadosEdicao.nome_funcionario?.trim()) {
+        if (!dadosEdicao.nome?.trim()) {
             showErrorToast("Validação", "Preencha o nome do funcionário");
             return;
         }
 
-        if (!dadosEdicao.cargo_funcionario?.trim()) {
+        if (!dadosEdicao.cargo?.trim()) {
             showErrorToast("Validação", "Selecione o cargo do funcionário");
             return;
         }
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/funcionario/${dadosEdicao.id_funcionario}`, {
-                nome_funcionario: dadosEdicao.nome_funcionario,
-                contacto_funcionario: dadosEdicao.contacto_funcionario,
-                bi_funcionario: dadosEdicao.bi_funcionario,
-                cargo_funcionario: dadosEdicao.cargo_funcionario,
-                idAdm: dadosEdicao.idAdm
+            const formData = new FormData();
+            formData.append('nome_funcionario', dadosEdicao.nome);
+            formData.append('contacto_funcionario', dadosEdicao.contacto);
+            formData.append('bi_funcionario', dadosEdicao.bi);
+            formData.append('cargo_funcionario', dadosEdicao.cargo);
+            formData.append('idAdm', user?.id || '');
+            if (fotoArquivo) {
+                formData.append('foto', fotoArquivo);
+            }
+
+            const response = await Api.put(`/funcionario/${dadosEdicao.id_func}`, formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
             });
 
             if (response.data.success) {
                 showSuccessToast(
                     "Sucesso",
                     response.data.message,
-                    { "Funcionário": dadosEdicao.nome_funcionario }
+                    { "Funcionário": dadosEdicao.nome }
                 );
                 
                 await fetchFuncionarios(false);
@@ -324,7 +452,7 @@ function FuncionarioEdit() {
         } finally {
             setSalvando(false);
         }
-    }, [dadosEdicao, apiClient, fetchFuncionarios]);
+    }, [dadosEdicao, user, fetchFuncionarios, fotoArquivo]);
 
     const salvarNovaSenha = useCallback(async (e) => {
         e?.preventDefault();
@@ -346,7 +474,7 @@ function FuncionarioEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/funcionario/senha/${dadosSenha.id_funcionario}`, {
+            const response = await apiClient.put(`/funcionario/senha/${dadosSenha.id_func}`, {
                 senha_funcionario: dadosSenha.nova_senha
             });
 
@@ -354,7 +482,7 @@ function FuncionarioEdit() {
                 showSuccessToast(
                     "Sucesso",
                     response.data.message,
-                    { "Funcionário": dadosSenha.nome_funcionario }
+                    { "Funcionário": dadosSenha.nome }
                 );
                 
                 fecharModalSenha();
@@ -374,7 +502,9 @@ function FuncionarioEdit() {
             `Tens a certeza que pretendes desativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await Api.put(`/funcionario/desativar/${id}`);
+                    const response = await Api.put(`/funcionario/desativar/${id}`, {}, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                    });
                     
                     if (response.status === 200) {
                         await fetchFuncionarios(false);
@@ -399,13 +529,17 @@ function FuncionarioEdit() {
     const fecharModalEditar = useCallback(() => {
         setModalEditarAberto(false);
         setDadosEdicao({
-            id_funcionario: '',
-            nome_funcionario: '',
-            contacto_funcionario: '',
-            bi_funcionario: '',
-            cargo_funcionario: '',
-            idAdm: ''
+            id_func: '',
+            nome: '',
+            contacto: '',
+            bi: '',
+            email: '',
+            cargo: '',
+            idAdm: '',
+            foto: null
         });
+        setFotoPreview(null);
+        setFotoArquivo(null);
     }, []);
 
     useEffect(() => {
@@ -415,20 +549,37 @@ function FuncionarioEdit() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
-    const headers = ['Nome', 'Contacto', 'BI', 'Cargo', 'Senha', 'Editar', 'Desativar'];
+    const headers = ['Foto', 'Nome', 'Contacto', 'BI', 'Email', 'Cargo', 'Senha', 'Editar', 'Desativar'];
 
     const renderRow = useCallback((item) => (
-        <tr key={item.id_funcionario}>
+        <tr key={item.id_func}>
+            <td className="align-middle text-center">
+                {item.foto_url ? (
+                    <img 
+                        src={item.foto_url} 
+                        alt={item.nome} 
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                ) : (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MdPerson size={20} color="#999" />
+                    </div>
+                )}
+            </td>
             <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
-                <MdPerson className="me-2 mb-1"/>{item.nome_funcionario}
+                <MdPerson className="me-2 mb-1"/>{item.nome}
             </td>
             <td className="align-middle">
                 <MdPhone className="me-2 mb-1" style={{color:'var(--azul-escuro)'}}/>
-                {item.contacto_funcionario || 'N/I'}
+                {item.contacto || 'N/I'}
             </td>
             <td className="align-middle">
                 <FaIdCard className="me-2 mb-1" style={{color:'var(--azul-escuro)'}}/>
-                {item.bi_funcionario || 'N/I'}
+                {item.bi || 'N/I'}
+            </td>
+            <td className="align-middle">
+                <MdEmail className="me-2 mb-1" style={{color:'var(--azul-escuro)'}}/>
+                {item.email || 'N/I'}
             </td>
             <td className="align-middle">
                 <span className="badge bg-primary">{item.cargo || 'N/I'}</span>
@@ -438,7 +589,7 @@ function FuncionarioEdit() {
                     className={`btn btn-sm ${Style.btnOutros}`}
                     onClick={() => abrirModalSenha(item)}
                     disabled={loading || salvando || isConfirming}
-                    title={`Alterar senha de ${item.nome_funcionario}`}
+                    title={`Alterar senha de ${item.nome}`}
                 >
                     <MdLock />
                 </button>
@@ -448,7 +599,7 @@ function FuncionarioEdit() {
                     className={`btn btn-sm ${Style.btnEditar}`}
                     onClick={() => abrirModalEditar(item)}
                     disabled={loading || salvando || isConfirming}
-                    title={`Editar ${item.nome_funcionario}`}
+                    title={`Editar ${item.nome}`}
                 >
                     <MdEdit />
                 </button>
@@ -456,9 +607,9 @@ function FuncionarioEdit() {
             <td className="text-center">
                 <button 
                     className={`btn btn-sm ${Style.btnDeletar}`}
-                    onClick={() => desativarFuncionario(item.id_funcionario, item.nome_funcionario)}
+                    onClick={() => desativarFuncionario(item.id_func, item.nome)}
                     disabled={loading || salvando || isConfirming}
-                    title={`Desativar ${item.nome_funcionario}`}
+                    title={`Desativar ${item.nome}`}
                 >
                     <MdDeleteForever />
                 </button>
@@ -565,7 +716,7 @@ function FuncionarioEdit() {
                                             <input
                                                 type="text"
                                                 className="form-control border-start-0 ps-0"
-                                                placeholder="Pesquisar funcionário por nome, BI ou contacto..."
+                                                placeholder="Pesquisar funcionário por nome, BI, contacto ou email..."
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
@@ -610,6 +761,7 @@ function FuncionarioEdit() {
                 {renderConteudo()}
             </div>
 
+            {/* Modal Adicionar */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -680,6 +832,23 @@ function FuncionarioEdit() {
                                                     />
                                                 </div>
                                             </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label small text-muted mb-1">Email *</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text"><MdEmail /></span>
+                                                    <input 
+                                                        type="email" 
+                                                        placeholder="Email do funcionário..." 
+                                                        className="form-control shadow-sm" 
+                                                        name="email_funcionario" 
+                                                        value={dadosNovoFuncionario.email_funcionario}
+                                                        onChange={handleNovoFuncionarioInputChange}
+                                                        disabled={salvando || isConfirming}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                             
                                             <div className="col-md-12 mb-3">
                                                 <label className="form-label small text-muted mb-1">Cargo *</label>
@@ -697,11 +866,68 @@ function FuncionarioEdit() {
                                                     ))}
                                                 </select>
                                             </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label small text-muted mb-1">Foto de Perfil</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text"><MdPhotoCamera /></span>
+                                                    <input 
+                                                        type="file" 
+                                                        className="form-control shadow-sm" 
+                                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                                        onChange={handleFotoChange}
+                                                        disabled={salvando || isConfirming}
+                                                    />
+                                                </div>
+                                                {fotoPreview && (
+                                                    <div className="mt-2 text-center">
+                                                        <img 
+                                                            src={fotoPreview} 
+                                                            alt="Preview" 
+                                                            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label small text-muted mb-1">Documentos (PDF, imagens)</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text"><MdAttachFile /></span>
+                                                    <input 
+                                                        type="file" 
+                                                        className="form-control shadow-sm" 
+                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                        multiple
+                                                        onChange={handleDocumentosChange}
+                                                        disabled={salvando || isConfirming}
+                                                    />
+                                                </div>
+                                                {documentosPreview.length > 0 && (
+                                                    <div className="mt-2">
+                                                        <small className="text-muted">Documentos anexados:</small>
+                                                        <div className="list-group mt-1">
+                                                            {documentosPreview.map((doc, index) => (
+                                                                <div key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>{doc.name}</span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        className="btn btn-sm btn-danger"
+                                                                        onClick={() => removerDocumento(index)}
+                                                                    >
+                                                                        <MdDeleteForever />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                             
                                             <div className="col-md-12 mb-3">
                                                 <div className="alert alert-info">
                                                     <small>
-                                                        <strong>Nota:</strong> Uma senha será gerada automaticamente para o funcionário.
+                                                        <strong>Nota:</strong> Uma senha será gerada automaticamente e enviada para o email do funcionário.
                                                     </small>
                                                 </div>
                                             </div>
@@ -738,6 +964,7 @@ function FuncionarioEdit() {
                 </div>
             )}
 
+            {/* Modal Editar */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -745,7 +972,7 @@ function FuncionarioEdit() {
                             <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
                                 <h5 className="modal-title mb-0">
                                     <MdEdit className="me-2" />
-                                    Editar Funcionário - {dadosEdicao.nome_funcionario}
+                                    Editar Funcionário - {dadosEdicao.nome}
                                 </h5>
                                 <button 
                                     type="button" 
@@ -765,8 +992,8 @@ function FuncionarioEdit() {
                                                     <input 
                                                         type="text" 
                                                         className="form-control shadow-sm" 
-                                                        name="nome_funcionario" 
-                                                        value={dadosEdicao.nome_funcionario}
+                                                        name="nome" 
+                                                        value={dadosEdicao.nome}
                                                         onChange={handleInputChange}
                                                         placeholder="Nome Completo"
                                                         disabled={salvando || isConfirming}
@@ -776,35 +1003,49 @@ function FuncionarioEdit() {
                                             </div>
                                             
                                             <div className="col-md-6 mb-3">
-                                                <label className="form-label small text-muted mb-1">Contacto *</label>
+                                                <label className="form-label small text-muted mb-1">Contacto</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text"><MdPhone /></span>
                                                     <input 
                                                         type="text" 
                                                         className="form-control shadow-sm" 
-                                                        name="contacto_funcionario" 
-                                                        value={dadosEdicao.contacto_funcionario}
+                                                        name="contacto" 
+                                                        value={dadosEdicao.contacto}
                                                         onChange={handleInputChange}
                                                         placeholder="Contacto"
                                                         disabled={salvando || isConfirming}
-                                                        required
                                                     />
                                                 </div>
                                             </div>
                                             
                                             <div className="col-md-6 mb-3">
-                                                <label className="form-label small text-muted mb-1">BI *</label>
+                                                <label className="form-label small text-muted mb-1">BI</label>
                                                 <div className="input-group">
                                                     <span className="input-group-text"><FaIdCard /></span>
                                                     <input 
                                                         type="text" 
                                                         className="form-control shadow-sm" 
-                                                        name="bi_funcionario" 
-                                                        value={dadosEdicao.bi_funcionario}
+                                                        name="bi" 
+                                                        value={dadosEdicao.bi}
                                                         onChange={handleInputChange}
                                                         placeholder="Nº do BI"
                                                         disabled={salvando || isConfirming}
-                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label small text-muted mb-1">Email</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text"><MdEmail /></span>
+                                                    <input 
+                                                        type="email" 
+                                                        className="form-control shadow-sm" 
+                                                        name="email" 
+                                                        value={dadosEdicao.email}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Email"
+                                                        disabled={salvando || isConfirming}
                                                     />
                                                 </div>
                                             </div>
@@ -813,8 +1054,8 @@ function FuncionarioEdit() {
                                                 <label className="form-label small text-muted mb-1">Cargo *</label>
                                                 <select
                                                     className="form-control shadow-sm"
-                                                    name="cargo_funcionario"
-                                                    value={dadosEdicao.cargo_funcionario}
+                                                    name="cargo"
+                                                    value={dadosEdicao.cargo}
                                                     onChange={handleInputChange}
                                                     disabled={salvando || isConfirming}
                                                     required
@@ -824,6 +1065,29 @@ function FuncionarioEdit() {
                                                         <option key={cargo.id_cargo} value={cargo.cargo}>{cargo.cargo}</option>
                                                     ))}
                                                 </select>
+                                            </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label small text-muted mb-1">Foto de Perfil</label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text"><MdPhotoCamera /></span>
+                                                    <input 
+                                                        type="file" 
+                                                        className="form-control shadow-sm" 
+                                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                                        onChange={handleEdicaoFotoChange}
+                                                        disabled={salvando || isConfirming}
+                                                    />
+                                                </div>
+                                                {fotoPreview && (
+                                                    <div className="mt-2 text-center">
+                                                        <img 
+                                                            src={fotoPreview} 
+                                                            alt="Preview" 
+                                                            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -840,7 +1104,7 @@ function FuncionarioEdit() {
                                     <button 
                                         type="submit" 
                                         className={`btn ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !dadosEdicao.nome_funcionario?.trim()}
+                                        disabled={salvando || isConfirming || !dadosEdicao.nome?.trim()}
                                     >
                                         {salvando ? (
                                             <>
@@ -858,6 +1122,7 @@ function FuncionarioEdit() {
                 </div>
             )}
 
+            {/* Modal Senha */}
             {modalSenhaAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <div className="modal-dialog modal-dialog-centered modal-md">
@@ -865,7 +1130,7 @@ function FuncionarioEdit() {
                             <div className="modal-header" style={{backgroundColor:'var(--azul-escuro)',color:'var(--dourado)'}}>
                                 <h5 className="modal-title mb-0">
                                     <MdLock className="me-2" />
-                                    Alterar Senha - {dadosSenha.nome_funcionario}
+                                    Alterar Senha - {dadosSenha.nome}
                                 </h5>
                                 <button 
                                     type="button" 

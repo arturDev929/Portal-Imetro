@@ -1,0 +1,36 @@
+{
+  "name": "server2.0",
+  "version": "2.0.0",
+  "description": "Back-End do projeto Portal Imetro",
+  "homepage": "https://github.com/arturDev929/Portal-Imetro#readme",
+  "bugs": {
+    "url": "https://github.com/arturDev929/Portal-Imetro/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arturDev929/Portal-Imetro.git"
+  },
+  "license": "ISC",
+  "author": "Artur Macumba Paulo, Goven Leya, Tiago António, Leovigildo João, Eliseu Cabanga",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "mysql2": "^3.22.4",
+    "nodemailer": "^8.0.9",
+    "nodemon": "^3.1.14",
+    "os": "^0.1.2",
+    "path": "^0.12.7",
+    "uuid": "^14.0.0"
+  }
+}

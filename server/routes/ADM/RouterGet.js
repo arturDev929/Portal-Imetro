@@ -2,8 +2,6 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../../infra/conexao");
 
-// ==================== ROTAS EXISTENTES ====================
-
 router.get('/totalcategoriacurso', (req, res) => {
     const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
     conexao.query(sql, (error, results) => {

@@ -11,7 +11,7 @@ import { api } from "../service/api";
 function Home() {
   const navigate = useNavigate();
 
-  const [numEstudante, setNumEstudante] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +21,13 @@ function Home() {
 
     try {
       const response = await api.post("/login", {
-        numEstudante,
+        email,
         password,
       });
 
       if (response.data.sucesso) {
+        localStorage.setItem("token", response.data.token);
+        
         showSuccessToast(
           response.data.titulo || "Login realizado",
           response.data.mensagem || "Login realizado com sucesso!",
@@ -108,10 +110,10 @@ function Home() {
                         <input
                           type="text"
                           className={`${Style.inputHome} form-control`}
-                          id="numEstudante"
-                          placeholder="Insira o seu codigo ou BI"
-                          value={numEstudante}
-                          onChange={(e) => setNumEstudante(e.target.value)}
+                          id="email"
+                          placeholder="Insira o seu email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
                         />
@@ -137,7 +139,7 @@ function Home() {
                     <button
                       type="submit"
                       className={`${Style.ButtonHome} btn w-100 py-2`}
-                      disabled={loading || !numEstudante.trim() || !password.trim()}
+                      disabled={loading || !email.trim() || !password.trim()}
                     >
                       {loading ? (
                         <>
