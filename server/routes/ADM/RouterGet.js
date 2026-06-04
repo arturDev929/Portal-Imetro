@@ -1,0 +1,1873 @@
+const { Router } = require("express");
+const router = Router();
+const conexao = require("../../infra/conexao");
+
+// ==================== ROTAS EXISTENTES ====================
+
+router.get('/totalcategoriacurso', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_categorias FROM categoriacurso;";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar categorias: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/totallicenciaturas', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_licenciaturas FROM curso;";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar licenciaturas: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/totaldisciplina', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_disciplinas FROM disciplina";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar disciplinas: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/dadosGraficosCategoria', (req, res) => {
+    const sql = "SELECT categoriacurso.categoriacurso, COUNT(curso.idcurso) as total_cursos FROM categoriacurso LEFT JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso GROUP BY categoriacurso.idcategoriacurso, categoriacurso.categoriacurso ORDER BY total_cursos DESC LIMIT 100";
+
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar dados para gráfico: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+router.get('/totalDisciplinasPorCurso', (req, res) => {
+    const sql = `
+        SELECT 
+            c.curso,
+            c.idcurso,
+            COUNT(s.idsemestre) as total_disciplinas
+        FROM curso c
+        INNER JOIN semestre s ON c.idcurso = s.idcurso
+        GROUP BY c.idcurso, c.curso
+        ORDER BY total_disciplinas DESC
+        LIMIT 100
+    `;
+
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar total de disciplinas por curso: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+router.get('/categoriaCurso', (req, res) => {
+    const sql = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso ORDER BY categoriacurso ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar categorias:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/getcursos', (req, res) => {
+    const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cursos:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/Cursos', (req, res) => {
+    const sql = "SELECT *FROM curso INNER JOIN categoriacurso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso ORDER BY categoriacurso ASC LIMIT 100";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cursos:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/anosCurriculares', (req, res) => {
+    const sql = "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular ORDER BY anocurricular ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar anos curriculares:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/Disciplinas', (req, res) => {
+    const sql = "SELECT iddisciplina, disciplina FROM disciplina ORDER BY disciplina ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/semestres', (req, res) => {
+    const sql = "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre ORDER BY semestre ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar semestres:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/periodos', (req, res) => {
+    const sql = "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma, anoletivo FROM periodo ORDER BY turma ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar períodos:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/categoriaCurso/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT idcategoriacurso, categoriacurso FROM categoriacurso WHERE idcategoriacurso = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar categoria:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Categoria não encontrada" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/curso/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT idcurso, curso, idcategoriacurso FROM curso WHERE idcurso = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar curso:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Curso não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/disciplina/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT iddisciplina, disciplina FROM disciplina WHERE iddisciplina = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplina:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Disciplina não encontrada" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/anoCurricular/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT idanocurricular, anocurricular, idcurso FROM anocurricular WHERE idcurso = ? ORDER BY anocurricular DESC LIMIT 100";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar ano curricular:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Ano curricular não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/semestre/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT idsemestre, idcategoriacurso, idcurso, iddisciplina, semestre, idanocurricular FROM semestre WHERE idsemestre = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar semestre:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Semestre não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/periodo/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT idperiodo, idanocurricular, idcategoriacurso, idcurso, periodo, turma, anoletivo FROM periodo WHERE idperiodo = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar período:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Período não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/ProfessoresDesativados', (req, res) => {
+    const sql = "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(professor => ({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/Professores', (req, res) => {
+    const sql = "SELECT * FROM professor WHERE estado = 'Ativo' ORDER BY nomeprofessor ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(professor => ({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/CategoriaCursosAno', (req, res) => {
+    const sql = "SELECT categoriacurso.categoriacurso, categoriacurso.idcategoriacurso, curso.curso, curso.idcurso, anocurricular.anocurricular, anocurricular.idanocurricular FROM categoriacurso INNER JOIN curso ON categoriacurso.idcategoriacurso = curso.idcategoriacurso INNER JOIN anocurricular ON curso.idcurso = anocurricular.idcurso ORDER BY anocurricular.anocurricular AND curso.curso ASC LIMIT 500";
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar dados combinados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
+    const { idcurso } = req.params;
+
+    const sql = `
+        SELECT 
+            d.iddisciplina,
+            d.disciplina,
+            s.idsemestre,
+            s.semestre,
+            a.anocurricular,
+            c.curso,
+            cc.categoriacurso
+        FROM semestre s
+        INNER JOIN disciplina d ON s.iddisciplina = d.iddisciplina
+        INNER JOIN anocurricular a ON s.idanocurricular = a.idanocurricular
+        INNER JOIN curso c ON s.idcurso = c.idcurso
+        INNER JOIN categoriacurso cc ON s.idcategoriacurso = cc.idcategoriacurso
+        WHERE s.idcurso = ?
+        ORDER BY a.anocurricular ASC, s.semestre ASC, d.disciplina ASC
+    `;
+
+    conexao.query(sql, [idcurso], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas do curso:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                const sqlCurso = "SELECT c.curso, cc.categoriacurso FROM curso c INNER JOIN categoriacurso cc ON c.idcategoriacurso = cc.idcategoriacurso WHERE c.idcurso = ?";
+                conexao.query(sqlCurso, [idcurso], (errorCurso, resultCurso) => {
+                    if (errorCurso) {
+                        res.status(200).json({
+                            curso: 'Curso não identificado',
+                            categoria: '',
+                            totalDisciplinas: 0,
+                            disciplinas: {}
+                        });
+                    } else {
+                        res.status(200).json({
+                            curso: resultCurso[0]?.curso || 'Curso não identificado',
+                            categoria: resultCurso[0]?.categoriacurso || '',
+                            totalDisciplinas: 0,
+                            disciplinas: {}
+                        });
+                    }
+                });
+                return;
+            }
+
+            const disciplinasAgrupadas = result.reduce((acc, disciplina) => {
+                const anoKey = `Ano ${disciplina.anocurricular}`;
+
+                if (!acc[anoKey]) {
+                    acc[anoKey] = {};
+                }
+
+                const semestreKey = `Semestre ${disciplina.semestre}`;
+
+                if (!acc[anoKey][semestreKey]) {
+                    acc[anoKey][semestreKey] = [];
+                }
+
+                acc[anoKey][semestreKey].push({
+                    id: disciplina.iddisciplina,
+                    idsemestre: disciplina.idsemestre,
+                    nome: disciplina.disciplina
+                });
+
+                return acc;
+            }, {});
+
+            res.status(200).json({
+                curso: result[0]?.curso || 'Curso não encontrado',
+                categoria: result[0]?.categoriacurso || '',
+                totalDisciplinas: result.length,
+                disciplinas: disciplinasAgrupadas
+            });
+        }
+    });
+});
+
+router.get('/professorVinculado/:id', async (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT 
+            disc_prof.iddiscprof,
+            professor.nomeprofessor,
+            professor.fotoprofessor,
+            professor.idprofessor,
+            professor.titulacaoprofessor,
+            disciplina.disciplina,
+            disciplina.iddisciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        INNER JOIN professor ON professor.idprofessor = disc_prof.idprofessor 
+        WHERE disciplina.iddisciplina = ? AND estado = 'Ativo'
+        ORDER BY professor.nomeprofessor ASC
+    `;
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores vinculados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(a => ({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professorDisponivel/:id', async (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT 
+            professor.idprofessor,
+            professor.nomeprofessor,
+            professor.titulacaoprofessor,
+            professor.fotoprofessor
+        FROM professor
+        WHERE estado = 'Ativo' AND  professor.idprofessor NOT IN (
+            SELECT disc_prof.idprofessor 
+            FROM disc_prof 
+            WHERE disc_prof.iddisciplina = ? 
+        )
+        ORDER BY professor.nomeprofessor ASC
+    `;
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores disponíveis:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(a => ({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/estatisticasProfessores', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalProfessores,
+            COUNT(CASE WHEN fotoprofessor IS NOT NULL THEN 1 END) as professoresComFoto,
+            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as professoresComTitulacao
+        FROM professor WHERE estado = 'Ativo'
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar estatísticas de professores:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/distribuicaoTitulacao', (req, res) => {
+    const sql = `
+        SELECT 
+            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
+            COUNT(*) as quantidade
+        FROM professor  WHERE estado = 'Ativo'
+        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
+        ORDER BY quantidade DESC
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar distribuição por titulação:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professoresPorDisciplina', (req, res) => {
+    const sql = `
+        SELECT 
+            d.disciplina,
+            d.iddisciplina,
+            COUNT(dp.idprofessor) as totalProfessores,
+            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professores
+        FROM disc_prof dp
+        RIGHT JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        LEFT JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
+        GROUP BY d.iddisciplina, d.disciplina
+        ORDER BY totalProfessores DESC, d.disciplina ASC
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores por disciplina:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/disciplinasMaisMinistradas', (req, res) => {
+    const sql = `
+        SELECT 
+            d.disciplina,
+            COUNT(DISTINCT dp.idprofessor) as totalProfessores,
+            GROUP_CONCAT(DISTINCT p.nomeprofessor SEPARATOR ', ') as professoresNomes
+        FROM disc_prof dp
+        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina
+        INNER JOIN professor p ON dp.idprofessor = p.idprofessor WHERE estado = 'Ativo'
+        GROUP BY d.iddisciplina, d.disciplina
+        HAVING totalProfessores > 0
+        ORDER BY totalProfessores DESC
+        LIMIT 10
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas mais ministradas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professoresMaisAtivos', (req, res) => {
+    const sql = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.titulacaoprofessor,
+            p.fotoprofessor,
+            COUNT(DISTINCT dp.iddisciplina) as totalDisciplinas,
+            GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') as disciplinas
+        FROM disc_prof dp
+        INNER JOIN professor p ON dp.idprofessor = p.idprofessor
+        INNER JOIN disciplina d ON dp.iddisciplina = d.iddisciplina 
+        WHERE estado = 'Ativo'
+        GROUP BY p.idprofessor, p.nomeprofessor, p.titulacaoprofessor
+        HAVING totalDisciplinas > 0
+        ORDER BY totalDisciplinas DESC
+        LIMIT 10
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores mais ativos:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(a => ({
+                ...a,
+                fotoUrl: a.fotoprofessor ? `${baseUrl}/api/img/professores/${a.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/professoresSemDisciplinas', (req, res) => {
+    const sql = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.titulacaoprofessor
+        FROM professor p
+        LEFT JOIN disc_prof dp ON p.idprofessor = dp.idprofessor
+        WHERE dp.idprofessor IS NULL AND estado = 'Ativo'
+        ORDER BY p.nomeprofessor ASC
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores sem disciplinas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const sql = `
+        SELECT 
+            disc_prof.iddiscprof,
+            disciplina.disciplina,
+            disciplina.iddisciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        WHERE disc_prof.idprofessor = ?
+        ORDER BY disciplina.disciplina ASC
+    `;
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas vinculadas:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json(result);
+    });
+});
+
+router.get('/InformacoesProfessor/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const sqlProfessor = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor,
+            p.fotoprofessor,
+            p.codigoprofessor,
+            p.generoprofessor,
+            p.nacionalidadeprofessor,
+            p.estadocivilprofessor,
+            p.nomepaiprofessor,
+            p.nomemaeprofessor,
+            p.nbiprofessor,
+            p.datanascimentoprofessor,
+            p.bipdfprofessor,
+            p.residenciaprofessor,
+            p.telefoneprofessor,
+            p.whatsappprofessor,
+            p.emailprofessor,
+            p.anoexperienciaprofessor,
+            p.titulacaoprofessor,
+            p.dataadmissaoprofessor,
+            p.tiposanguineoprofessor,
+            p.ibanprofessor,
+            p.condicoesprofessor,
+            contactoemergenciaprofessor
+        FROM professor p
+        WHERE p.idprofessor = ?
+    `;
+
+    const sqlDisciplinas = `
+        SELECT 
+            disciplina.iddisciplina,
+            disciplina.disciplina
+        FROM disc_prof 
+        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
+        WHERE disc_prof.idprofessor = ?
+        ORDER BY disciplina.disciplina ASC
+    `;
+
+    conexao.query(sqlProfessor, [id], (error, professorResult) => {
+        if (error) {
+            console.error("Erro ao buscar dados do professor:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        if (professorResult.length === 0) {
+            return res.status(404).json({ error: "Professor não encontrado" });
+        }
+
+        const professor = professorResult[0];
+
+        conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
+            if (error) {
+                console.error("Erro ao buscar disciplinas:", error);
+                return res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: error.message
+                });
+            }
+
+            let curriculoUrl = null;
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            if (professor.bipdfprofessor) {
+                curriculoUrl = `${baseUrl}/api/img/professores/DocBI/${professor.bipdfprofessor}`;
+            }
+
+            const professorCompleto = {
+                ...professor,
+                fotoUrl: professor.fotoprofessor ?
+                    `${baseUrl}/api/img/professores/${professor.fotoprofessor}` :
+                    '/default-avatar.png',
+                curriculoUrl: curriculoUrl,
+                datanascimentoFormatada: professor.datanascimentoprofessor ?
+                    new Date(professor.datanascimentoprofessor).toISOString().split('T')[0] :
+                    null,
+                dataadmissaoFormatada: professor.dataadmissaoprofessor ?
+                    new Date(professor.dataadmissaoprofessor).toISOString().split('T')[0] :
+                    null,
+                disciplinas: disciplinasResult
+            };
+
+            res.status(200).json(professorCompleto);
+        });
+    });
+});
+
+router.get('/turmas', async (req, res) => {
+    const sql = `SELECT p.idperiodo, p.periodo, p.turma, p.anoletivo, ct.categoriacurso, c.curso, a.anocurricular FROM periodo p INNER JOIN categoriacurso ct ON p.idcategoriacurso = ct.idcategoriacurso INNER JOIN curso c ON p.idcurso = c.idcurso INNER JOIN anocurricular a ON p.idanocurricular = a.idanocurricular ORDER BY (p.anoletivo IS NOT NULL AND a.anocurricular IS NOT NULL) DESC,p.anoletivo ASC,a.anocurricular ASC,p.turma ASC LIMIT 10000`;
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores sem disciplinas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+})
+
+router.get('/estatisticasProfessoresDesativados', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalProfessoresDesativados,
+            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as desativadosComTitulacao
+        FROM professor WHERE estado = 'Desativado'
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar estatísticas de professores desativados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/professoresDesativados', (req, res) => {
+    const sql = "SELECT * FROM professor WHERE estado = 'Desativado' ORDER BY nomeprofessor ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores desativados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(professor => ({
+                ...professor,
+                fotoUrl: professor.fotoprofessor ? `${baseUrl}/api/img/professores/${professor.fotoprofessor}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/distribuicaoTitulacaoDesativados', (req, res) => {
+    const sql = `
+        SELECT 
+            IFNULL(titulacaoprofessor, 'Não informado') as titulacao,
+            COUNT(*) as quantidade
+        FROM professor
+        WHERE estado = 'Desativado'
+        GROUP BY IFNULL(titulacaoprofessor, 'Não informado')
+        ORDER BY quantidade DESC
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar distribuição por titulação de desativados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/estatisticasFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as totalFuncionarios,
+            COUNT(CASE WHEN bi_funcionario IS NOT NULL AND bi_funcionario != '' THEN 1 END) as funcionariosComBI,
+            COUNT(CASE WHEN contacto_funcionario IS NOT NULL AND contacto_funcionario != '' THEN 1 END) as funcionariosComContacto
+        FROM funcionario 
+        WHERE estado_funcionario = 'Ativo'
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar estatísticas de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/estatisticasFuncionariosDesativados', (req, res) => {
+    const sql = "SELECT COUNT(*) as totalFuncionariosDesativados FROM funcionario WHERE estado_funcionario = 'Desativado'";
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar estatísticas de funcionários desativados:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result[0] || {});
+        }
+    });
+});
+
+router.get('/funcionarios', (req, res) => {
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Ativo' ORDER BY funcionario.nome_funcionario ASC";
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/funcionariosDesativados', (req, res) => {
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.estado_funcionario = 'Desativado' ORDER BY funcionario.nome_funcionario ASC";
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar funcionários desativados:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/funcionario/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT * FROM funcionario INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo WHERE funcionario.id_funcionario = ?";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar funcionário:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Funcionário não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/funcionariosPorCargo/:id_cargo', (req, res) => {
+    const { id_cargo } = req.params;
+    const sql = "SELECT f.*, cf.cargo FROM funcionario f INNER JOIN cargo_funcionario_relation cfr ON f.id_funcionario = cfr.id_funcionario INNER JOIN cargo_funcionario cf ON cf.id_cargo = cfr.id_cargo WHERE cf.id_cargo = ? AND f.estado_funcionario = 'Ativo' ORDER BY f.nome_funcionario ASC";
+
+    conexao.query(sql, [id_cargo], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar funcionários por cargo:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/dashboardFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Ativo') as ativos,
+            (SELECT COUNT(*) FROM funcionario WHERE estado_funcionario = 'Desativado') as desativados,
+            (SELECT COUNT(*) FROM funcionario) as total
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar dashboard de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            const dados = result[0] || { ativos: 0, desativados: 0, total: 0 };
+            const total = dados.total || 1;
+            const percentAtivos = ((dados.ativos / total) * 100).toFixed(1);
+            const percentDesativados = ((dados.desativados / total) * 100).toFixed(1);
+
+            res.status(200).json({
+                ...dados,
+                percentAtivos,
+                percentDesativados,
+                dadosGrafico: [
+                    { nome: 'Ativos', valor: dados.ativos, cor: '#003366' },
+                    { nome: 'Desativados', valor: dados.desativados, cor: '#DC143C' }
+                ]
+            });
+        }
+    });
+});
+
+router.get('/cargosFuncionarios', (req, res) => {
+    const sql = `
+        SELECT 
+            cargo_funcionario.cargo as cargo,
+            COUNT(*) as quantidade
+        FROM funcionario 
+        INNER JOIN cargo_funcionario_relation ON funcionario.id_funcionario = cargo_funcionario_relation.id_funcionario 
+        INNER JOIN cargo_funcionario ON cargo_funcionario.id_cargo = cargo_funcionario_relation.id_cargo
+        WHERE estado_funcionario = 'Ativo'
+        GROUP BY cargo_funcionario.cargo
+        ORDER BY quantidade DESC LIMIT 100
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cargos de funcionários:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/cargosDisponiveis', (req, res) => {
+    const sql = "SELECT id_cargo, cargo FROM cargo_funcionario ORDER BY cargo ASC";
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cargos disponíveis:", error);
+            res.status(500).json({ error: "Erro interno do servidor" });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/disciplinasPorTurma/:idperiodo/:anocurricular', (req, res) => {
+    const { idperiodo, anocurricular } = req.params;
+    const query = `
+        SELECT DISTINCT
+            d.iddisciplina,
+            d.disciplina,
+            a.anocurricular,
+            s.semestre
+        FROM curso c
+        INNER JOIN periodo p ON p.idcurso = c.idcurso
+        INNER JOIN semestre s ON s.idcurso = c.idcurso
+        INNER JOIN disciplina d ON d.iddisciplina = s.iddisciplina
+        INNER JOIN anocurricular a ON a.idanocurricular = s.idanocurricular
+        WHERE p.idperiodo = ? AND a.anocurricular = ?
+        ORDER BY s.semestre ASC, d.disciplina ASC
+        LIMIT 100
+    `;
+
+    conexao.query(query, [idperiodo, anocurricular], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas da turma:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json(results);
+    });
+});
+router.get('/professoresPorDisciplina/:iddisciplina', (req, res) => {
+    const { iddisciplina } = req.params;
+
+    if (!iddisciplina) {
+        return res.status(400).json({
+            error: 'ID da disciplina não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            p.idprofessor,
+            p.nomeprofessor as nome,
+            p.emailprofessor as email,
+            p.titulacaoprofessor as especialidade
+        FROM disc_prof dp
+        INNER JOIN professor p ON p.idprofessor = dp.idprofessor
+        WHERE dp.iddisciplina = ? AND p.estado = 'Ativo'
+        ORDER BY p.nomeprofessor ASC
+    `;
+
+    conexao.query(query, [iddisciplina], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar professores da disciplina:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json(results);
+    });
+});
+
+router.get('/turmasProfessor/:idprofessor', (req, res) => {
+    const { idprofessor } = req.params;
+
+    if (!idprofessor) {
+        return res.status(400).json({
+            error: 'ID do professor não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            pr.turma,
+            pr.periodo,
+            pr.anoletivo,
+            d.disciplina,
+            d.iddisciplina,
+            ptd.idperiodo,
+            COUNT(DISTINCT e.id_estudante) AS total_estudantes
+        FROM periodo pr
+        INNER JOIN professor_turma_disciplina ptd ON ptd.idperiodo = pr.idperiodo
+        INNER JOIN professor p ON p.idprofessor = ptd.idprofessor
+        INNER JOIN disciplina d ON d.iddisciplina = ptd.iddisciplina
+        LEFT JOIN estudante_matriculado e ON e.idperiodo = pr.idperiodo 
+            AND e.idperiodo = ptd.idperiodo
+        WHERE p.codigoprofessor = ?
+        GROUP BY pr.turma, pr.periodo, pr.anoletivo, d.disciplina, d.iddisciplina, ptd.idperiodo
+        ORDER BY pr.turma, d.disciplina 
+        LIMIT 100
+    `;
+
+    conexao.query(query, [idprofessor], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar turmas do professor:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results,
+            total: results.length
+        });
+    });
+});
+
+router.get('/estudantesPorTurmaDisciplina/:idperiodo/:iddisciplina', (req, res) => {
+    const { idperiodo, iddisciplina } = req.params;
+
+    if (!idperiodo || !iddisciplina) {
+        return res.status(400).json({
+            error: 'Parâmetros inválidos'
+        });
+    }
+
+    const query = `
+        SELECT DISTINCT
+            e.id_estudante,
+            e.numero_estudante,
+            e.nome_estudante as nome,
+            e.email_estudante as email,
+            e.contacto_estudante as contacto,
+            e.genero_estudante as genero,
+            e.estado_estudante as situacao,
+            DATE_FORMAT(em.data_matricula, '%d/%m/%Y') as data_matricula
+        FROM estudante_matriculado
+        WHERE em.idperiodo = ? 
+            AND em.iddisciplina = ?
+            AND e.estado_estudante = 'Ativo'
+        ORDER BY e.nome_estudante ASC
+    `;
+
+    conexao.query(query, [idperiodo, iddisciplina], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar estudantes:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results,
+            total: results.length
+        });
+    });
+});
+
+// Rota para buscar detalhes da turma
+router.get('/detalhesTurma/:idperiodo', (req, res) => {
+    const { idperiodo } = req.params;
+
+    if (!idperiodo) {
+        return res.status(400).json({
+            error: 'ID do período não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            pr.idperiodo,
+            pr.turma,
+            pr.periodo,
+            pr.anoletivo,
+            c.nome_curso as curso,
+            cc.nome_categoria as categoria,
+            ac.ano_curricular as ano_curricular
+        FROM periodo pr
+        INNER JOIN curso c ON c.idcurso = pr.idcurso
+        INNER JOIN categoria_curso cc ON cc.idcategoriacurso = pr.idcategoriacurso
+        INNER JOIN ano_curricular ac ON ac.idanocurricular = pr.idanocurricular
+        WHERE pr.idperiodo = ?
+    `;
+
+    conexao.query(query, [idperiodo], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar detalhes da turma:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                error: "Turma não encontrada"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: results[0]
+        });
+    });
+});
+
+module.exports = router;
+
+/**
+ * @swagger
+ * /totalcategoriacurso:
+ *   get:
+ *     summary: Total de categorias de curso
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de categorias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_categorias:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /totallicenciaturas:
+ *   get:
+ *     summary: Total de cursos (licenciaturas)
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de cursos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_licenciaturas:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /totaldisciplina:
+ *   get:
+ *     summary: Total de disciplinas
+ *     tags: [Disciplinas - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de disciplinas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total_disciplinas:
+ *                   type: integer
+ */
+
+/**
+ * @swagger
+ * /dadosGraficosCategoria:
+ *   get:
+ *     summary: Dados para gráfico de categorias com total de cursos
+ *     tags: [Cursos - Gráficos]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias com contagem de cursos
+ */
+
+/**
+ * @swagger
+ * /totalDisciplinasPorCurso:
+ *   get:
+ *     summary: Total de disciplinas por curso
+ *     tags: [Cursos - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos com total de disciplinas
+ */
+
+/**
+ * @swagger
+ * /categoriaCurso:
+ *   get:
+ *     summary: Listar todas as categorias de curso
+ *     tags: [Cursos - Categorias]
+ *     responses:
+ *       200:
+ *         description: Lista de categorias
+ */
+
+/**
+ * @swagger
+ * /getcursos:
+ *   get:
+ *     summary: Listar cursos com suas categorias
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos
+ */
+
+/**
+ * @swagger
+ * /Cursos:
+ *   get:
+ *     summary: Listar cursos com suas categorias (alias)
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Lista de cursos
+ */
+
+/**
+ * @swagger
+ * /anosCurriculares:
+ *   get:
+ *     summary: Listar anos curriculares
+ *     tags: [Cursos - Ano Curricular]
+ *     responses:
+ *       200:
+ *         description: Lista de anos curriculares
+ */
+
+/**
+ * @swagger
+ * /Disciplinas:
+ *   get:
+ *     summary: Listar todas as disciplinas
+ *     tags: [Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Lista de disciplinas
+ */
+
+/**
+ * @swagger
+ * /semestres:
+ *   get:
+ *     summary: Listar todos os semestres
+ *     tags: [Semestres]
+ *     responses:
+ *       200:
+ *         description: Lista de semestres
+ */
+
+/**
+ * @swagger
+ * /periodos:
+ *   get:
+ *     summary: Listar todos os períodos/turmas
+ *     tags: [Turmas]
+ *     responses:
+ *       200:
+ *         description: Lista de períodos
+ */
+
+/**
+ * @swagger
+ * /categoriaCurso/{id}:
+ *   get:
+ *     summary: Buscar categoria por ID
+ *     tags: [Cursos - Categorias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Categoria encontrada
+ *       404:
+ *         description: Categoria não encontrada
+ */
+
+/**
+ * @swagger
+ * /curso/{id}:
+ *   get:
+ *     summary: Buscar curso por ID
+ *     tags: [Cursos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Curso encontrado
+ *       404:
+ *         description: Curso não encontrado
+ */
+
+/**
+ * @swagger
+ * /disciplina/{id}:
+ *   get:
+ *     summary: Buscar disciplina por ID
+ *     tags: [Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Disciplina encontrada
+ *       404:
+ *         description: Disciplina não encontrada
+ */
+
+/**
+ * @swagger
+ * /anoCurricular/{id}:
+ *   get:
+ *     summary: Buscar ano curricular por ID do curso
+ *     tags: [Cursos - Ano Curricular]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do curso
+ *     responses:
+ *       200:
+ *         description: Ano curricular encontrado
+ *       404:
+ *         description: Ano curricular não encontrado
+ */
+
+/**
+ * @swagger
+ * /semestre/{id}:
+ *   get:
+ *     summary: Buscar semestre por ID
+ *     tags: [Semestres]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Semestre encontrado
+ *       404:
+ *         description: Semestre não encontrado
+ */
+
+/**
+ * @swagger
+ * /periodo/{id}:
+ *   get:
+ *     summary: Buscar período por ID
+ *     tags: [Turmas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Período encontrado
+ *       404:
+ *         description: Período não encontrado
+ */
+
+/**
+ * @swagger
+ * /Professores:
+ *   get:
+ *     summary: Listar professores ativos
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores com fotos
+ */
+
+/**
+ * @swagger
+ * /ProfessoresDesativados:
+ *   get:
+ *     summary: Listar professores desativados
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores desativados
+ */
+
+/**
+ * @swagger
+ * /CategoriaCursosAno:
+ *   get:
+ *     summary: Dados combinados de categorias, cursos e anos curriculares
+ *     tags: [Cursos]
+ *     responses:
+ *       200:
+ *         description: Dados combinados
+ */
+
+/**
+ * @swagger
+ * /disciplinasPorCurso/{idcurso}:
+ *   get:
+ *     summary: Disciplinas agrupadas por ano e semestre de um curso
+ *     tags: [Cursos - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: idcurso
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Disciplinas organizadas por ano e semestre
+ */
+
+/**
+ * @swagger
+ * /professorVinculado/{id}:
+ *   get:
+ *     summary: Professores vinculados a uma disciplina
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     responses:
+ *       200:
+ *         description: Lista de professores
+ */
+
+/**
+ * @swagger
+ * /professorDisponivel/{id}:
+ *   get:
+ *     summary: Professores disponíveis (não vinculados a uma disciplina)
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da disciplina
+ *     responses:
+ *       200:
+ *         description: Lista de professores disponíveis
+ */
+
+/**
+ * @swagger
+ * /estatisticasProfessores:
+ *   get:
+ *     summary: Estatísticas gerais de professores ativos
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total, com foto, com titulação
+ */
+
+/**
+ * @swagger
+ * /distribuicaoTitulacao:
+ *   get:
+ *     summary: Distribuição de professores por titulação (ativos)
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por titulação
+ */
+
+/**
+ * @swagger
+ * /professoresPorDisciplina:
+ *   get:
+ *     summary: Professores por disciplina
+ *     tags: [Professores - Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Disciplinas com total e lista de professores
+ */
+
+/**
+ * @swagger
+ * /disciplinasMaisMinistradas:
+ *   get:
+ *     summary: Top 10 disciplinas com mais professores
+ *     tags: [Disciplinas - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Top 10 disciplinas
+ */
+
+/**
+ * @swagger
+ * /professoresMaisAtivos:
+ *   get:
+ *     summary: Top 10 professores com mais disciplinas
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Top 10 professores
+ */
+
+/**
+ * @swagger
+ * /professoresSemDisciplinas:
+ *   get:
+ *     summary: Professores sem disciplinas vinculadas
+ *     tags: [Professores - Disciplinas]
+ *     responses:
+ *       200:
+ *         description: Lista de professores sem disciplinas
+ */
+
+/**
+ * @swagger
+ * /professorVinculadoDisciplinas/{id}:
+ *   get:
+ *     summary: Disciplinas vinculadas a um professor
+ *     tags: [Professores - Disciplinas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do professor
+ *     responses:
+ *       200:
+ *         description: Lista de disciplinas do professor
+ */
+
+/**
+ * @swagger
+ * /InformacoesProfessor/{id}:
+ *   get:
+ *     summary: Informações completas de um professor
+ *     tags: [Professores]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Dados completos do professor
+ *       404:
+ *         description: Professor não encontrado
+ */
+
+/**
+ * @swagger
+ * /turmas:
+ *   get:
+ *     summary: Listar todas as turmas com informações detalhadas
+ *     tags: [Turmas]
+ *     responses:
+ *       200:
+ *         description: Lista de turmas
+ */
+
+/**
+ * @swagger
+ * /estatisticasProfessoresDesativados:
+ *   get:
+ *     summary: Estatísticas de professores desativados
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total de professores desativados
+ */
+
+/**
+ * @swagger
+ * /professoresDesativados:
+ *   get:
+ *     summary: Listar professores desativados
+ *     tags: [Professores]
+ *     responses:
+ *       200:
+ *         description: Lista de professores desativados
+ */
+
+/**
+ * @swagger
+ * /distribuicaoTitulacaoDesativados:
+ *   get:
+ *     summary: Distribuição de titulação de professores desativados
+ *     tags: [Professores - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por titulação (desativados)
+ */
+
+/**
+ * @swagger
+ * /estatisticasFuncionarios:
+ *   get:
+ *     summary: Estatísticas de funcionários ativos
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total funcionários ativos
+ */
+
+/**
+ * @swagger
+ * /estatisticasFuncionariosDesativados:
+ *   get:
+ *     summary: Estatísticas de funcionários desativados
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Total funcionários desativados
+ */
+
+/**
+ * @swagger
+ * /funcionarios:
+ *   get:
+ *     summary: Listar funcionários ativos com cargos
+ *     tags: [Funcionários]
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários ativos
+ */
+
+/**
+ * @swagger
+ * /funcionariosDesativados:
+ *   get:
+ *     summary: Listar funcionários desativados com cargos
+ *     tags: [Funcionários]
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários desativados
+ */
+
+/**
+ * @swagger
+ * /funcionario/{id}:
+ *   get:
+ *     summary: Buscar funcionário por ID
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Funcionário encontrado
+ *       404:
+ *         description: Funcionário não encontrado
+ */
+
+/**
+ * @swagger
+ * /funcionariosPorCargo/{id_cargo}:
+ *   get:
+ *     summary: Listar funcionários por cargo
+ *     tags: [Funcionários]
+ *     parameters:
+ *       - in: path
+ *         name: id_cargo
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de funcionários do cargo
+ */
+
+/**
+ * @swagger
+ * /dashboardFuncionarios:
+ *   get:
+ *     summary: Dashboard com estatísticas de funcionários
+ *     tags: [Funcionários - Dashboard]
+ *     responses:
+ *       200:
+ *         description: Estatísticas e dados para gráfico
+ */
+
+/**
+ * @swagger
+ * /cargosFuncionarios:
+ *   get:
+ *     summary: Distribuição de funcionários por cargo
+ *     tags: [Funcionários - Estatísticas]
+ *     responses:
+ *       200:
+ *         description: Quantidade por cargo
+ */
+
+/**
+ * @swagger
+ * /cargosDisponiveis:
+ *   get:
+ *     summary: Listar todos os cargos disponíveis
+ *     tags: [Funcionários - Cargos]
+ *     responses:
+ *       200:
+ *         description: Lista de cargos
+ */
