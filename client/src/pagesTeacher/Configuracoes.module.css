@@ -1,0 +1,315 @@
+/* Configuracoes.module.css */
+
+.container {
+    padding: 20px;
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    margin-bottom: 30px;
+}
+
+.title {
+    color: var(--azul-escuro, #0b2b40);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.titleIcon {
+    color: var(--dourado, #d4af37);
+    font-size: 2rem;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0;
+}
+
+/* Config Grid */
+.configGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.configCard {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.cardHeader {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--azul-escuro), #0a2a3a);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cardIcon {
+    color: var(--dourado);
+    font-size: 24px;
+}
+
+.cardHeader h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.cardBody {
+    padding: 24px;
+}
+
+/* Avatar */
+.avatarSection {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.avatar {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(212, 175, 55, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    color: var(--dourado);
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.changeAvatarBtn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--dourado);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.changeAvatarBtn:hover {
+    transform: scale(1.1);
+}
+
+/* Formulário */
+.formGroup {
+    margin-bottom: 16px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.85rem;
+}
+
+.formGroup input,
+.formGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+    outline: none;
+    border-color: var(--dourado);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Notificações */
+.notificationItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.notificationItem:last-child {
+    border-bottom: none;
+}
+
+.notificationItem strong {
+    display: block;
+    color: var(--azul-escuro);
+    margin-bottom: 4px;
+}
+
+.notificationItem p {
+    color: #666;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--dourado);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btnReset {
+    padding: 12px 24px;
+    background: white;
+    color: #666;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btnReset:hover {
+    background: #f8f9fa;
+}
+
+.btnSave {
+    padding: 12px 32px;
+    background: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btnSave:hover {
+    background: var(--azul-escuro);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btnSave:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .configGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .formRow {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btnReset,
+    .btnSave {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .title {
+        font-size: 1.5rem;
+    }
+    
+    .cardBody {
+        padding: 16px;
+    }
+}

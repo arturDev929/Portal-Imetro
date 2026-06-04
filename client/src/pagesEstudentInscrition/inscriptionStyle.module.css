@@ -1,0 +1,262 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
+  padding: 20px;
+}
+
+.card {
+  max-width: 580px;
+  width: 100%;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  background: linear-gradient(135deg, #003366 0%, #002244 100%);
+  padding: 32px 32px 28px;
+  text-align: center;
+  color: white;
+}
+
+.headerIcon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  backdrop-filter: blur(10px);
+}
+
+.header h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: white;
+}
+
+.header p {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.infoGrid {
+  padding: 28px 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.infoItem svg {
+  color: #003366;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.infoItem div {
+  flex: 1;
+}
+
+.infoLabel {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.infoItem strong {
+  font-size: 1rem;
+  color: #212529;
+}
+
+.countdownBox {
+  margin: 24px 32px;
+  padding: 20px;
+  background: linear-gradient(135deg, #B8860B 0%, #996F0A 100%);
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(184, 134, 11, 0.2);
+}
+
+.countdownHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.countdownTimer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.timeUnit {
+  text-align: center;
+}
+
+.timeValue {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  margin-bottom: 6px;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+.timeLabel {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeSeparator {
+  font-size: 2rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 20px;
+}
+
+.uploadSection {
+  padding: 0 32px 32px;
+}
+
+.sectionTitle {
+  margin-bottom: 20px;
+}
+
+.sectionTitle span {
+  display: block;
+  font-weight: 600;
+  color: #212529;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.sectionTitle small {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.submitButton {
+  width: 100%;
+  margin-top: 24px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #0047AB 0%, #003366 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.3);
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 71, 171, 0.35);
+  background: linear-gradient(135deg, #0055CC 0%, #004080 100%);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.submitButton.submitting {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+}
+
+.submitButton.success {
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .card {
+    border-radius: 20px;
+  }
+  
+  .header {
+    padding: 24px 20px;
+  }
+  
+  .infoGrid {
+    padding: 20px 24px 0;
+  }
+  
+  .countdownBox {
+    margin: 20px 24px;
+    padding: 16px;
+  }
+  
+  .timeValue {
+    font-size: 1.5rem;
+  }
+  
+  .uploadSection {
+    padding: 0 24px 24px;
+  }
+}

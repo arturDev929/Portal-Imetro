@@ -1,0 +1,546 @@
+/* MinhaAgenda.module.css */
+
+.container {
+    padding: 20px;
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    margin-bottom: 30px;
+}
+
+.title {
+    color: var(--azul-escuro, #0b2b40);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.titleIcon {
+    color: var(--dourado, #d4af37);
+    font-size: 2rem;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.viewControls {
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 4px;
+    border-radius: 40px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.viewBtn {
+    padding: 8px 20px;
+    background: none;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.viewBtnActive {
+    background: var(--dourado);
+    color: var(--azul-escuro);
+}
+
+.searchBar {
+    flex: 1;
+    max-width: 300px;
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 30px;
+    padding: 8px 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.searchIcon {
+    color: #999;
+    margin-right: 8px;
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+}
+
+.btnAdicionar {
+    background: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btnAdicionar:hover {
+    background: var(--azul-escuro);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Calendário */
+.calendarContainer {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendarHeader h2 {
+    color: var(--azul-escuro);
+    font-size: 1.3rem;
+}
+
+.navBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.navBtn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--dourado);
+}
+
+.calendarWeekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.weekday {
+    padding: 10px;
+    font-weight: 600;
+    color: #666;
+}
+
+.calendarDays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendarDay {
+    min-height: 100px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 8px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.calendarDay:hover {
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.emptyDay {
+    background: none;
+}
+
+.today {
+    background: rgba(212, 175, 55, 0.2);
+    border: 2px solid var(--dourado);
+}
+
+.dayNumber {
+    font-weight: 600;
+    color: var(--azul-escuro);
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.dayEvents {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dayEvent {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.moreEvents {
+    font-size: 0.7rem;
+    color: #999;
+    text-align: center;
+}
+
+/* Lista de Eventos */
+.listContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.eventoCard {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.eventoCard:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateX(5px);
+}
+
+.eventoDate {
+    min-width: 70px;
+    text-align: center;
+    padding: 12px;
+    border-radius: 12px;
+    color: white;
+}
+
+.eventoDay {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.eventoMonth {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.eventoInfo {
+    flex: 1;
+}
+
+.eventoInfo h3 {
+    color: var(--azul-escuro);
+    margin-bottom: 8px;
+}
+
+.eventoDescricao {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.eventoMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.eventoMeta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.eventoTipo {
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: white;
+}
+
+.eventoLembrete {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #f57c00;
+    margin-top: 8px;
+}
+
+.eventoActions {
+    display: flex;
+    gap: 8px;
+}
+
+.eventoActions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.eventoActions button:hover {
+    color: var(--dourado);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.emptyIcon {
+    font-size: 60px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.emptyState h3 {
+    color: var(--azul-escuro);
+    margin-bottom: 8px;
+}
+
+.emptyState p {
+    color: #666;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modalContainer {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modalHeader {
+    padding: 20px 24px;
+    background: var(--azul-escuro);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modalHeader h3 {
+    margin: 0;
+}
+
+.modalClose {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modalClose:hover {
+    transform: scale(1.1);
+}
+
+.modalBody {
+    padding: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: var(--dourado);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.modalFooter {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btnCancelar {
+    padding: 10px 24px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btnCancelar:hover {
+    background: #5a6268;
+}
+
+.btnSalvar {
+    padding: 10px 24px;
+    background: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btnSalvar:hover {
+    background: var(--azul-escuro);
+    color: white;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+    }
+    
+    .viewControls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .searchBar {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .btnAdicionar {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .calendarDay {
+        min-height: 80px;
+    }
+    
+    .dayEvent {
+        font-size: 0.6rem;
+    }
+    
+    .eventoCard {
+        flex-direction: column;
+    }
+    
+    .eventoDate {
+        align-self: flex-start;
+    }
+    
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendarWeekdays {
+        font-size: 0.7rem;
+    }
+    
+    .dayNumber {
+        font-size: 0.8rem;
+    }
+    
+    .calendarDay {
+        min-height: 60px;
+    }
+}
