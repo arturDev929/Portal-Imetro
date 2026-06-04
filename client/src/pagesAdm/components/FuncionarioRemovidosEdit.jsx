@@ -4,7 +4,7 @@ import {
     MdSearch,
     MdPerson,
     MdPhone,
-    MdDeleteForever
+    MdEmail
 } from "react-icons/md";
 import {
     GrStatusGood
@@ -14,6 +14,7 @@ import { showSuccessToast, showErrorToast, useConfirmToast } from "../../compone
 import Style from "./DepartamentosEdit.module.css";
 import Api from '../../service/api';
 import Table from '../../components/global/Table';
+
 const API_TIMEOUT = 30000;
 
 function FuncionarioRemovidosEdit() {
@@ -24,14 +25,23 @@ function FuncionarioRemovidosEdit() {
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
     const apiClient = useMemo(() => {
+        const token = localStorage.getItem("token");
         const client = Api.create({
             timeout: API_TIMEOUT,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            }
         });
 
         client.interceptors.response.use(
             (response) => response,
             (error) => {
+                if (error.response?.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("usuarioLogado");
+                    window.location.href = "/";
+                }
                 if (error.response?.data?.error) {
                     showErrorToast("Erro", error.response.data.error);
                 } else if (error.response?.data?.message) {
@@ -53,15 +63,28 @@ function FuncionarioRemovidosEdit() {
         try {
             setLoading(true);
             const response = await apiClient.get('/funcionariosDesativados');
-            setLista(response.data || []);
-            setListaFiltrada(response.data || []);
+            const dados = response.data.map(func => ({
+                id_funcionario: func.id_funcionario,
+                nome_funcionario: func.nome_funcionario,
+                contacto_funcionario: func.contacto_funcionario,
+                bi_funcionario: func.bi_funcionario,
+                email: func.email,
+                cargo: func.cargo,
+                status: func.status,
+                foto: func.foto,
+                foto_url: func.foto_url
+            }));
+            setLista(dados);
+            setListaFiltrada(dados);
             
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
+            if (mostrarNotificacao && dados && dados.length > 0) {
                 showSuccessToast(
                     "Sucesso",
                     "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} funcionário(s)` }
+                    { "Quantidade": `${dados.length} funcionário(s)` }
                 );
+            } else if (mostrarNotificacao && dados && dados.length === 0) {
+                showSuccessToast("Sucesso", "Nenhum funcionário desativado encontrado");
             }
         } catch (error) {
             console.error("Erro ao buscar funcionários:", error);
@@ -87,65 +110,41 @@ function FuncionarioRemovidosEdit() {
             const filtrados = lista.filter(item => 
                 item.nome_funcionario?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
                 (item.bi_funcionario && item.bi_funcionario.toLowerCase().includes(termoPesquisa.toLowerCase())) ||
-                (item.contacto_funcionario && item.contacto_funcionario.includes(termoPesquisa))
+                (item.contacto_funcionario && item.contacto_funcionario.includes(termoPesquisa)) ||
+                (item.email && item.email.toLowerCase().includes(termoPesquisa.toLowerCase()))
             );
             setListaFiltrada(filtrados);
         }
     }, [lista, termoPesquisa]);
 
-    const ativarFuncionario = (id, nome) => {
+    const ativarFuncionario = useCallback((id, nome) => {
         showConfirmToast(
             `Tens a certeza que pretendes ativar o funcionário ${nome}?`,
             async () => {
                 try {
-                    const response = await Api.put(`/funcionario/ativar/${id}`);
+                    const response = await Api.put(`/funcionario/ativar/${id}`, {}, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                    });
                     
-                    if (response.status === 200) {
+                    if (response.data.success) {
                         await fetchFuncionarios(false);
-                        showSuccessToast(`Funcionário ${nome} ativado com sucesso!`);
+                        showSuccessToast("Sucesso", response.data.message);
                     }
                 } catch (error) {
                     console.error("Erro ao ativar funcionário:", error);
                     if (error.response) {
-                        showErrorToast(error.response.data.error || `Erro ao ativar funcionário ${nome}`);
+                        showErrorToast("Erro", error.response.data.error || `Erro ao ativar funcionário ${nome}`);
                     } else if (error.request) {
-                        showErrorToast("Erro de conexão com o servidor");
+                        showErrorToast("Erro de conexão", "Erro de conexão com o servidor");
                     } else {
-                        showErrorToast(`Erro ao ativar funcionário ${nome}`);
+                        showErrorToast("Erro", `Erro ao ativar funcionário ${nome}`);
                     }
                 }
             },
             null,
             "Confirmar Ativação"
         );
-    };
-
-    const excluirPermanente = (id, nome) => {
-        showConfirmToast(
-            `Tens a certeza que pretendes EXCLUIR PERMANENTEMENTE o funcionário ${nome}? Esta ação não pode ser desfeita.`,
-            async () => {
-                try {
-                    const response = await Api.delete(`/funcionario/permanent/${id}`);
-                    
-                    if (response.status === 200) {
-                        await fetchFuncionarios(false);
-                        showSuccessToast(`Funcionário ${nome} excluído permanentemente!`);
-                    }
-                } catch (error) {
-                    console.error("Erro ao excluir funcionário:", error);
-                    if (error.response) {
-                        showErrorToast(error.response.data.error || `Erro ao excluir funcionário ${nome}`);
-                    } else if (error.request) {
-                        showErrorToast("Erro de conexão com o servidor");
-                    } else {
-                        showErrorToast(`Erro ao excluir funcionário ${nome}`);
-                    }
-                }
-            },
-            null,
-            "Confirmar Exclusão Permanente"
-        );
-    };
+    }, [showConfirmToast, fetchFuncionarios]);
 
     useEffect(() => {
         fetchFuncionarios(false);
@@ -154,10 +153,23 @@ function FuncionarioRemovidosEdit() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
-    const headers = ['Nome', 'Contacto', 'BI', 'Cargo', 'Ativar', 'Excluir'];
+    const headers = ['Foto', 'Nome', 'Contacto', 'BI', 'Email', 'Cargo', 'Ativar'];
 
     const renderRow = useCallback((item) => (
         <tr key={item.id_funcionario}>
+            <td className="align-middle text-center">
+                {item.foto_url ? (
+                    <img 
+                        src={item.foto_url} 
+                        alt={item.nome_funcionario} 
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                ) : (
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MdPerson size={20} color="#999" />
+                    </div>
+                )}
+            </td>
             <td className="align-middle fw-semibold" style={{color:'var(--azul-escuro)'}}>
                 <MdPerson className="me-2 mb-1"/>{item.nome_funcionario}
             </td>
@@ -168,7 +180,11 @@ function FuncionarioRemovidosEdit() {
             <td className="align-middle">
                 <FaIdCard className="me-1" style={{color:'var(--azul-escuro)'}}/>
                 {item.bi_funcionario || 'N/I'}
-            </td>   
+            </td>
+            <td className="align-middle">
+                <MdEmail className="me-1" style={{color:'var(--azul-escuro)'}}/>
+                {item.email || 'N/I'}
+            </td>  
             <td className="align-middle">
                 <span className="badge bg-secondary">{item.cargo || 'N/I'}</span>
             </td>
@@ -182,18 +198,8 @@ function FuncionarioRemovidosEdit() {
                     <GrStatusGood />
                 </button>
             </td>
-            <td className="text-center">
-                <button 
-                    className={`btn btn-sm ${Style.btnDeletar}`}
-                    onClick={() => excluirPermanente(item.id_funcionario, item.nome_funcionario)}
-                    disabled={loading || isConfirming}
-                    title={`Excluir permanentemente ${item.nome_funcionario}`}
-                >
-                    <MdDeleteForever />
-                </button>
-            </td>
         </tr>
-    ), [loading, isConfirming, ativarFuncionario, excluirPermanente]);
+    ), [loading, isConfirming, ativarFuncionario]);
 
     const renderConteudo = () => {
         if (loading) {
@@ -226,7 +232,7 @@ function FuncionarioRemovidosEdit() {
             return (
                 <div className="text-center py-5">
                     <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                    <p className="text-muted mb-3">Nenhum funcionário encontrado</p>
+                    <p className="text-muted mb-3">Nenhum funcionário desativado encontrado</p>
                     <button className="btn btn-outline-primary" onClick={() => fetchFuncionarios(true)}>
                         <MdRefresh className="me-1" />
                         Carregar funcionários
@@ -280,7 +286,7 @@ function FuncionarioRemovidosEdit() {
                                             <input
                                                 type="text"
                                                 className="form-control border-start-0 ps-0"
-                                                placeholder="Pesquisar funcionário por nome, BI ou contacto..."
+                                                placeholder="Pesquisar funcionário por nome, BI, contacto ou email..."
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
