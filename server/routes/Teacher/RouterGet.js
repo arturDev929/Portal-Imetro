@@ -87,6 +87,7 @@ router.get('/PerfilProfessor/:codigo', async (req, res) => {
     });
 });
 
+<<<<<<< HEAD
 router.get('/TurmasProfessor/:codigo', async (req, res) => {
     const { codigo } = req.params;
     console.log(`Buscando turmas para professor com código: ${codigo}`);
@@ -108,6 +109,8 @@ router.get('/TurmasProfessor/:codigo', async (req, res) => {
     }
 });
 
+=======
+>>>>>>> eliseu_front2.0
 module.exports = router;
 
 /**

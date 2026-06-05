@@ -41,10 +41,17 @@ const LOCAL_IP = getLocalIP();
 
 // Configuração do CORS
 const allowedOrigins = [
+<<<<<<< HEAD
   'http://localhost:3000',
   'http://localhost:3001',
   'https://portal-imetro.vercel.app',
   `http://${LOCAL_IP}:3000`,
+=======
+  'http://localhost:8081',
+  'http://localhost:8080',
+  'https://portal-imetro.vercel.app',
+  `http://${LOCAL_IP}:8081`,
+>>>>>>> eliseu_front2.0
   `http://localhost:${port}`,
   `http://${LOCAL_IP}:${port}`,
   /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,

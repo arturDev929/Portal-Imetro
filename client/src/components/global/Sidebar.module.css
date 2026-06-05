@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 .Link{
     text-decoration: none;
@@ -21,3 +22,297 @@
 .containerFluid{
     background-color: var(--azul-escuro);
 }
+=======
+/* Sidebar.module.css - Responsivo */
+
+.containerFluid {
+    background: linear-gradient(135deg, var(--azul-escuro) 0%, #061a24 100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Desktop */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+/* Botão de Colapsar */
+.collapseBtn {
+    position: absolute;
+    top: 20px;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--dourado);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    color: var(--azul-escuro);
+}
+
+.collapseBtn:hover {
+    transform: scale(1.1);
+}
+
+/* Logo Area */
+.logoArea {
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.logoArea.logoCollapsed {
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.logoText {
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.collapsed .logoText {
+    opacity: 0;
+    width: 0;
+    display: none;
+}
+
+.logoImetro {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+/* Navegação */
+.navContainer {
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.navSection {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sectionTitle {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0 12px;
+    margin-bottom: 12px;
+    white-space: nowrap;
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+    margin: 8px 0;
+}
+
+/* Links de Navegação */
+.Link {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.collapsed .Link {
+    justify-content: center;
+    padding: 10px;
+}
+
+.navIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.navLabel {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.collapsed .navLabel {
+    opacity: 0;
+    width: 0;
+    display: none;
+}
+
+.Link:hover {
+    color: var(--branco);
+    background: rgba(212, 175, 55, 0.15);
+    transform: translateX(5px);
+}
+
+.collapsed .Link:hover {
+    transform: translateX(0);
+}
+
+.Link.active {
+    color: var(--dourado);
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), transparent);
+    border-right: 3px solid var(--dourado);
+}
+
+/* Perfil do Usuário */
+.userProfile {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.userProfile.profileCollapsed {
+    justify-content: center;
+    padding: 16px 0;
+}
+
+.userAvatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(212, 175, 55, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid var(--dourado);
+    flex-shrink: 0;
+}
+
+.userAvatar img,
+.userAvatar svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.userInfo {
+    flex: 1;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.profileCollapsed .userInfo {
+    opacity: 0;
+    display: none;
+}
+
+.userName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--branco);
+    margin: 0 0 4px 0;
+}
+
+.userCode {
+    font-size: 11px;
+    color: var(--dourado);
+    font-weight: 500;
+}
+
+/* Espaçador para conteúdo */
+.contentSpacer {
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+}
+
+.contentSpacer.spacerCollapsed {
+    margin-left: 80px;
+}
+
+/* Mobile Navigation Items */
+.mobileNavItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+/* Scrollbar */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--dourado);
+    border-radius: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 1199px) {
+    .sidebar {
+        width: 240px;
+    }
+    
+    .contentSpacer {
+        margin-left: 240px;
+    }
+}
+
+@media (max-width: 991px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .contentSpacer {
+        margin-left: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+    
+    .contentSpacer {
+        margin-left: 0;
+    }
+}
+>>>>>>> eliseu_front2.0

@@ -1,9 +1,18 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
 import Navbar from "../pagesAdm/components/navbar";
 import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
 import { FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, FaArrowRight, FaArrowLeft } from "react-icons/fa";
+=======
+import imetro from "../img/logo_goldenrod.png";
+import Style from "./Cadastro.module.css";
+import { 
+  FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, 
+  FaArrowRight, FaArrowLeft, FaCheckCircle, FaFileUpload 
+} from "react-icons/fa";
+>>>>>>> eliseu_front2.0
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
@@ -211,7 +220,10 @@ function Cadastro() {
         try {
             const formData = new FormData();
             
+<<<<<<< HEAD
             // Adicionar todos os dados do formulário
+=======
+>>>>>>> eliseu_front2.0
             formData.append('nomeEstudante', valores.nomeEstudante);
             formData.append('contactoEstudante', valores.contactoEstudante);
             formData.append('emailEstudante', valores.emailEstudante);
@@ -220,12 +232,17 @@ function Cadastro() {
             formData.append('periodoEstudante', valores.periodoEstudante);
             formData.append('idcurso', valores.idcurso);
             formData.append('senhaEstudante', valores.senhaEstudante);
+<<<<<<< HEAD
             
             // Adicionar código e email
             formData.append('codigo', codigoCompleto);
             formData.append('email', valores.emailEstudante);
             
             // Adicionar arquivos
+=======
+            formData.append('codigo', codigoCompleto);
+            formData.append('email', valores.emailEstudante);
+>>>>>>> eliseu_front2.0
             formData.append('documentoEstudante', arquivos.documentoEstudante);
             formData.append('fotoEstudante', arquivos.fotoEstudante);
 
@@ -245,7 +262,10 @@ function Cadastro() {
                     response.data.mensagem || "Estudante registrado com sucesso!"
                 );
                 
+<<<<<<< HEAD
                 // Limpar formulário
+=======
+>>>>>>> eliseu_front2.0
                 setValores({
                     nomeEstudante: '',
                     contactoEstudante: '',
@@ -279,7 +299,10 @@ function Cadastro() {
                 errorData?.mensagem || "Erro na verificação"
             );
             
+<<<<<<< HEAD
             // Limpar código em caso de erro
+=======
+>>>>>>> eliseu_front2.0
             setCodigoVerificacao(['', '', '', '', '', '']);
             document.getElementById('codigo-0')?.focus();
         } finally {
@@ -315,6 +338,7 @@ function Cadastro() {
         setTimerAtivo(false);
     };
 
+<<<<<<< HEAD
     const renderEtapa1 = () => (
         <>
             <h3 className="mb-4 text-white">Passo 1 de 4: Dados Pessoais</h3>
@@ -669,6 +693,323 @@ function Cadastro() {
                                     )}
                                 </div>
                             </div>
+=======
+    return (
+        <div className={Style.cadastroWrapper}>
+            <div className={Style.sobrepo}></div>
+            <div className={Style.cadastroContainer}>
+                <div className={Style.contentWrapper}>
+                    <div className={Style.leftSection}>
+                        <div className={Style.brandSection}>
+                            <img src={imetro} alt="Logotipo Imetro" className={Style.logoLarge} />
+                            <h1 className={Style.brandTitle}>Imetro</h1>
+                            <p className={Style.brandSubtitle}>instituto Politecnico Superior Metropolitano de Angola</p>
+                            <div className={Style.divider}></div>
+                            <p className={Style.brandDesc}>
+                                Junte-se a nós e construa seu futuro profissional
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className={Style.rightSection}>
+                        <div className={Style.cadastroCard}>
+                            {!etapaVerificacao ? (
+                                <>
+                                    <div className={Style.cardHeader}>
+                                        <h2>Criar conta</h2>
+                                        <p>Preencha os dados abaixo para se cadastrar</p>
+                                    </div>
+
+                                    <div className={Style.progressContainer}>
+                                        <div className={Style.steps}>
+                                            {[1, 2, 3, 4].map((step) => (
+                                                <div key={step} className={Style.stepWrapper}>
+                                                    <div className={`${Style.step} ${etapa >= step ? Style.active : ''}`}>
+                                                        {etapa > step ? <FaCheckCircle /> : step}
+                                                    </div>
+                                                    <span className={Style.stepLabel}>
+                                                        {step === 1 && "Dados"}
+                                                        {step === 2 && "Documento"}
+                                                        {step === 3 && "Curso"}
+                                                        {step === 4 && "Segurança"}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <form onSubmit={(e) => e.preventDefault()} className={Style.cadastroForm}>
+                                        {etapa === 1 && (
+                                            <div className={Style.formSection}>
+                                                <div className={Style.inputGroup}>
+                                                    <FaUser className={Style.inputIcon} />
+                                                    <input 
+                                                        type="text" 
+                                                        name="nomeEstudante"
+                                                        placeholder="Nome completo"
+                                                        value={valores.nomeEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <FaPhone className={Style.inputIcon} />
+                                                    <input 
+                                                        type="tel" 
+                                                        name="contactoEstudante"
+                                                        placeholder="+244 000 000 000"
+                                                        value={valores.contactoEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <FaEnvelope className={Style.inputIcon} />
+                                                    <input 
+                                                        type="email" 
+                                                        name="emailEstudante"
+                                                        placeholder="seu@email.com"
+                                                        value={valores.emailEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {etapa === 2 && (
+                                            <div className={Style.formSection}>
+                                                <div className={Style.inputGroup}>
+                                                    <FaIdCard className={Style.inputIcon} />
+                                                    <input 
+                                                        type="text" 
+                                                        name="biEstudante"
+                                                        placeholder="Nº do Bilhete de Identidade"
+                                                        value={valores.biEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <PiGenderIntersexBold className={Style.inputIcon} />
+                                                    <select 
+                                                        name="sexoEstudante"
+                                                        value={valores.sexoEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    >
+                                                        <option value="">Selecione o sexo</option>
+                                                        <option value="Masculino">Masculino</option>
+                                                        <option value="Feminino">Feminino</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {etapa === 3 && (
+                                            <div className={Style.formSection}>
+                                                <div className={Style.inputGroup}>
+                                                    <IoPartlySunny className={Style.inputIcon} />
+                                                    <select 
+                                                        name="periodoEstudante"
+                                                        value={valores.periodoEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    >
+                                                        <option value="">Selecione o período</option>
+                                                        <option value="Manhã">Manhã</option>
+                                                        <option value="Tarde">Tarde</option>
+                                                        <option value="Noite">Noite</option> 
+                                                    </select>
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <SelectCurso 
+                                                        value={valores.idcurso}
+                                                        onChange={handleCursoChange}
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {etapa === 4 && (
+                                            <div className={Style.formSection}>
+                                                <div className={Style.inputGroup}>
+                                                    <FaLock className={Style.inputIcon} />
+                                                    <input 
+                                                        type="password" 
+                                                        name="senhaEstudante"
+                                                        placeholder="Crie uma senha (mínimo 6 caracteres)"
+                                                        value={valores.senhaEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                        minLength="6"
+                                                    />
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <FaLock className={Style.inputIcon} />
+                                                    <input 
+                                                        type="password" 
+                                                        name="confirmarSenha"
+                                                        placeholder="Confirme a senha"
+                                                        value={valores.confirmarSenha}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+
+                                                <div className={Style.fileInputGroup}>
+                                                    <label className={Style.fileLabel}>
+                                                        <FaFileUpload />
+                                                        <span>Documento (BI/Certificado)</span>
+                                                        <input 
+                                                            type="file" 
+                                                            name="documentoEstudante"
+                                                            onChange={handleFileChange}
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            required
+                                                            disabled={loading}
+                                                        />
+                                                    </label>
+                                                    {arquivos.documentoEstudante && (
+                                                        <span className={Style.fileName}>{arquivos.documentoEstudante.name}</span>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className={Style.fileInputGroup}>
+                                                    <label className={Style.fileLabel}>
+                                                        <FaFileUpload />
+                                                        <span>Foto tipo passe</span>
+                                                        <input 
+                                                            type="file" 
+                                                            name="fotoEstudante"
+                                                            onChange={handleFileChange}
+                                                            accept=".jpg,.jpeg,.png"
+                                                            required
+                                                            disabled={loading}
+                                                        />
+                                                    </label>
+                                                    {arquivos.fotoEstudante && (
+                                                        <span className={Style.fileName}>{arquivos.fotoEstudante.name}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <div className={Style.formActions}>
+                                            {etapa > 1 && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={voltarEtapa}
+                                                    className={Style.backButton}
+                                                    disabled={loading}
+                                                >
+                                                    <FaArrowLeft />
+                                                    Voltar
+                                                </button>
+                                            )}
+                                            
+                                            <button 
+                                                type="button"
+                                                onClick={avancarEtapa}
+                                                className={Style.nextButton}
+                                                disabled={loading}
+                                            >
+                                                {loading ? (
+                                                    <div className={Style.spinner}></div>
+                                                ) : (
+                                                    <>
+                                                        {etapa === 4 ? 'Enviar código' : 'Continuar'}
+                                                        <FaArrowRight />
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        
+                                        <div className={Style.loginRedirect}>
+                                            <span>Já tem uma conta?</span>
+                                            <Link to="/" className={Style.loginLink}>Fazer login</Link>
+                                        </div>
+                                    </form>
+                                </>
+                            ) : (
+                                <div className={Style.verificationSection}>
+                                    <button 
+                                        onClick={voltarParaFormulario}
+                                        className={Style.backToForm}
+                                        disabled={loading}
+                                    >
+                                        <FiArrowLeft />
+                                        Voltar
+                                    </button>
+                                    
+                                    <div className={Style.verificationIcon}>
+                                        <FiMail />
+                                    </div>
+                                    
+                                    <h2>Verifique seu email</h2>
+                                    <p>Enviamos um código de 6 dígitos para:</p>
+                                    <strong className={Style.emailHighlight}>{valores.emailEstudante}</strong>
+                                    
+                                    <div className={Style.codeInputs}>
+                                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                                            <input
+                                                key={index}
+                                                id={`codigo-${index}`}
+                                                type="text"
+                                                value={codigoVerificacao[index]}
+                                                onChange={(e) => handleCodigoChange(index, e.target.value)}
+                                                onKeyDown={(e) => handleKeyDown(index, e)}
+                                                maxLength="1"
+                                                disabled={loading || tempoRestante === 0 || tentativas >= 3}
+                                            />
+                                        ))}
+                                    </div>
+                                    
+                                    <div className={Style.verificationInfo}>
+                                        <span>Tentativas: {tentativas}/3</span>
+                                        <span className={tempoRestante < 60 ? Style.timeWarning : ''}>
+                                            ⏱️ {formatarTempo(tempoRestante)}
+                                        </span>
+                                    </div>
+                                    
+                                    <button
+                                        onClick={handleVerificarCodigo}
+                                        className={Style.verifyButton}
+                                        disabled={loading || tempoRestante === 0 || tentativas >= 3}
+                                    >
+                                        {loading ? (
+                                            <div className={Style.spinner}></div>
+                                        ) : (
+                                            "Verificar código"
+                                        )}
+                                    </button>
+                                    
+                                    {(tempoRestante === 0 || tentativas >= 3) && (
+                                        <button
+                                            onClick={handleReenviarCodigo}
+                                            className={Style.resendButton}
+                                            disabled={loading}
+                                        >
+                                            Reenviar código
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+>>>>>>> eliseu_front2.0
                         </div>
                     </div>
                 </div>

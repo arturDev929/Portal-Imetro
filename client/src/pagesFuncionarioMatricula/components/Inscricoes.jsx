@@ -61,11 +61,19 @@ function Inscricoes({ filtroStatus }) {
         setLoading(true);
         try {
             const response = await api.put(`/estudanteInscritoAceitar/${estudanteId}`);
+<<<<<<< HEAD
 
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
                 // Remover o estudante da lista
                 setEstudantesInscritos(prevEstudantes =>
+=======
+            
+            if (response.data.success) {
+                showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
+                // Remover o estudante da lista
+                setEstudantesInscritos(prevEstudantes => 
+>>>>>>> eliseu_front2.0
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -87,12 +95,21 @@ function Inscricoes({ filtroStatus }) {
     const handleReverter = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
+<<<<<<< HEAD
             const response = await api.put(`/estudanteInscritoReverter/${estudanteId}`);
 
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
                 // Remover o estudante da lista
                 setEstudantesInscritos(prevEstudantes =>
+=======
+            const response = await api.put(`/put/estudanteInscritoReverter/${estudanteId}`);
+            
+            if (response.data.success) {
+                showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} aceita com sucesso!`);
+                // Remover o estudante da lista
+                setEstudantesInscritos(prevEstudantes => 
+>>>>>>> eliseu_front2.0
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -109,17 +126,29 @@ function Inscricoes({ filtroStatus }) {
         } finally {
             setLoading(false);
         }
+<<<<<<< HEAD
     };
+=======
+    }; 
+>>>>>>> eliseu_front2.0
 
     const handleRecusar = async (estudanteId, estudanteNome) => {
         setLoading(true);
         try {
             const response = await api.put(`/estudanteInscritoRecusar/${estudanteId}`);
+<<<<<<< HEAD
 
             if (response.data.success) {
                 showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} recusada com sucesso!`);
 
                 setEstudantesInscritos(prevEstudantes =>
+=======
+            
+            if (response.data.success) {
+                showSuccessToast(response.data.message || `Inscrição de ${estudanteNome} recusada com sucesso!`);
+
+                setEstudantesInscritos(prevEstudantes => 
+>>>>>>> eliseu_front2.0
                     prevEstudantes.filter(est => est.id_estudanteInscricao !== estudanteId)
                 );
                 // Fechar modal se estiver aberto para este estudante
@@ -147,7 +176,11 @@ function Inscricoes({ filtroStatus }) {
                     </div>
                 </div>
             )}
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> eliseu_front2.0
             <table className="table table-hover table-striped border">
                 <thead style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--branco)' }}>
                     <tr>
@@ -157,7 +190,11 @@ function Inscricoes({ filtroStatus }) {
                         <th className="col-2 text-center">Curso</th>
                         <th className="col-1 text-center">Período</th>
                         <th className="col-1 text-center">Info</th>
+<<<<<<< HEAD
 
+=======
+                       
+>>>>>>> eliseu_front2.0
                         {
                             filtroStatus === "Pendente" && (
                                 <>
@@ -166,12 +203,20 @@ function Inscricoes({ filtroStatus }) {
                                 </>
                             )
                         }
+<<<<<<< HEAD
                         {
+=======
+                        {    
+>>>>>>> eliseu_front2.0
                             filtroStatus==="Reprovado"&&(
                                  <th className="col-1 text-center">Reverter</th>
                             )
                         }
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> eliseu_front2.0
                     </tr>
                 </thead>
                 <tbody>
@@ -191,9 +236,15 @@ function Inscricoes({ filtroStatus }) {
                                 <td className="text-center">{estudante.curso}</td>
                                 <td className="text-center">{estudante.periodo_estudanteInscricao}</td>
                                 <td className="text-center">
+<<<<<<< HEAD
                                     <button
                                         className={`btn btn-sm ${Style.btnOutros}`}
                                         onClick={() => openModal(estudante)}
+=======
+                                    <button 
+                                        className={`btn btn-sm ${Style.btnOutros}`} 
+                                        onClick={() => openModal(estudante)} 
+>>>>>>> eliseu_front2.0
                                         title="Informações"
                                         disabled={loading}
                                     >
@@ -204,7 +255,11 @@ function Inscricoes({ filtroStatus }) {
                                     filtroStatus==="Pendente"?
                                    <>
                                     <td className="text-center">
+<<<<<<< HEAD
                                     <button
+=======
+                                    <button 
+>>>>>>> eliseu_front2.0
                                         className={`btn btn-sm ${Style.btnAdd}`}
                                         onClick={() => handleAceitar(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
                                         title="Aceitar inscrição"
@@ -214,7 +269,11 @@ function Inscricoes({ filtroStatus }) {
                                     </button>
                                 </td>
                                 <td className="text-center">
+<<<<<<< HEAD
                                     <button
+=======
+                                    <button 
+>>>>>>> eliseu_front2.0
                                         className={`btn btn-sm ${Style.btnDeletar}`}
                                         onClick={() => handleRecusar(estudante.id_estudanteInscricao, estudante.nome_estudanteInscricao)}
                                         title="Recusar inscrição"
@@ -227,7 +286,11 @@ function Inscricoes({ filtroStatus }) {
                                     :filtroStatus==="Reprovado"?
                                     <>
                                     <td className="text-center">
+<<<<<<< HEAD
                                         <button
+=======
+                                        <button 
+>>>>>>> eliseu_front2.0
                                             className={`btn btn-sm ${Style.btnReverter}`}
                                             onClick={() => setModalAlert(true)}
                                             title="Reverter Reprovação"
@@ -239,7 +302,11 @@ function Inscricoes({ filtroStatus }) {
                                    </>
                                     :<></>
                                 }
+<<<<<<< HEAD
 
+=======
+                                
+>>>>>>> eliseu_front2.0
                             </tr>
                         ))
                     ) : (
@@ -252,9 +319,15 @@ function Inscricoes({ filtroStatus }) {
 
             {/* Modal de informações do estudante */}
             {modalEstudante && infoEstudante && (
+<<<<<<< HEAD
                 <ModalDetail
                     closeModal={closeModal}
                     handleAceitar={handleAceitar}
+=======
+                <ModalDetail 
+                    closeModal={closeModal}
+                    handleAceitar={handleAceitar} 
+>>>>>>> eliseu_front2.0
                     handleRecusar={handleRecusar}
                     handleReverter={handleReverter}
                     loading={loading}
@@ -263,7 +336,11 @@ function Inscricoes({ filtroStatus }) {
                 />
             )}
              {modalAlert && infoEstudante && (
+<<<<<<< HEAD
                 <ModalAlert
+=======
+                <ModalAlert 
+>>>>>>> eliseu_front2.0
                     closeModal={closeModal}
                     handleReverter={handleReverter}
                     loading={loading}

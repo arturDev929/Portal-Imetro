@@ -19,9 +19,15 @@ function HomeAdm() {
     }, []);
 
     useEffect(()=>{
+<<<<<<< HEAD
         RequestData()
     },[inscritos])
 
+=======
+       
+        RequestData()
+    },[inscritos])
+>>>>>>> eliseu_front2.0
     async function  RequestData() {
         const data=await api.get("/EstudantesInscritos");
         console.log(data.data)
@@ -36,6 +42,7 @@ function HomeAdm() {
         },
         {
             cor: "#28a745",
+<<<<<<< HEAD
             titulo: "Estudantes Admitidos",
             icone: FaUserCheck,
             status: "Admitido"
@@ -45,6 +52,17 @@ function HomeAdm() {
             titulo: "Estudantes Não Admitido",
             icone: FaUserTimes,
             status: "Não Admitido"
+=======
+            titulo: "Estudantes Aprovados",
+            icone: FaUserCheck,
+            status: "Aprovado"
+        },
+        {
+            cor: "#dc3545",
+            titulo: "Estudantes Reprovados",
+            icone: FaUserTimes,
+            status: "Reprovado"
+>>>>>>> eliseu_front2.0
         }
     ];
 
@@ -72,7 +90,11 @@ function HomeAdm() {
 
                     <div className="row mb-4 g-2">
                         <div className="col-md-2">
+<<<<<<< HEAD
                             <button
+=======
+                            <button 
+>>>>>>> eliseu_front2.0
                                 className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
                                 onClick={() => setSecaoAtiva("Pendente")}
                             >
@@ -81,6 +103,7 @@ function HomeAdm() {
                             </button>
                         </div>
                         <div className="col-md-2">
+<<<<<<< HEAD
 <<<<<<< Updated upstream
                             <button
                                 className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
@@ -108,6 +131,23 @@ function HomeAdm() {
                             >
                                 <FaUserTimes className="me-2 mb-1" />
                                 E. Não Admitidos
+=======
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                onClick={() => setSecaoAtiva("Aprovado")}
+                            >
+                                <FaUserCheck className="me-2 mb-1" />
+                                E. Aprovados
+                            </button>
+                        </div>
+                        <div className="col-md-2">
+                            <button 
+                                className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                                onClick={() => setSecaoAtiva("Reprovado")}
+                            >
+                                <FaUserTimes className="me-2 mb-1" />
+                                E. Reprovados
+>>>>>>> eliseu_front2.0
                             </button>
                         </div>
                     </div>
@@ -128,7 +168,11 @@ function HomeAdm() {
                                 </div>
                             )
                         ))}
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> eliseu_front2.0
                         </div>
                     </div>
         </FuncionarioLayout>

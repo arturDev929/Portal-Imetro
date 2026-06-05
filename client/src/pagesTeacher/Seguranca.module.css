@@ -1,0 +1,428 @@
+/* Seguranca.module.css */
+
+.container {
+    padding: 20px;
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    margin-bottom: 30px;
+}
+
+.title {
+    color: var(--azul-escuro, #0b2b40);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.titleIcon {
+    color: var(--dourado, #d4af37);
+    font-size: 2rem;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0;
+}
+
+/* Security Grid */
+.securityGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.securityCard {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.cardHeader {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--azul-escuro), #0a2a3a);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cardIcon {
+    color: var(--dourado);
+    font-size: 24px;
+}
+
+.cardHeader h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.cardBody {
+    padding: 24px;
+}
+
+/* Formulário de Senha */
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.passwordInput {
+    display: flex;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.passwordInput:focus-within {
+    border-color: var(--dourado);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.passwordInput input {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+}
+
+.passwordInput button {
+    background: none;
+    border: none;
+    padding: 0 12px;
+    cursor: pointer;
+    color: #999;
+}
+
+.passwordInput button:hover {
+    color: var(--dourado);
+}
+
+/* Força da Senha */
+.passwordStrength {
+    margin-top: 8px;
+}
+
+.strengthBar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #e0e0e0;
+}
+
+.strengthFill {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.strengthWeak {
+    background: #dc3545;
+}
+
+.strengthMedium {
+    background: #ffc107;
+}
+
+.strengthStrong {
+    background: #28a745;
+}
+
+.passwordStrength small {
+    font-size: 0.7rem;
+    color: #999;
+}
+
+.btnAlterar {
+    width: 100%;
+    padding: 12px;
+    background: var(--dourado);
+    color: var(--azul-escuro);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: all 0.3s ease;
+}
+
+.btnAlterar:hover {
+    background: var(--azul-escuro);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btnAlterar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--dourado);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.notificationItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.notificationItem:last-child {
+    border-bottom: none;
+}
+
+.notificationItem strong {
+    display: block;
+    color: var(--azul-escuro);
+    margin-bottom: 4px;
+}
+
+.notificationItem p {
+    color: #666;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* Info Box */
+.infoBox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: #fff3cd;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.infoBox svg {
+    color: #856404;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.infoBox small {
+    color: #856404;
+    font-size: 0.75rem;
+}
+
+/* Sessões */
+.sessaoItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.sessaoItem:last-child {
+    border-bottom: none;
+}
+
+.sessaoInfo strong {
+    display: block;
+    color: var(--azul-escuro);
+    margin-bottom: 4px;
+}
+
+.sessaoInfo p {
+    color: #666;
+    font-size: 0.8rem;
+    margin: 0 0 4px 0;
+}
+
+.sessaoInfo small {
+    color: #999;
+    font-size: 0.7rem;
+}
+
+.sessaoAtual {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.btnEncerrar {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    transition: all 0.3s ease;
+}
+
+.btnEncerrar:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+}
+
+.btnEncerrarTodas {
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.3s ease;
+}
+
+.btnEncerrarTodas:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* Atividade Recente */
+.atividadeItem {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.atividadeItem:last-child {
+    border-bottom: none;
+}
+
+.atividadeIcon {
+    width: 40px;
+    height: 40px;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dourado);
+}
+
+.atividadeItem strong {
+    display: block;
+    color: var(--azul-escuro);
+    margin-bottom: 4px;
+}
+
+.atividadeItem p {
+    color: #666;
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .securityGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sessaoItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .btnEncerrar {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .title {
+        font-size: 1.5rem;
+    }
+    
+    .cardBody {
+        padding: 16px;
+    }
+    
+    .atividadeItem {
+        gap: 12px;
+    }
+    
+    .atividadeIcon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}

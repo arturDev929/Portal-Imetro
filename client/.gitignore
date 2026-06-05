@@ -1,2 +1,13 @@
+<<<<<<< HEAD
 .env.development
 node_modules/
+=======
+node_modules/
+build/
+.env
+.env.development
+*.log
+.DS_Store
+dist/
+build/
+>>>>>>> eliseu_front2.0
