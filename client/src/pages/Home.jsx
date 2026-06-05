@@ -1,14 +1,7 @@
 import { useState } from "react";
-<<<<<<< HEAD
-import { FaIdCard } from "react-icons/fa";
-import { MdLock } from "react-icons/md";
-import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../pagesAdm/components/navbar";
-=======
 import { FaIdCard, FaLock, FaArrowRight } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 
->>>>>>> eliseu_front2.0
 import imetro from "../img/logoFundo.png";
 import Style from "./Home.module.css";
 import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
@@ -17,11 +10,7 @@ import { api } from "../service/api";
 function Home() {
   const navigate = useNavigate();
 
-<<<<<<< HEAD
-  const [email, setEmail] = useState("");
-=======
   const [numEstudante, setNumEstudante] = useState("");
->>>>>>> eliseu_front2.0
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -31,20 +20,11 @@ function Home() {
 
     try {
       const response = await api.post("/login", {
-<<<<<<< HEAD
-        email,
-=======
         numEstudante,
->>>>>>> eliseu_front2.0
         password,
       });
 
       if (response.data.sucesso) {
-<<<<<<< HEAD
-        localStorage.setItem("token", response.data.token);
-        
-=======
->>>>>>> eliseu_front2.0
         showSuccessToast(
           response.data.titulo || "Login realizado",
           response.data.mensagem || "Login realizado com sucesso!",
@@ -70,10 +50,6 @@ function Home() {
             navigate("/homefuncionarioM");
           } else if (response.data.tipoUsuario === "funcionario") {
             navigate("/homefuncionario");
-<<<<<<< HEAD
-
-=======
->>>>>>> eliseu_front2.0
           }else if (response.data.tipoUsuario === "professor") {
             navigate("/painelGeralTeacher");
           }else if (response.data.tipoUsuario === "estudante"){
@@ -106,85 +82,6 @@ function Home() {
   };
 
   return (
-<<<<<<< HEAD
-    <div>
-      <Navbar />
-      <div className={Style.loginContainer}>
-        <div className="container">
-          <div className="d-flex justify-content-center align-items-center min-vh-100">
-            <div className="col-11 col-sm-8 col-md-6 col-lg-4">
-              <div className={`${Style.card} shadow-sm`}>
-                <div className="card-body p-4 text-center">
-                  <img
-                    src={imetro}
-                    alt="Logotipo Imetro"
-                    className={`${Style.logoImetro} mb-4`}
-                  />
-                  <h3 className="mb-4 text-white">Vamos comecar? Faca o login</h3>
-
-                  <form onSubmit={handleLogin}>
-                    <div className="mb-3">
-                      <div className="input-group">
-                        <span className="input-group-text">
-                          <FaIdCard />
-                        </span>
-                        <input
-                          type="text"
-                          className={`${Style.inputHome} form-control`}
-                          id="email"
-                          placeholder="Insira o seu email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <div className="input-group">
-                        <span className="input-group-text">
-                          <MdLock />
-                        </span>
-                        <input
-                          type="password"
-                          className={`${Style.inputHome} form-control`}
-                          id="password"
-                          placeholder="Insira a sua senha"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="submit"
-                      className={`${Style.ButtonHome} btn w-100 py-2`}
-                      disabled={loading || !email.trim() || !password.trim()}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                          Entrando...
-                        </>
-                      ) : (
-                        "Entrar no Sistema"
-                      )}
-                    </button>
-                    <p className="mt-3 text-white">
-                      Ainda nao tens uma conta?{" "}
-                      <Link to="/cadastro" className={Style.LinkHome}>
-                        Fazer Inscricao
-                      </Link>
-                    </p>
-                  </form>
-                </div>
-              </div>
-=======
     <div className={Style.homeWrapper}>
       <div className={Style.sobrepo}>
       
@@ -281,15 +178,11 @@ function Home() {
                   </Link>
                 </div>
               </form>
->>>>>>> eliseu_front2.0
             </div>
           </div>
         </div>
       </div>
-<<<<<<< HEAD
-=======
       </div>
->>>>>>> eliseu_front2.0
     </div>
   );
 }

@@ -7,26 +7,6 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { Link } from "react-router-dom";
 import Style from "./NavbarAdm.module.css";
-<<<<<<< HEAD
-
-function NavbarAdm(){
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-    
-    useEffect(() => {
-        const usuarioSalvo = localStorage.getItem("usuarioLogado");
-        if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
-        }
-    }, []);
-    
-    const handleLogout = () => {
-        localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("token");
-        navigate("/");
-    };
-    
-=======
 function NavbarAdm(){
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -40,7 +20,6 @@ function NavbarAdm(){
         localStorage.removeItem("usuarioLogado");
         navigate("/");
     };
->>>>>>> eliseu_front2.0
     return(
         <nav className={`${Style.navbar} navbar navbar-expand-lg border-bottom z-1 sticky-top`}>
             <div className="container-fluid p-2">
@@ -57,10 +36,7 @@ function NavbarAdm(){
                             {user && user.nome} <IoPersonCircleOutline className="mb-1 text-white"/>
                         </button>
                         <ul className={`${Style.dropdownMenu} dropdown-menu dropdown-menu-end`}>
-<<<<<<< HEAD
-=======
                             {/* <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoPersonCircleOutline className="me-2 mb-1"/>Perfil</Link></li> */}
->>>>>>> eliseu_front2.0
                             <li><Link className={`dropdown-item ${Style.Link}`} to="#"><IoSettingsOutline className="me-2 mb-1"/>Configurações</Link></li>
                             <li><hr className="dropdown-divider"/></li>
                             <li onClick={handleLogout}><Link className={`dropdown-item ${Style.Link}`} to="#"><RiLogoutCircleRLine className="me-2 mb-1"/>Terminar Sessão</Link></li>
@@ -72,8 +48,4 @@ function NavbarAdm(){
     )
 }
 
-<<<<<<< HEAD
-export default NavbarAdm;
-=======
 export default NavbarAdm
->>>>>>> eliseu_front2.0

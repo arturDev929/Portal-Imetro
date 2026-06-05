@@ -1,28 +1,3 @@
-<<<<<<< HEAD
-
-.Link{
-    text-decoration: none;
-    color: var(--branco);
-    border-radius: 20px;
-}
-.Link:hover{
-    color: var(--branco);
-    background-color: var(--dourado);
-    border-radius: 20px;
-}
-.Link:active{
-    color: var(--branco);
-    background-color: var(--dourado);
-    border-radius: 20px;
-}
-.logoImetro {
-    width: 50px;
-    height: 50px;
-}
-.containerFluid{
-    background-color: var(--azul-escuro);
-}
-=======
 /* Sidebar.module.css - Responsivo */
 
 .containerFluid {
@@ -315,4 +290,3 @@
         margin-left: 0;
     }
 }
->>>>>>> eliseu_front2.0

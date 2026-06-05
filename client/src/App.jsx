@@ -10,8 +10,6 @@ import { useAuth } from "./hooks/global/useAuth";
 import LancarNotasM from "./pagesFuncionarioMatricula/LancarNotas";
 import EstudentIsncription from "./pagesEstudentInscrition/index.jsx";
 import TurmasTeacher from "./pagesTeacher/TurmasTeacher.jsx";
-<<<<<<< HEAD
-=======
 import AvaliacoesNotas from "./pagesTeacher/AvaliacoesNotas.jsx";
 import ChatDelegado from "./pagesTeacher/ChatDelgado.jsx";
 import ConteudosTopicos from "./pagesTeacher/ConteudosTopicos.jsx";
@@ -19,7 +17,6 @@ import Horarios from "./pagesTeacher/Horarios.jsx";
 import Configuracoes from "./pagesTeacher/Configuracoes.jsx";
 import Seguranca from "./pagesTeacher/Seguranca.jsx";
 import MinhaAgenda from "./pagesTeacher/MinhaAgenda.jsx";
->>>>>>> eliseu_front2.0
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
 const Home = lazy(() => import("./pages/Home"));
@@ -37,11 +34,6 @@ const GestaoFuncionarioAdm = lazy(
 const HomeFuncionarioM = lazy(() => import("./pagesFuncionarioMatricula/Home"));
 const HomeTeacher = lazy(() => import("./pagesTeacher/Home"));
 const PainelGeral = lazy(() => import("./pagesTeacher/PainelGeral"));
-<<<<<<< HEAD
-const GerenciarTurma = lazy(() => import("./pagesTeacher/GerenciarTurma"));
-=======
-
->>>>>>> eliseu_front2.0
 
 const RotaPrivada = ({ children }) => {
   const { isLoggedIn } = useAuth();
@@ -150,9 +142,6 @@ function App() {
             <Route path="/inscricao" element={<RotaPrivada><EstudentIsncription /></RotaPrivada>} />
             <Route path="/turmasTeacher" element={<RotaPrivada><TurmasTeacher /></RotaPrivada>} />
             <Route path="/painelGeralTeacher" element={<RotaPrivada><PainelGeral /></RotaPrivada>} />
-<<<<<<< HEAD
-            <Route path="/professor/gerenciar-turma/:idperiodo/:iddisciplina/:turma/:disciplina" element={<RotaPrivada><GerenciarTurma /></RotaPrivada>} />
-=======
             <Route path="/avaliacoesNotas" element ={<RotaPrivada><AvaliacoesNotas /></RotaPrivada>} />
             <Route path="/chat" element={<RotaPrivada><ChatDelegado /></RotaPrivada>} />
             <Route path="/topicos" element={<RotaPrivada><ConteudosTopicos /></RotaPrivada>} />
@@ -161,7 +150,6 @@ function App() {
             <Route path="/configura" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
             <Route path="/segura" element={<RotaPrivada><Seguranca /></RotaPrivada>} />
     
->>>>>>> eliseu_front2.0
           </Routes>
         </Suspense>
       </Layout>

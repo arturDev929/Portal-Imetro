@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import TeacherLayout from "../layouts/TeacherLayout";
-
-function PainelGeral() {
-  return (
-    <TeacherLayout>
-        <h1>Painel Geral</h1>
-    </TeacherLayout>
-  );
-}
-=======
 import { useState } from "react";
 import TeacherLayout from "../layouts/TeacherLayout";
 import { 
@@ -481,5 +470,4 @@ function PainelGeral() {
   );
 }
 
->>>>>>> eliseu_front2.0
 export default PainelGeral;
