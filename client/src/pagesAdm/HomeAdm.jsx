@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../layouts/AdminLayout";
@@ -45,11 +44,6 @@ function HomeAdm() {
         );
     }
 
-=======
-import AdminLayout from "../layouts/AdminLayout";
-
-function HomeAdm() {
->>>>>>> eliseu_front2.0
     return (
         <AdminLayout>
             <div className="row">

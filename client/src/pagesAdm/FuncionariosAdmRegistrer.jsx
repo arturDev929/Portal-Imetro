@@ -1,7 +1,6 @@
 import AdminLayout from "../layouts/AdminLayout";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
 import { showErrorToast } from "../components/global/CustomToast";
 import { api } from "../service/api";
@@ -40,20 +39,6 @@ function FuncionáriosAdmRegistrer() {
     }
   }, [navigate]);
 
-=======
-import { showErrorToast } from "../components/global/CustomToast";
-import { api } from "../service/api";
-import { showSuccessToast } from "../components/global/CustomToast"; // Missing import
-
-function FuncionáriosAdmRegistrer() {
-  const [user, setUser] = useState(null);
-  useEffect(() => {
-    const usuarioSalvo = localStorage.getItem("usuarioLogado");
-    if (usuarioSalvo) {
-      setUser(JSON.parse(usuarioSalvo));
-    }
-  }, []);
->>>>>>> eliseu_front2.0
   const [nome, setNome] = useState("");
   const [contacto, setContacto] = useState("");
   const [nbi, setNBI] = useState("");
@@ -70,10 +55,7 @@ function FuncionáriosAdmRegistrer() {
 
     if (!user || !user.id) {
       showErrorToast("Usuário não autenticado", "Faça login novamente");
-<<<<<<< HEAD
       navigate("/");
-=======
->>>>>>> eliseu_front2.0
       return;
     }
 
@@ -91,10 +73,7 @@ function FuncionáriosAdmRegistrer() {
         {
           headers: {
             "Content-Type": "application/json",
-<<<<<<< HEAD
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-=======
->>>>>>> eliseu_front2.0
           },
         },
       );
@@ -103,13 +82,10 @@ function FuncionáriosAdmRegistrer() {
           response.data.titulo || "Sucesso",
           response.data.mensagem || "Funcionário registrado com sucesso",
         );
-<<<<<<< HEAD
         setNome("");
         setContacto("");
         setNBI("");
         setCargo("");
-=======
->>>>>>> eliseu_front2.0
       } else {
         showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
       }
@@ -131,7 +107,6 @@ function FuncionáriosAdmRegistrer() {
       setLoading(false);
     }
   };
-<<<<<<< HEAD
 
   if (loadingAuth) {
     return (
@@ -143,8 +118,6 @@ function FuncionáriosAdmRegistrer() {
     );
   }
 
-=======
->>>>>>> eliseu_front2.0
   return (
     <AdminLayout>
       <div className="row h-100">
@@ -154,7 +127,6 @@ function FuncionáriosAdmRegistrer() {
             Registrar Funcionários
           </h3>
         </div>
-<<<<<<< HEAD
         <div className="col-12 col-lg-6 mb-3">
           <div className="shadow-sm rounded-3 p-4 bg-light border">
             <h5 className="text-primary mb-3">
@@ -247,96 +219,3 @@ function FuncionáriosAdmRegistrer() {
 }
 
 export default FuncionáriosAdmRegistrer;
-=======
-            <div className="col-12 col-lg-6 mb-3">
-              <div className="shadow-sm rounded-3 p-4 bg-light border">
-                <h5 className="text-primary mb-3">
-                  <IoMdAddCircleOutline className="me-2 mb-1" />
-                  Funcionário Responsável por Inscrições e Matrículas dos alunos
-                </h5>
-                <form className="row g-2" onSubmit={handleSubmitFuncionario}>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Nome Funcionário..."
-                      className="form-control form-control-sm"
-                      name="nomefuncionario"
-                      onChange={(e) => setNome(e.target.value)}
-                      value={nome}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Contacto..."
-                      className="form-control form-control-sm"
-                      name="contactofuncionario"
-                      onChange={(e) => setContacto(e.target.value)}
-                      value={contacto}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <select
-                      className="form-control form-control-sm"
-                      name="cargo"
-                      value={cargo}
-                      onChange={(e) => setCargo(e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="">Selecione um Cargo</option>
-                      <option value="Coordenador de Admissões e Matrículas">
-                        Coordenador de Admissões e Matrículas
-                      </option>
-                      <option value="Tesoureiro">
-                        Tesoureiro
-                      </option>
-                      <option value="Assistente Administrativo">
-                        Assistente Administrativo
-                      </option>
-                      <option value="Oficial de Cartões e Identificações">
-                        Oficial de Cartões e Identificações
-                      </option>
-                    </select>
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      placeholder="Nº do B.I..."
-                      className="form-control form-control-sm"
-                      name="nbifuncionario"
-                      onChange={(e) => setNBI(e.target.value)}
-                      value={nbi}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <button
-                      type="submit"
-                      className="btn btn-sm btn-primary w-100"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                          Processando...
-                        </>
-                      ) : (
-                        "Registrar"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-    </AdminLayout>
-  );
-}
-export default FuncionáriosAdmRegistrer;
->>>>>>> eliseu_front2.0

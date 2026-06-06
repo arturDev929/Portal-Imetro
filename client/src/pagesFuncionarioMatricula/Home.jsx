@@ -8,9 +8,9 @@ import api from "../service/api";
 
 function HomeAdm() {
     const [user, setUser] = useState(null);
+    const [secaoAtiva, setSecaoAtiva] = useState("Pendente");
+    const [inscritos, setInscritos] = useState([]);
 
-    const [secaoAtiva, setSecaoAtiva] = useState("Pendente"); // inscritos, aprovados, reprovados
-    const [inscritos,setInscritos]=useState([])
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
@@ -18,19 +18,18 @@ function HomeAdm() {
         }
     }, []);
 
-    useEffect(()=>{
-<<<<<<< HEAD
-        RequestData()
-    },[inscritos])
+    useEffect(() => {
+        RequestData();
+    }, []); // Removeu a dependência de inscritos para evitar loop infinito
 
-=======
-       
-        RequestData()
-    },[inscritos])
->>>>>>> eliseu_front2.0
-    async function  RequestData() {
-        const data=await api.get("/EstudantesInscritos");
-        console.log(data.data)
+    async function RequestData() {
+        try {
+            const data = await api.get("/EstudantesInscritos");
+            console.log(data.data);
+            setInscritos(data.data);
+        } catch (error) {
+            console.error("Erro ao buscar dados:", error);
+        }
     }
 
     const secoes = [
@@ -42,17 +41,6 @@ function HomeAdm() {
         },
         {
             cor: "#28a745",
-<<<<<<< HEAD
-            titulo: "Estudantes Admitidos",
-            icone: FaUserCheck,
-            status: "Admitido"
-        },
-        {
-            cor: "#dc3545",
-            titulo: "Estudantes Não Admitido",
-            icone: FaUserTimes,
-            status: "Não Admitido"
-=======
             titulo: "Estudantes Aprovados",
             icone: FaUserCheck,
             status: "Aprovado"
@@ -62,7 +50,6 @@ function HomeAdm() {
             titulo: "Estudantes Reprovados",
             icone: FaUserTimes,
             status: "Reprovado"
->>>>>>> eliseu_front2.0
         }
     ];
 
@@ -81,100 +68,61 @@ function HomeAdm() {
                                 </p>
                             )}
                         </div>
-                                <div className="badge p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
-                                    <IoMdPerson size={24} color="white" />
+                        <div className="badge p-3" style={{ backgroundColor: 'var(--azul-escuro)' }}>
+                            <IoMdPerson size={24} color="white" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="row mb-4 g-2">
+                <div className="col-md-2">
+                    <button 
+                        className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                        onClick={() => setSecaoAtiva("Pendente")}
+                    >
+                        <FaUserPlus className="me-2 mb-1" />
+                        E. Inscritos
+                    </button>
+                </div>
+                <div className="col-md-2">
+                    <button
+                        className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                        onClick={() => setSecaoAtiva("Aprovado")}
+                    >
+                        <FaUserCheck className="me-2 mb-1" />
+                        E. Aprovados
+                    </button>
+                </div>
+                <div className="col-md-2">
+                    <button
+                        className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                        onClick={() => setSecaoAtiva("Reprovado")}
+                    >
+                        <FaUserTimes className="me-2 mb-1" />
+                        E. Reprovados
+                    </button>
+                </div>
+            </div>
+
+            {/* Seções condicionais */}
+            <div className="row">
+                <div className="col-12">
+                    {secoes.map((secao) => (
+                        secaoAtiva === secao.status && (
+                            <div key={secao.status}>
+                                <div className="d-flex align-items-center gap-2 mb-3">
+                                    <secao.icone size={20} color={secao.cor} className="me-2" />
+                                    <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
+                                        {secao.titulo}
+                                    </h4>
                                 </div>
+                                <Inscricoes filtroStatus={secao.status} />
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="row mb-4 g-2">
-                        <div className="col-md-2">
-<<<<<<< HEAD
-                            <button
-=======
-                            <button 
->>>>>>> eliseu_front2.0
-                                className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Pendente")}
-                            >
-                                <FaUserPlus className="me-2 mb-1" />
-                                E. Inscritos
-                            </button>
-                        </div>
-                        <div className="col-md-2">
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-                            <button
-                                className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Aprovado")}
-=======
-                            <button 
-                                className={`btn w-100 ${secaoAtiva === "Admitido" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Admitido")}
->>>>>>> Stashed changes
-                            >
-                                <FaUserCheck className="me-2 mb-1" />
-                                E. Admitidos
-                            </button>
-                        </div>
-                        <div className="col-md-2">
-<<<<<<< Updated upstream
-                            <button
-                                className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Reprovado")}
-=======
-                            <button 
-                                className={`btn w-100 ${secaoAtiva === "Não Admitido" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Não Admitido")}
->>>>>>> Stashed changes
-                            >
-                                <FaUserTimes className="me-2 mb-1" />
-                                E. Não Admitidos
-=======
-                            <button 
-                                className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Aprovado")}
-                            >
-                                <FaUserCheck className="me-2 mb-1" />
-                                E. Aprovados
-                            </button>
-                        </div>
-                        <div className="col-md-2">
-                            <button 
-                                className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                                onClick={() => setSecaoAtiva("Reprovado")}
-                            >
-                                <FaUserTimes className="me-2 mb-1" />
-                                E. Reprovados
->>>>>>> eliseu_front2.0
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Seções condicionais */}
-                    <div className="row">
-                        <div className="col-12">
-                        {secoes.map((secao) => (
-                            secaoAtiva === secao.status && (
-                                <div key={secao.status}>
-                                    <div className="d-flex align-items-center gap-2 mb-3">
-                                        <secao.icone size={20} color={secao.cor} className="me-2" />
-                                        <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                            {secao.titulo}
-                                        </h4>
-                                    </div>
-                                    <Inscricoes filtroStatus={secao.status} />
-                                </div>
-                            )
-                        ))}
-<<<<<<< HEAD
-
-=======
-                            
->>>>>>> eliseu_front2.0
-                        </div>
-                    </div>
+                        )
+                    ))}
+                </div>
+            </div>
         </FuncionarioLayout>
     );
 }
