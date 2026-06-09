@@ -353,7 +353,7 @@ router.delete('/disciplina/:id', (req, res) => {
 
 router.delete('/desvincularProfessor/:iddisciplina/:idprofessor', (req, res) => {
     const { iddisciplina, idprofessor } = req.params;
-    const sql = "DELETE FROM disc_prof WHERE idprofessor = ? AND iddisciplina = ?";
+    const sql = "DELETE FROM disc_professor WHERE id_professor = ? AND id_disciplina = ?";
     conexao.query(sql, [idprofessor, iddisciplina], (error, result) => {
         if (error) {
             console.error("Erro ao desvincular professor:", error);

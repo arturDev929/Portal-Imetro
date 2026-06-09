@@ -1,3 +1,4 @@
+// ProfessorEdit.jsx
 import { useState, useEffect, useCallback } from 'react';
 import Api from "../../service/api"
 import {
@@ -106,7 +107,9 @@ function ProfessorEdit() {
         tiposanguineoprofessor: '',
         contactoemergenciaprofessor: '',
         fotoUrl: '',
-        curriculoUrl: ''
+        curriculoUrl: '',
+        redefinirSenha: false,
+        fotoFile: null
     });
 
     const [user, setUser] = useState(null);
@@ -162,8 +165,8 @@ function ProfessorEdit() {
             setListaFiltrada(lista);
         } else {
             const filtrados = lista.filter(item =>
-                item.nomeprofessor?.toLowerCase().includes(termo.toLowerCase()) ||
-                (item.codigoprofessor && item.codigoprofessor.toLowerCase().includes(termo.toLowerCase()))
+                item.nome?.toLowerCase().includes(termo.toLowerCase()) ||
+                (item.codigo && item.codigo.toLowerCase().includes(termo.toLowerCase()))
             );
             setListaFiltrada(filtrados);
         }
@@ -179,8 +182,8 @@ function ProfessorEdit() {
             setListaFiltrada(lista);
         } else {
             const filtrados = lista.filter(item =>
-                item.nomeprofessor?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
-                (item.codigoprofessor && item.codigoprofessor.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                item.nome?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                (item.codigo && item.codigo.toLowerCase().includes(termoPesquisa.toLowerCase()))
             );
             setListaFiltrada(filtrados);
         }
@@ -209,7 +212,7 @@ function ProfessorEdit() {
     const fetchInfoProfessor = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/InformacoesProfessor/${professor.id_professor}`, {
                 timeout: API_TIMEOUT
             });
             setProfessorSelecionadoInfo({
@@ -300,7 +303,11 @@ function ProfessorEdit() {
     }, []);
 
     const adicionarProfessor = useCallback(async (e) => {
-        e?.preventDefault();
+        // Prevenir comportamento padrão do formulário
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (!user?.id) {
             showErrorToast("Acesso Negado", "Administrador não autenticado!");
@@ -309,6 +316,11 @@ function ProfessorEdit() {
 
         if (!dadosNovoProfessor.nomeprofessore?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
+            return;
+        }
+
+        if (!dadosNovoProfessor.emailprofessor?.trim()) {
+            showErrorToast("Validação", "Preencha o email do professor");
             return;
         }
 
@@ -332,24 +344,27 @@ function ProfessorEdit() {
             });
 
             if (response.data.sucesso) {
-                const codigoProfessor = response.data.dados?.codigoProfessor;
-                const codigoAcesso = response.data.dados?.codigoAcesso;
-
                 showSuccessToast(
-                    "Professor Registrado com Sucesso!",
-                    "Professor registrado com sucesso.",
-                    {
-                        "Código do Professor": codigoProfessor,
-                        "Senha de Acesso": codigoAcesso
+                    response.data.titulo || "Professor Registrado com Sucesso!",
+                    response.data.mensagem,
+                    response.data.dados && {
+                        "Código do Professor": response.data.dados.codigoProfessor,
+                        "Email": response.data.dados.email
                     }
                 );
 
                 await fetchProfessores(false);
                 fecharModalAdicionar();
+            } else {
+                showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
         } catch (error) {
             console.error("Erro ao adicionar professor:", error);
-            showErrorToast("Erro", "Não foi possível registrar o professor");
+            if (error.response?.data?.mensagem) {
+                showErrorToast("Erro", error.response.data.mensagem);
+            } else {
+                showErrorToast("Erro", "Não foi possível registrar o professor");
+            }
         } finally {
             setSalvando(false);
         }
@@ -358,36 +373,38 @@ function ProfessorEdit() {
     const abrirModalEditar = useCallback(async (professor) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/InformacoesProfessor/${professor.idprofessor}`, {
+            const response = await Api.get(`/InformacoesProfessor/${professor.id_professor}`, {
                 timeout: API_TIMEOUT
             });
             const infoCompletas = response.data;
 
             setDadosEdicao({
-                idprofessor: professor.idprofessor,
-                codigoprofessor: professor.codigoprofessor || infoCompletas.codigoprofessor || '',
-                nomeprofessor: professor.nomeprofessor || infoCompletas.nomeprofessor || '',
-                generoprofessor: professor.generoprofessor || infoCompletas.generoprofessor || '',
-                nacionalidadeprofessor: professor.nacionalidadeprofessor || infoCompletas.nacionalidadeprofessor || '',
-                estadocivilprofessor: professor.estadocivilprofessor || infoCompletas.estadocivilprofessor || '',
-                nomepaiprofessor: professor.nomepaiprofessor || infoCompletas.nomepaiprofessor || '',
-                nomemaeprofessor: professor.nomemaeprofessor || infoCompletas.nomemaeprofessor || '',
-                nbiprofessor: professor.nbiprofessor || infoCompletas.nbiprofessor || '',
-                datanascimentoprofessor: professor.datanascimentoprofessor || infoCompletas.datanascimentoprofessor || '',
-                residenciaprofessor: professor.residenciaprofessor || infoCompletas.residenciaprofessor || '',
-                telefoneprofessor: professor.telefoneprofessor || infoCompletas.telefoneprofessor || '',
-                whatsappprofessor: professor.whatsappprofessor || infoCompletas.whatsappprofessor || '',
-                emailprofessor: professor.emailprofessor || infoCompletas.emailprofessor || '',
-                anoexperienciaprofessor: professor.anoexperienciaprofessor || infoCompletas.anoexperienciaprofessor || '',
-                titulacaoprofessor: professor.titulacaoprofessor || infoCompletas.titulacaoprofessor || '',
-                dataadmissaoprofessor: professor.dataadmissaoprofessor || infoCompletas.dataadmissaoprofessor || '',
-                condicoesprofessor: professor.condicoesprofessor || infoCompletas.condicoesprofessor || '',
-                ibanprofessor: professor.ibanprofessor || infoCompletas.ibanprofessor || '',
-                tipocontratoprofessor: professor.tipocontratoprofessor || infoCompletas.tipocontratoprofessor || '',
-                tiposanguineoprofessor: professor.tiposanguineoprofessor || infoCompletas.tiposanguineoprofessor || '',
-                contactoemergenciaprofessor: professor.contactoemergenciaprofessor || infoCompletas.contactoemergenciaprofessor || '',
+                idprofessor: professor.id_professor,
+                codigoprofessor: professor.codigo || infoCompletas.codigo || '',
+                nomeprofessor: professor.nome || infoCompletas.nome || '',
+                generoprofessor: professor.genero || infoCompletas.genero || '',
+                nacionalidadeprofessor: professor.nacionalidade || infoCompletas.nacionalidade || '',
+                estadocivilprofessor: professor.estadocivil || infoCompletas.estadocivil || '',
+                nomepaiprofessor: professor.nomepai || infoCompletas.nomepai || '',
+                nomemaeprofessor: professor.nomemae || infoCompletas.nomemae || '',
+                nbiprofessor: professor.bi || infoCompletas.bi || '',
+                datanascimentoprofessor: professor.data_nascimento || infoCompletas.data_nascimento || '',
+                residenciaprofessor: professor.residencia || infoCompletas.residencia || '',
+                telefoneprofessor: professor.contacto || infoCompletas.contacto || '',
+                whatsappprofessor: professor.whatsapp || infoCompletas.whatsapp || '',
+                emailprofessor: professor.email || infoCompletas.email || '',
+                anoexperienciaprofessor: professor.anoexperiencia || infoCompletas.anoexperiencia || '',
+                titulacaoprofessor: professor.titulacao || infoCompletas.titulacao || '',
+                dataadmissaoprofessor: professor.data_admissao || infoCompletas.data_admissao || '',
+                condicoesprofessor: professor.condicoes || infoCompletas.condicoes || '',
+                ibanprofessor: professor.iban || infoCompletas.iban || '',
+                tipocontratoprofessor: professor.tipo_contrato || infoCompletas.tipo_contrato || '',
+                tiposanguineoprofessor: professor.tipo_sangue || infoCompletas.tipo_sangue || '',
+                contactoemergenciaprofessor: professor.contacto_emergencia || infoCompletas.contacto_emergencia || '',
                 fotoUrl: professor.fotoUrl || infoCompletas.fotoUrl || '',
-                curriculoUrl: professor.curriculoUrl || infoCompletas.curriculoUrl || null
+                curriculoUrl: professor.bi_pdf ? `/api/img/professores/${professor.bi_pdf}` : null,
+                redefinirSenha: false,
+                fotoFile: null
             });
             setModalEditarAberto(true);
         } catch (error) {
@@ -403,16 +420,12 @@ function ProfessorEdit() {
         setDadosEdicao(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    const handleFotoChange = useCallback((e, isNovo = false) => {
+    const handleFotoChange = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                if (isNovo) {
-                    setDadosNovoProfessor(prev => ({ ...prev, fotoprofessor: file }));
-                } else {
-                    setDadosEdicao(prev => ({ ...prev, fotoUrl: reader.result }));
-                }
+                setDadosEdicao(prev => ({ ...prev, fotoUrl: reader.result, fotoFile: file }));
             };
             reader.readAsDataURL(file);
         }
@@ -427,7 +440,11 @@ function ProfessorEdit() {
     }, []);
 
     const salvarEdicao = useCallback(async (e) => {
-        e?.preventDefault();
+        // Prevenir comportamento padrão do formulário
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (!dadosEdicao.nomeprofessor?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
@@ -436,46 +453,47 @@ function ProfessorEdit() {
 
         setSalvando(true);
         try {
-            await Api.put(`/atualizarprofessor/${dadosEdicao.idprofessor}`, {
-                codigoprofessor: dadosEdicao.codigoprofessor,
-                nomeprofessor: dadosEdicao.nomeprofessor,
-                generoprofessor: dadosEdicao.generoprofessor,
-                nacionalidadeprofessor: dadosEdicao.nacionalidadeprofessor,
-                estadocivilprofessor: dadosEdicao.estadocivilprofessor,
-                nomepaiprofessor: dadosEdicao.nomepaiprofessor,
-                nomemaeprofessor: dadosEdicao.nomemaeprofessor,
-                nbiprofessor: dadosEdicao.nbiprofessor,
-                datanascimentoprofessor: dadosEdicao.datanascimentoprofessor,
-                residenciaprofessor: dadosEdicao.residenciaprofessor,
-                telefoneprofessor: dadosEdicao.telefoneprofessor,
-                whatsappprofessor: dadosEdicao.whatsappprofessor,
-                emailprofessor: dadosEdicao.emailprofessor,
-                anoexperienciaprofessor: dadosEdicao.anoexperienciaprofessor,
-                titulacaoprofessor: dadosEdicao.titulacaoprofessor,
-                dataadmissaoprofessor: dadosEdicao.dataadmissaoprofessor,
-                condicoesprofessor: dadosEdicao.condicoesprofessor,
-                ibanprofessor: dadosEdicao.ibanprofessor,
-                tipocontratoprofessor: dadosEdicao.tipocontratoprofessor,
-                tiposanguineoprofessor: dadosEdicao.tiposanguineoprofessor,
-                contactoemergenciaprofessor: dadosEdicao.contactoemergenciaprofessor,
-                foto: dadosEdicao.fotoUrl,
-                curriculo: dadosEdicao.curriculoUrl
-            }, {
-                timeout: API_TIMEOUT,
-                headers: { 'Content-Type': 'application/json' }
+            const formData = new FormData();
+            
+            // Adicionar todos os campos do formulário
+            Object.keys(dadosEdicao).forEach(key => {
+                if (key !== 'fotoUrl' && key !== 'curriculoUrl' && key !== 'fotoFile' && dadosEdicao[key] !== null && dadosEdicao[key] !== undefined && dadosEdicao[key] !== '') {
+                    formData.append(key, dadosEdicao[key]);
+                }
             });
 
-            showSuccessToast(
-                "Sucesso",
-                "Professor atualizado com sucesso",
-                { "Professor": dadosEdicao.nomeprofessor }
-            );
+            // Adicionar foto se foi alterada
+            if (dadosEdicao.fotoFile) {
+                formData.append('fotoprofessor', dadosEdicao.fotoFile);
+            }
 
-            await fetchProfessores(false);
-            fecharModalEditar();
+            // Adicionar redefinir senha
+            formData.append('redefinirSenha', dadosEdicao.redefinirSenha ? 'true' : 'false');
+
+            const response = await Api.put(`/atualizarprofessor/${dadosEdicao.idprofessor}`, formData, {
+                timeout: API_TIMEOUT,
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.data.sucesso) {
+                showSuccessToast(
+                    response.data.titulo || "Sucesso",
+                    response.data.mensagem,
+                    { "Professor": dadosEdicao.nomeprofessor }
+                );
+
+                await fetchProfessores(false);
+                fecharModalEditar();
+            } else {
+                showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
+            }
         } catch (error) {
             console.error("Erro ao atualizar professor:", error);
-            showErrorToast("Erro", "Não foi possível atualizar o professor");
+            if (error.response?.data?.mensagem) {
+                showErrorToast("Erro", error.response.data.mensagem);
+            } else {
+                showErrorToast("Erro", "Não foi possível atualizar o professor");
+            }
         } finally {
             setSalvando(false);
         }
@@ -492,7 +510,11 @@ function ProfessorEdit() {
     }, []);
 
     const adicionarDisciplinaProfessor = useCallback(async (e) => {
-        e?.preventDefault();
+        // Prevenir comportamento padrão do formulário
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (!iddisciplina || !idprofessor) {
             showErrorToast("Seleção Incompleta", "Por favor, selecione uma disciplina e um professor.");
@@ -633,7 +655,9 @@ function ProfessorEdit() {
             tiposanguineoprofessor: '',
             contactoemergenciaprofessor: '',
             fotoUrl: '',
-            curriculoUrl: ''
+            curriculoUrl: '',
+            redefinirSenha: false,
+            fotoFile: null
         });
     }, []);
 
@@ -647,11 +671,11 @@ function ProfessorEdit() {
     const headers = ['Foto', 'Nome', 'Titulação', 'Código', 'Disciplinas', 'Info', 'Editar', 'Apagar'];
 
     const renderRow = useCallback((item) => (
-        <tr key={item.idprofessor}>
+        <tr key={item.id_professor}>
             <td className="align-middle">
                 <img
                     src={item.fotoUrl || '/default-avatar.png'}
-                    alt={`Foto de ${item.nomeprofessor}`}
+                    alt={`Foto de ${item.nome}`}
                     className="img-fluid rounded-circle"
                     style={{ width: '40px', height: '40px', objectFit: 'cover' }}
                     onError={(e) => {
@@ -660,20 +684,20 @@ function ProfessorEdit() {
                 />
             </td>
             <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
-                <MdPerson className="me-2 mb-1" />{item.nomeprofessor}
+                <MdPerson className="me-2 mb-1" />{item.nome}
             </td>
             <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
-                {item.titulacaoprofessor}
+                {item.titulacao || 'Não informado'}
             </td>
             <td className="align-middle text-muted">
-                <small>{item.codigoprofessor || 'N/I'}</small>
+                <small>{item.codigo || 'N/I'}</small>
             </td>
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnOutros}`}
-                    onClick={() => fetchDisciplinasProfessor(item.idprofessor, item.nomeprofessor)}
+                    onClick={() => fetchDisciplinasProfessor(item.id_professor, item.nome)}
                     disabled={loading || loadingDisciplinas || isConfirming}
-                    title={`Ver disciplinas de ${item.nomeprofessor}`}
+                    title={`Ver disciplinas de ${item.nome}`}
                 >
                     <FaBook />
                 </button>
@@ -683,7 +707,7 @@ function ProfessorEdit() {
                     className={`btn btn-sm ${Style.btnOutros}`}
                     onClick={() => fetchInfoProfessor(item)}
                     disabled={loading || isConfirming}
-                    title={`Informações de ${item.nomeprofessor}`}
+                    title={`Informações de ${item.nome}`}
                 >
                     <FaInfoCircle />
                 </button>
@@ -693,7 +717,7 @@ function ProfessorEdit() {
                     className={`btn btn-sm ${Style.btnEditar}`}
                     onClick={() => abrirModalEditar(item)}
                     disabled={loading || salvando || isConfirming}
-                    title={`Editar ${item.nomeprofessor}`}
+                    title={`Editar ${item.nome}`}
                 >
                     <MdEdit />
                 </button>
@@ -701,15 +725,16 @@ function ProfessorEdit() {
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnDeletar}`}
-                    onClick={() => deletarProfessor(item.idprofessor, item.nomeprofessor)}
+                    onClick={() => deletarProfessor(item.id_professor, item.nome)}
                     disabled={loading || salvando || isConfirming}
-                    title={`Excluir ${item.nomeprofessor}`}
+                    title={`Excluir ${item.nome}`}
                 >
                     <MdDeleteForever />
                 </button>
             </td>
         </tr>
     ), [fetchDisciplinasProfessor, fetchInfoProfessor, abrirModalEditar, deletarProfessor, loading, loadingDisciplinas, isConfirming, salvando]);
+
     const renderConteudo = () => {
         if (loading) {
             return (
@@ -717,7 +742,7 @@ function ProfessorEdit() {
                     <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
                         <span className="visually-hidden">Carregando...</span>
                     </div>
-                    <p className="text-muted mb-0">Carregando funcionários...</p>
+                    <p className="text-muted mb-0">Carregando professores...</p>
                 </div>
             );
         }
@@ -726,7 +751,7 @@ function ProfessorEdit() {
             return (
                 <div className="text-center py-5">
                     <MdSearch size={48} className="text-muted mb-3" />
-                    <p className="text-muted mb-2">Nenhum funcionário encontrado para "{termoPesquisa}"</p>
+                    <p className="text-muted mb-2">Nenhum professor encontrado para "{termoPesquisa}"</p>
                     <button 
                         className="btn btn-outline-primary btn-sm"
                         onClick={limparPesquisa}
@@ -761,6 +786,7 @@ function ProfessorEdit() {
             </div>
         );
     };
+
     return (
         <div className="row mb-4">
             <div className="col-12">
@@ -862,6 +888,7 @@ function ProfessorEdit() {
                 {renderConteudo()}
             </div>
 
+            {/* Modal Adicionar Professor */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -1070,7 +1097,7 @@ function ProfessorEdit() {
                                             </div>
 
                                             <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Email</label>
+                                                <label className="form-label small text-muted mb-1">Email *</label>
                                                 <input
                                                     type="email"
                                                     placeholder="Email..."
@@ -1079,6 +1106,7 @@ function ProfessorEdit() {
                                                     value={dadosNovoProfessor.emailprofessor}
                                                     onChange={handleNovoProfessorInputChange}
                                                     disabled={salvando || isConfirming}
+                                                    required
                                                 />
                                             </div>
 
@@ -1224,7 +1252,7 @@ function ProfessorEdit() {
                                     <button
                                         type="submit"
                                         className={`btn ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !dadosNovoProfessor.nomeprofessore?.trim()}
+                                        disabled={salvando || isConfirming || !dadosNovoProfessor.nomeprofessore?.trim() || !dadosNovoProfessor.emailprofessor?.trim()}
                                     >
                                         {salvando ? (
                                             <>
@@ -1242,6 +1270,7 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* Modal Adicionar Disciplina */}
             {modalAdicionarDisciplinaAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -1309,6 +1338,7 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* Modal Disciplinas do Professor */}
             {modalDisciplinasAberto && professorSelecionado && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -1336,7 +1366,7 @@ function ProfessorEdit() {
                                 ) : disciplinasProfessor.length > 0 ? (
                                     <div className="row">
                                         {disciplinasProfessor.map((disciplina) => (
-                                            <div key={disciplina.iddisciplina} className="col-md-6 mb-2">
+                                            <div key={disciplina.id_dp} className="col-md-6 mb-2">
                                                 <div className="p-3 border rounded d-flex justify-content-between align-items-center"
                                                     style={{ backgroundColor: 'var(--cinza-claro)' }}>
                                                     <div className="d-flex align-items-center">
@@ -1348,15 +1378,15 @@ function ProfessorEdit() {
                                                     <button
                                                         className={`btn btn-sm ${Style.btnDeletar}`}
                                                         onClick={() => removerDisciplina(
-                                                            disciplina.iddisciplina,
+                                                            disciplina.id_disciplina,
                                                             disciplina.disciplina,
                                                             professorSelecionado.idprofessor,
                                                             professorSelecionado.nomeprofessor
                                                         )}
-                                                        disabled={removendoDisciplina === disciplina.iddisciplina || isConfirming}
+                                                        disabled={removendoDisciplina === disciplina.id_disciplina || isConfirming}
                                                         title="Desvincular disciplina"
                                                     >
-                                                        {removendoDisciplina === disciplina.iddisciplina ? (
+                                                        {removendoDisciplina === disciplina.id_disciplina ? (
                                                             <span className="spinner-border spinner-border-sm"></span>
                                                         ) : (
                                                             <MdDeleteForever />
@@ -1387,6 +1417,7 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* Modal Informações do Professor */}
             {modalInfoAberto && professorSelecionadoInfo && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -1394,7 +1425,7 @@ function ProfessorEdit() {
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <FaInfoCircle className="me-2" />
-                                    Informações do Professor - {professorSelecionadoInfo.nomeprofessor}
+                                    Informações do Professor - {professorSelecionadoInfo.nome}
                                 </h5>
                                 <button
                                     type="button"
@@ -1410,10 +1441,10 @@ function ProfessorEdit() {
                                                 src={professorSelecionadoInfo.fotoUrl || '/default-avatar.png'}
                                                 className="rounded-circle border"
                                                 style={{ width: '120px', height: '120px', objectFit: 'cover' }}
-                                                alt={professorSelecionadoInfo.nomeprofessor}
+                                                alt={professorSelecionadoInfo.nome}
                                             />
                                             <h6 className="mt-2 mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                                Código: {professorSelecionadoInfo.codigoprofessor || 'N/I'}
+                                                Código: {professorSelecionadoInfo.codigo || 'N/I'}
                                             </h6>
                                         </div>
                                         <div className="col-md-10">
@@ -1425,14 +1456,14 @@ function ProfessorEdit() {
                                                     </h6>
                                                     <div className="row">
                                                         <div className="col-md-6">
-                                                            <p className="mb-1"><strong>Nome Completo:</strong> {professorSelecionadoInfo.nomeprofessor || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Gênero:</strong> {professorSelecionadoInfo.generoprofessor || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Nacionalidade:</strong> {professorSelecionadoInfo.nacionalidadeprofessor || 'Não informado'}</p>
+                                                            <p className="mb-1"><strong>Nome Completo:</strong> {professorSelecionadoInfo.nome || 'Não informado'}</p>
+                                                            <p className="mb-1"><strong>Gênero:</strong> {professorSelecionadoInfo.genero || 'Não informado'}</p>
+                                                            <p className="mb-1"><strong>Nacionalidade:</strong> {professorSelecionadoInfo.nacionalidade || 'Não informado'}</p>
                                                         </div>
                                                         <div className="col-md-6">
-                                                            <p className="mb-1"><strong>Estado Civil:</strong> {professorSelecionadoInfo.estadocivilprofessor || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Data Nascimento:</strong> {professorSelecionadoInfo.datanascimentoFormatada || 'Não informada'}</p>
-                                                            <p className="mb-1"><strong>Nº do BI:</strong> {professorSelecionadoInfo.nbiprofessor || 'Não informado'}</p>
+                                                            <p className="mb-1"><strong>Estado Civil:</strong> {professorSelecionadoInfo.estadocivil || 'Não informado'}</p>
+                                                            <p className="mb-1"><strong>Data Nascimento:</strong> {professorSelecionadoInfo.data_nascimento ? new Date(professorSelecionadoInfo.data_nascimento).toLocaleDateString('pt-BR') : 'Não informada'}</p>
+                                                            <p className="mb-1"><strong>Nº do BI:</strong> {professorSelecionadoInfo.bi || 'Não informado'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1451,7 +1482,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0 h-100">
                                                 <div className="card-body">
                                                     <p className="mb-1"><MdLocationOn className="me-1" /> <strong>Residência:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.residenciaprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0">{professorSelecionadoInfo.residencia || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1459,7 +1490,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0 h-100">
                                                 <div className="card-body">
                                                     <p className="mb-1"><MdPhone className="me-1" /> <strong>Telefone:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.telefoneprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0">{professorSelecionadoInfo.contacto || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1467,7 +1498,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0 h-100">
                                                 <div className="card-body">
                                                     <p className="mb-1"><MdEmail className="me-1" /> <strong>Email:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.emailprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0">{professorSelecionadoInfo.email || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1484,7 +1515,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Anos de Experiência:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.anoexperienciaprofessor || '0'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.anoexperiencia || '0'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1492,7 +1523,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Titularidade:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.titulacaoprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.titulacao || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1500,7 +1531,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Data Admissão:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.dataadmissaoFormatada || 'Não informada'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.data_admissao ? new Date(professorSelecionadoInfo.data_admissao).toLocaleDateString('pt-BR') : 'Não informada'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1508,7 +1539,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Tipo Contrato:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tipocontratoprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tipo_contrato || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1525,7 +1556,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>IBAN:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.ibanprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.iban || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1533,7 +1564,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Tipo Sanguíneo:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tiposanguineoprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tipo_sangue || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1541,7 +1572,7 @@ function ProfessorEdit() {
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
                                                     <strong>Contacto Emergência:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.contactoemergenciaprofessor || 'Não informado'}</p>
+                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.contacto_emergencia || 'Não informado'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1555,9 +1586,9 @@ function ProfessorEdit() {
                                         <div className="col-md-12">
                                             <div className="card bg-light border-0">
                                                 <div className="card-body">
-                                                    {professorSelecionadoInfo.curriculoUrl ? (
+                                                    {professorSelecionadoInfo.bi_pdf ? (
                                                         <a
-                                                            href={professorSelecionadoInfo.curriculoUrl}
+                                                            href={`/api/img/professores/${professorSelecionadoInfo.bi_pdf}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="btn btn-primary"
@@ -1588,6 +1619,7 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* Modal Editar Professor */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -1604,7 +1636,7 @@ function ProfessorEdit() {
                                     disabled={salvando || isConfirming}
                                 />
                             </div>
-                            <form onSubmit={salvarEdicao}>
+                            <form onSubmit={salvarEdicao} encType="multipart/form-data">
                                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                     <div className="container-fluid">
                                         <div className="row mb-4">
@@ -1628,9 +1660,27 @@ function ProfessorEdit() {
                                                         className="d-none"
                                                         id="fotoProfessor"
                                                         accept="image/*"
-                                                        onChange={(e) => handleFotoChange(e, false)}
+                                                        onChange={handleFotoChange}
                                                         disabled={salvando || isConfirming}
                                                     />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="row mb-3">
+                                            <div className="col-md-12">
+                                                <div className="form-check">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="form-check-input"
+                                                        id="redefinirSenha"
+                                                        checked={dadosEdicao.redefinirSenha}
+                                                        onChange={(e) => setDadosEdicao(prev => ({ ...prev, redefinirSenha: e.target.checked }))}
+                                                        disabled={salvando || isConfirming}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="redefinirSenha">
+                                                        Redefinir senha e enviar nova por email
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
@@ -1946,20 +1996,9 @@ function ProfessorEdit() {
                                                         <input
                                                             type="file"
                                                             className="form-control"
+                                                            name="bipdfprofessor"
                                                             accept=".pdf,.doc,.docx"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        setDadosEdicao(prev => ({
-                                                                            ...prev,
-                                                                            curriculoUrl: reader.result
-                                                                        }));
-                                                                    };
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
+                                                            onChange={handleNovoProfessorInputChange}
                                                             disabled={salvando || isConfirming}
                                                         />
                                                         <small className="text-muted d-block mt-2">

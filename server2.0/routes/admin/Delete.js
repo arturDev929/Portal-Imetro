@@ -49,4 +49,23 @@ router.delete("/funcionario/:id", verificarToken, async (req, res) => {
     }
 });
 
+router.delete('/desvincularProfessor/:iddisciplina/:idprofessor', (req, res) => {
+    const { iddisciplina, idprofessor } = req.params;
+    const sql = "DELETE FROM disc_professor WHERE id_professor = ? AND id_disciplina = ?";
+    conexao.query(sql, [idprofessor, iddisciplina], (error, result) => {
+        if (error) {
+            console.error("Erro ao desvincular professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json({
+                message: "Professor desvinculado com sucesso",
+                professoresAfetados: result.affectedRows
+            });
+        }
+    });
+});
+
 module.exports = router;

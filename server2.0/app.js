@@ -75,6 +75,8 @@ app.get('/', (req, res) => {
 
 
 app.use('/api/img/funcionarios', express.static(path.join(__dirname, '../client/src/img/funcionarios')));
+app.use('/api/img/professores', express.static(path.join(__dirname, '../client/src/img/professores')));
+app.use('/api/img/docprofessores', express.static(path.join(__dirname, '../client/src/img/docprofessores')));
 app.use('/api/src/img', express.static(path.join(__dirname, '../client/src/img')));
 
 app.use('/login', login);

@@ -536,9 +536,8 @@ router.get('/estatisticasProfessores', (req, res) => {
     const sql = `
         SELECT 
             COUNT(*) as totalProfessores,
-            COUNT(CASE WHEN fotoprofessor IS NOT NULL THEN 1 END) as professoresComFoto,
-            COUNT(CASE WHEN titulacaoprofessor IS NOT NULL AND titulacaoprofessor != '' THEN 1 END) as professoresComTitulacao
-        FROM professor WHERE estado = 'Ativo'
+            COUNT(CASE WHEN titulacao IS NOT NULL AND titulacao != '' THEN 1 END) as professoresComTitulacao
+        FROM professor WHERE status = 'Ativo' LIMIT 100
     `;
 
     conexao.query(sql, (error, result) => {
@@ -699,13 +698,13 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
 
     const sql = `
         SELECT 
-            disc_prof.iddiscprof,
-            disciplina.disciplina,
-            disciplina.iddisciplina
-        FROM disc_prof 
-        INNER JOIN disciplina ON disc_prof.iddisciplina = disciplina.iddisciplina 
-        WHERE disc_prof.idprofessor = ?
-        ORDER BY disciplina.disciplina ASC
+            df.id_dp,
+            d.disciplina,
+            d.id_disciplina
+        FROM disc_professor df
+        INNER JOIN disciplina d ON df.id_disciplina = d.id_disciplina LIMIT 100
+        WHERE df.id_professor = ?
+        ORDER BY d.disciplina ASC
     `;
 
     conexao.query(sql, [id], (error, result) => {

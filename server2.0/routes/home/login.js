@@ -33,63 +33,148 @@ router.post("/", (req, res) => {
             });
         }
 
-        console.log("Resultados encontrados:", results.length);
+        console.log("Resultados encontrados em admin:", results.length);
 
         if (results.length === 0) {
-            return res.status(401).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Usuário não encontrado",
-                mensagem: "Usuário não encontrado."
-            });
-        }
+            // Se não encontrou em admin, busca em funcionarios
+            console.log("Procurando em funcionarios...");
+            
+            const sqlFuncionario = `
+                SELECT 
+                    funcionario.id_func as id,
+                    funcionario.nome,
+                    funcionario.bi,
+                    funcionario.senha,
+                    funcionario.contacto,
+                    funcionario.email,
+                    cargo.cargo as tipo_usuario
+                FROM funcionario 
+                INNER JOIN cargo ON funcionario.id_cargo = cargo.id_cargo
+                WHERE funcionario.bi = ?
+            `;
+            
+            conexao.query(sqlFuncionario, [email], async (errFunc, resultsFunc) => {
+                if (errFunc) {
+                    console.error("ERRO NA QUERY DE FUNCIONARIO:", errFunc.message);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: errFunc.message
+                    });
+                }
 
-        const usuario = results[0];
-        console.log("Usuário encontrado:", usuario.email);
+                console.log("Resultados encontrados em funcionarios:", resultsFunc.length);
 
-        try {
-            const senhaCorreta = await bcrypt.compare(password, usuario.senha);
-            console.log("Senha correta:", senhaCorreta);
+                if (resultsFunc.length === 0) {
+                    return res.status(401).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Usuário não encontrado",
+                        mensagem: "Usuário não encontrado."
+                    });
+                }
 
-            if (!senhaCorreta) {
-                return res.status(401).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Senha incorreta",
-                    mensagem: "Senha inválida."
-                });
-            }
+                const usuario = resultsFunc[0];
+                console.log("Usuário encontrado:", usuario.email);
+                console.log("Cargo:", usuario.tipo_usuario);
 
-            console.log("Gerando token...");
-            const token = gerarToken(
-                { id: usuario.id_user, nome: usuario.nome },
-                "admin"
-            );
-            console.log("Token gerado");
+                try {
+                    const senhaCorreta = await bcrypt.compare(password, usuario.senha);
+                    console.log("Senha correta:", senhaCorreta);
 
-            return res.status(200).json({
-                sucesso: true,
-                tipo: "sucesso",
-                titulo: "Login realizado",
-                mensagem: "Login realizado com sucesso!",
-                tipoUsuario: "adm",
-                token: token,
-                dados: {
-                    id: usuario.id_user,
-                    nome: usuario.nome,
-                    email: usuario.email,
-                    contacto: usuario.contacto
+                    if (!senhaCorreta) {
+                        return res.status(401).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Senha incorreta",
+                            mensagem: "Senha inválida."
+                        });
+                    }
+
+                    console.log("Gerando token para funcionario...");
+                    const token = gerarToken(
+                        { id: usuario.id, nome: usuario.nome },
+                        usuario.tipo_usuario
+                    );
+                    console.log("Token gerado");
+
+                    return res.status(200).json({
+                        sucesso: true,
+                        tipo: "sucesso",
+                        titulo: "Login realizado",
+                        mensagem: "Login realizado com sucesso!",
+                        tipoUsuario: usuario.tipo_usuario,
+                        token: token,
+                        dados: {
+                            id: usuario.id,
+                            nome: usuario.nome,
+                            email: usuario.email,
+                            contacto: usuario.contacto,
+                            bi: usuario.bi
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("ERRO NO TRY/CATCH:", error.message);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro ao verificar senha",
+                        mensagem: error.message
+                    });
                 }
             });
+            
+        } else {
+            // Usuário encontrado em admin
+            const usuario = results[0];
+            console.log("Usuário encontrado em admin:", usuario.email);
 
-        } catch (error) {
-            console.error("ERRO NO TRY/CATCH:", error.message);
-            return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro ao verificar senha",
-                mensagem: error.message
-            });
+            try {
+                const senhaCorreta = await bcrypt.compare(password, usuario.senha);
+                console.log("Senha correta:", senhaCorreta);
+
+                if (!senhaCorreta) {
+                    return res.status(401).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Senha incorreta",
+                        mensagem: "Senha inválida."
+                    });
+                }
+
+                console.log("Gerando token para admin...");
+                const token = gerarToken(
+                    { id: usuario.id_user, nome: usuario.nome },
+                    "admin"
+                );
+                console.log("Token gerado");
+
+                return res.status(200).json({
+                    sucesso: true,
+                    tipo: "sucesso",
+                    titulo: "Login realizado",
+                    mensagem: "Login realizado com sucesso!",
+                    tipoUsuario: "adm",
+                    token: token,
+                    dados: {
+                        id: usuario.id_user,
+                        nome: usuario.nome,
+                        email: usuario.email,
+                        contacto: usuario.contacto
+                    }
+                });
+
+            } catch (error) {
+                console.error("ERRO NO TRY/CATCH:", error.message);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro ao verificar senha",
+                    mensagem: error.message
+                });
+            }
         }
     });
 });

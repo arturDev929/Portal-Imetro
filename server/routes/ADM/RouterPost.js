@@ -556,7 +556,7 @@ router.post('/registrarprofessor', async (req, res) => {
             });
         }
 
-        const verificarBISQL = "SELECT idprofessor FROM professor WHERE nbiprofessor = ?";
+        const verificarBISQL = "SELECT id_professor FROM professor WHERE bi = ?";
         conexao.query(verificarBISQL, [biprofessor], async (erro, resultados) => {
             if (erro) {
                 console.error("Erro ao verificar BI:", erro);
@@ -586,7 +586,7 @@ router.post('/registrarprofessor', async (req, res) => {
                 while (!codigoUnico && tentativas < maxTentativas) {
                     codigoAcesso = Math.floor(1000 + Math.random() * 9000).toString();
                     
-                    const verificarCodigoSQL = "SELECT idprofessor FROM professor WHERE senhaprofessor = ?";
+                    const verificarCodigoSQL = "SELECT id_professor FROM professor WHERE senha = ?";
                     const [resultadosCodigo] = await conexao.promise().query(verificarCodigoSQL, [codigoAcesso]);
                     
                     if (resultadosCodigo.length === 0) {
@@ -611,7 +611,7 @@ router.post('/registrarprofessor', async (req, res) => {
                 while (!codigoProfessorUnico && tentativas < maxTentativas) {
                     codigoProfessor = Math.floor(10000000 + Math.random() * 90000000).toString();
                     
-                    const verificarCodigoProfessorSQL = "SELECT idprofessor FROM professor WHERE codigoprofessor = ?";
+                    const verificarCodigoProfessorSQL = "SELECT id_professor FROM professor WHERE codigoprofessor = ?";
                     const [resultadosCodigoProfessor] = await conexao.promise().query(verificarCodigoProfessorSQL, [codigoProfessor]);
                     
                     if (resultadosCodigoProfessor.length === 0) {
@@ -675,14 +675,14 @@ router.post('/registrarprofessor', async (req, res) => {
 
                 const inserirProfessorSQL = `
                     INSERT INTO professor (
-                        codigoprofessor, fotoprofessor, nomeprofessor, generoprofessor, 
-                        nacionalidadeprofessor, estadocivilprofessor, nomepaiprofessor, 
-                        nomemaeprofessor, nbiprofessor, datanascimentoprofessor, 
-                        bipdfprofessor, residenciaprofessor, telefoneprofessor, 
-                        whatsappprofessor, emailprofessor, anoexperienciaprofessor, 
-                        titulacaoprofessor, dataadmissaoprofessor, tipocontratoprofessor, 
-                        ibanprofessor, tiposanguineoprofessor, condicoesprofessor, 
-                        contactoemergenciaprofessor, idAdm, senhaprofessor
+                        codigo, foto, nome, genero, 
+                        nacionalidade, estadocivil, nomepai, 
+                        nomemae, bi, data_nascimento, 
+                        contacto, 
+                        whatsapp, email, anoexperiencia, 
+                        titulacao, data_admissao, tipo_contrato, 
+                        iban, tipo_sangue, condicoes, 
+                        contacto_emergencia, id_adm, senha
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
 
