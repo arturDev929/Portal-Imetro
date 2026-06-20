@@ -3,7 +3,7 @@ const router = Router();
 const conexao = require("../../infra/conexao");
 const verificarToken = require("../../middlewares/authMiddleware");
 const { uploadCombinado, deletarFotoFuncionario, deletarDocumentoFuncionario } = require("../../utils/upload");
-const { criptografarSenha,gerarSenhaTemporaria } = require("../../utils/senhas");
+const { criptografarSenha,gerarSenhaTemporaria,gerarId } = require("../../utils/senhas");
 const { enviarEmail, enviarCredenciaisReativacao } = require('../../utils/email');
 
 router.put("/funcionario/:id", verificarToken, uploadCombinado.fields([
@@ -110,7 +110,6 @@ router.put("/funcionario/:id", verificarToken, uploadCombinado.fields([
     }
 });
 
-// Desativar funcionário
 router.put("/funcionario/desativar/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
     const dataAtual = new Date().toISOString().split('T')[0];
@@ -135,79 +134,32 @@ router.put("/funcionario/desativar/:id", verificarToken, async (req, res) => {
     }
 });
 
-// Rota para ativar funcionário
 router.put("/funcionario/ativar/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
     const dataAtual = new Date().toISOString().split('T')[0];
-
     try {
-        console.log(`Ativando funcionário ID: ${id}`);
-        
-        // Buscar informações do funcionário (incluindo codigo)
-        const funcionario = await new Promise((resolve, reject) => {
-            conexao.query(`
-                SELECT f.id_func, f.nome, f.email, f.codigo, c.cargo 
-                FROM funcionario f
-                INNER JOIN cargo c ON c.id_cargo = f.id_cargo
-                WHERE f.id_func = ? AND f.status = 'Desativado'
-            `, [id], (erro, resultados) => {
+        const checkFuncionario = await new Promise((resolve, reject) => {
+            conexao.query("SELECT nome FROM funcionario WHERE id_func = ? AND status = 'Desativado'", [id], (erro, resultados) => {
                 if (erro) reject(erro);
                 else resolve(resultados);
             });
         });
+        if (checkFuncionario.length === 0) return res.status(404).json({ error: "Funcionario nao encontrado" });
         
-        if (funcionario.length === 0) {
-            console.log(`Funcionário ${id} não encontrado ou já está ativo`);
-            return res.status(404).json({ error: "Funcionario nao encontrado ou já está ativo" });
-        }
-        
-        const { nome, email, codigo, cargo } = funcionario[0];
-        console.log(`Funcionário encontrado: ${nome}, Código: ${codigo}, Email: ${email}`);
-        
-        // Gerar nova senha temporária
-        const novaSenha = gerarSenhaTemporaria();
-        const senhaCriptografada = await criptografarSenha(novaSenha);
-        console.log(`Nova senha gerada para ${nome}`);
-
-        // Atualizar status e senha
         await new Promise((resolve, reject) => {
-            conexao.query(
-                "UPDATE funcionario SET status = 'Ativo', senha = ?, data_atualizacao = ? WHERE id_func = ?", 
-                [senhaCriptografada, dataAtual, id], 
-                (erro, resultado) => {
-                    if (erro) reject(erro);
-                    else resolve(resultado);
-                }
-            );
+            conexao.query("UPDATE funcionario SET status = 'Ativo', data_atualizacao = ? WHERE id_func = ?", [dataAtual, id], (erro, resultado) => {
+                if (erro) reject(erro);
+                else resolve(resultado);
+            });
         });
-        console.log(`Status do funcionário ${nome} atualizado para Ativo`);
-
-        // Enviar email com CÓDIGO e senha (o código é o usuário para login)
-        console.log(`Enviando email para ${email}...`);
-        const emailEnviado = await enviarCredenciaisReativacao(email, nome, codigo, novaSenha, cargo);
-        
-        if (emailEnviado.sucesso) {
-            console.log(`Email enviado com sucesso para ${email}`);
-        } else {
-            console.error(`Erro ao enviar email para ${email}:`, emailEnviado.erro);
-        }
-
-        res.status(200).json({ 
-            success: true, 
-            message: `Funcionario ${nome} ativado com sucesso! ${emailEnviado.sucesso ? 'Credenciais enviadas por email.' : 'Erro ao enviar email. Verifique o email do funcionário.'}`,
-            emailEnviado: emailEnviado.sucesso
-        });
-        
+        res.status(200).json({ success: true, message: "Funcionario Ativado com sucesso" });
     } catch (error) {
-        console.error("Erro ao ativar funcionário:", error);
-        res.status(500).json({ error: "Erro interno do servidor: " + error.message });
+        res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
 
-// Alterar senha
 router.put("/funcionario/senha/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
-    const { senha_funcionario } = req.body;
     const dataAtual = new Date().toISOString().split('T')[0];
     try {
         const funcionario = await new Promise((resolve, reject) => {
@@ -218,6 +170,7 @@ router.put("/funcionario/senha/:id", verificarToken, async (req, res) => {
         });
         if (funcionario.length === 0) return res.status(404).json({ success: false, error: "Funcionario nao encontrado" });
 
+        const senha_funcionario = gerarSenhaTemporaria();
         const senhaCriptografada = await criptografarSenha(senha_funcionario);
         await new Promise((resolve, reject) => {
             conexao.query("UPDATE funcionario SET senha = ?, data_atualizacao = ? WHERE id_func = ?", [senhaCriptografada, dataAtual, id], (erro, resultado) => {
@@ -236,378 +189,231 @@ router.put("/funcionario/senha/:id", verificarToken, async (req, res) => {
     }
 });
 
-router.put('/atualizarprofessor/:id', (req, res) => {
-    // Usar o uploadProfessor para permitir upload de novos arquivos
-    upload.uploadProfessor(req, res, async (err) => {
-        // Erro do multer
-        if (err) {
-            console.error("Erro no upload:", err);
-            
-            if (err instanceof multer.MulterError) {
-                if (err.code === 'FILE_TOO_LARGE') {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Arquivo muito grande",
-                        mensagem: "O arquivo excede o limite de 10MB"
-                    });
-                }
-                if (err.code === 'LIMIT_FILE_COUNT') {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Muitos arquivos",
-                        mensagem: "Número máximo de arquivos excedido"
-                    });
-                }
-            }
-            
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no upload",
-                mensagem: err.message
-            });
-        }
-
+// ========== ROTA PARA ATUALIZAR PROFESSOR ==========
+router.put(
+    "/atualizarprofessor/:id", 
+    verificarToken,
+    uploadCombinado.fields([
+        { name: 'foto', maxCount: 1 },
+        { name: 'documentos', maxCount: 10 }
+    ]),
+    async (req, res) => {
+        const { id } = req.params;
+        const dataAtual = new Date().toISOString().split('T')[0];
+        
+        console.log("=== ATUALIZANDO PROFESSOR ===");
+        console.log("ID:", id);
+        console.log("Body:", req.body);
+        console.log("Files:", req.files);
+        
         try {
-            const { id } = req.params;
-            const body = req.body || {};
-            const files = req.files || {};
-
-            // Dados do corpo da requisição
-            const nomeprofessore = body.nomeprofessore || "";
-            const genero = body.genero || "";
-            const nacionalidadeprofessor = body.nacionalidadeprofessor || "";
-            const estadocivilprofessor = body.estadocivilprofessor || "";
-            const nomepaiprofessor = body.nomepaiprofessor || "";
-            const nomemaeprofessor = body.nomemaeprofessor || "";
-            const biprofessor = body.biprofessor || "";
-            const datanascimentoprofessor = body.datanascimentoprofessor || "";
-            const residenciaprofessor = body.residenciaprofessor || "";
-            const telefoneprofessor = body.telefoneprofessor || "";
-            const whatsappprofessor = body.whatsappprofessor || "";
-            const emailprofessor = body.emailprofessor || "";
-            const anoexprienciaprofessor = body.anoexprienciaprofessor || "";
-            const titulacaoprofessor = body.titulacaoprofessor || "";
-            const dataadmissaprofessor = body.dataadmissaprofessor || "";
-            const tipocontratoprofessor = body.tipocontratoprofessor || "";
-            const ibanprofessor = body.ibanprofessor || "";
-            const tiposanguineoprofessor = body.tiposanguineoprofessor || "";
-            const condicoesprofessor = body.condicoesprofessor || "";
-            const contactoemergenciaprofessor = body.contactoemergenciaprofessor || "";
+            // 1. Verificar se o professor existe
+            const professorExistente = await new Promise((resolve, reject) => {
+                conexao.query(
+                    "SELECT id_professor, foto FROM professor WHERE id_professor = ?", 
+                    [id], 
+                    (erro, resultados) => {
+                        if (erro) reject(erro);
+                        else resolve(resultados);
+                    }
+                );
+            });
             
-            // Flag para redefinir senha
-            const redefinirSenha = body.redefinirSenha === 'true' || body.redefinirSenha === true;
-            
-            // VALIDAÇÕES
-            if (!nomeprofessore || !nomeprofessore.trim()) {
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Campo obrigatório",
-                    mensagem: "Nome do professor é obrigatório"
-                });
-            }
-            
-            if (!genero || !genero.trim()) {
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Campo obrigatório",
-                    mensagem: "Gênero é obrigatório"
+            if (professorExistente.length === 0) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: "Professor não encontrado" 
                 });
             }
 
-            if (emailprofessor && emailprofessor.trim()) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(emailprofessor.trim())) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Email inválido",
-                        mensagem: "Formato de email inválido"
-                    });
+            // 2. Atualizar dados do professor
+            const camposAtualizar = [];
+            const valores = [];
+            
+            const camposPermitidos = [
+                'nome', 'genero', 'nacionalidade', 'nomepai', 'nomemae', 
+                'contacto', 'whatsapp', 'bi', 'email', 'contactoemergencia',
+                'anoexperienca', 'titulacao', 'iban', 'tiposangue',
+                'data_nascimento', 'data_admissao', 'estadocivil', 'id_contrato'
+            ];
+            
+            camposPermitidos.forEach(campo => {
+                if (req.body[campo] !== undefined && req.body[campo] !== null && req.body[campo] !== '') {
+                    camposAtualizar.push(`${campo} = ?`);
+                    valores.push(req.body[campo]);
+                }
+            });
+            
+            // Atualizar foto se houver
+            const fs = require('fs');
+            const path = require('path');
+            
+            if (req.files && req.files.foto && req.files.foto.length > 0) {
+                const foto = req.files.foto[0];
+                const nomeFoto = foto.filename;
+                const dirUpload = path.join(__dirname, '../../uploads/professores');
+                
+                camposAtualizar.push('foto = ?');
+                valores.push(nomeFoto);
+                
+                // Remover foto antiga
+                if (professorExistente[0].foto) {
+                    const caminhoAntigo = path.join(dirUpload, professorExistente[0].foto);
+                    if (fs.existsSync(caminhoAntigo)) {
+                        fs.unlinkSync(caminhoAntigo);
+                    }
                 }
             }
-
-            // Buscar dados atuais do professor
-            const buscarProfessorSQL = "SELECT * FROM professor WHERE id_professor = ?";
-            const [professorAtual] = await conexao.promise().query(buscarProfessorSQL, [id]);
             
-            if (professorAtual.length === 0) {
-                return res.status(404).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Não encontrado",
-                    mensagem: "Professor não encontrado"
+            // Adicionar data de atualização
+            if (camposAtualizar.length > 0) {
+                camposAtualizar.push('data_atualizacao = ?');
+                valores.push(dataAtual);
+                valores.push(id);
+                
+                const sql = `UPDATE professor SET ${camposAtualizar.join(', ')} WHERE id_professor = ?`;
+                console.log("SQL:", sql);
+                console.log("Valores:", valores);
+                
+                await new Promise((resolve, reject) => {
+                    conexao.query(sql, valores, (erro, resultado) => {
+                        if (erro) reject(erro);
+                        else resolve(resultado);
+                    });
                 });
             }
 
-            // Verificar duplicidade (exceto o próprio registro)
-            const duplicidadeChecks = [
-                { campo: 'bi', valor: biprofessor, label: 'BI' },
-                { campo: 'email', valor: emailprofessor, label: 'Email' },
-                { campo: 'telefone', valor: telefoneprofessor, label: 'Telefone' },
-                { campo: 'whatsapp', valor: whatsappprofessor, label: 'WhatsApp' }
-            ];
-
-            for (const check of duplicidadeChecks) {
-                if (check.valor && check.valor.trim()) {
-                    const [existe] = await conexao.promise().query(
-                        `SELECT id_professor FROM professor WHERE ${check.campo} = ? AND id_professor != ?`,
-                        [check.valor, id]
-                    );
-                    
-                    if (existe.length > 0) {
-                        return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Dado duplicado",
-                            mensagem: `${check.label} já está em uso por outro professor`
+            // 3. Gerenciar documentos
+            const dirDocs = path.join(__dirname, '../../uploads/professores/documentos');
+            if (!fs.existsSync(dirDocs)) {
+                fs.mkdirSync(dirDocs, { recursive: true });
+            }
+            
+            // 3.1 Remover documentos
+            if (req.body.documentos_remover) {
+                const docsRemover = Array.isArray(req.body.documentos_remover) 
+                    ? req.body.documentos_remover 
+                    : [req.body.documentos_remover];
+                
+                for (const docId of docsRemover) {
+                    if (docId) {
+                        const docInfo = await new Promise((resolve, reject) => {
+                            conexao.query(
+                                "SELECT ficheiro FROM ficheiro_prof WHERE id_ficheiro = ? AND id_professor = ?", 
+                                [docId, id], 
+                                (erro, resultados) => {
+                                    if (erro) reject(erro);
+                                    else resolve(resultados);
+                                }
+                            );
+                        });
+                        
+                        if (docInfo.length > 0 && docInfo[0].ficheiro) {
+                            const caminhoArquivo = path.join(dirDocs, docInfo[0].ficheiro);
+                            if (fs.existsSync(caminhoArquivo)) {
+                                fs.unlinkSync(caminhoArquivo);
+                            }
+                        }
+                        
+                        await new Promise((resolve, reject) => {
+                            conexao.query(
+                                "DELETE FROM ficheiro_prof WHERE id_ficheiro = ? AND id_professor = ?", 
+                                [docId, id], 
+                                (erro, resultado) => {
+                                    if (erro) reject(erro);
+                                    else resolve(resultado);
+                                }
+                            );
                         });
                     }
                 }
             }
-
-            // Processar nova senha se solicitado
-            let novaSenha = null;
-            let senhaCriptografada = null;
-            let emailEnviado = false;
-
-            if (redefinirSenha && emailprofessor && emailprofessor.trim()) {
-                novaSenha = gerarSenhaTemporaria();
-                senhaCriptografada = await criptografarSenha(novaSenha);
-            }
-
-            // Processar arquivos
-            let nomeFoto = professorAtual[0].foto;
-            let nomeBIPDF = professorAtual[0].bi_pdf;
             
-            // Processar nova foto
-            if (files.fotoprofessor) {
-                // Deletar foto antiga
-                if (nomeFoto) {
-                    upload.deletarFotoProfessor(nomeFoto);
+            // 3.2 Adicionar novos documentos
+            if (req.files && req.files.documentos && req.files.documentos.length > 0) {
+                const documentos = req.files.documentos;
+                
+                let titulos = [];
+                if (req.body.documentos_titulo) {
+                    titulos = Array.isArray(req.body.documentos_titulo) 
+                        ? req.body.documentos_titulo 
+                        : [req.body.documentos_titulo];
                 }
-                nomeFoto = files.fotoprofessor[0].filename;
-            }
-            
-            // Processar novo BI PDF
-            if (files.bipdfprofessor) {
-                // Deletar BI antigo
-                if (nomeBIPDF) {
-                    upload.deletarDocumentoProfessor(nomeBIPDF);
-                }
-                nomeBIPDF = files.bipdfprofessor[0].filename;
-            }
-
-            // Processar outros documentos
-            const novosDocumentos = [];
-            const camposDoc = ['certificadoprofessor', 'diplomaprofessor', 'contratoprofessor', 'documentoprofessor'];
-            
-            camposDoc.forEach(campo => {
-                if (files[campo]) {
-                    files[campo].forEach(file => {
-                        novosDocumentos.push({
-                            tipo: campo,
-                            nome: file.filename
-                        });
+                
+                for (let i = 0; i < documentos.length; i++) {
+                    const doc = documentos[i];
+                    const titulo = titulos[i] || doc.originalname.replace(/\.[^/.]+$/, '');
+                    
+                    await new Promise((resolve, reject) => {
+                        const sql = `
+                            INSERT INTO ficheiro_prof 
+                            (id_professor, ficheiro, nome, status, data_actualizacao) 
+                            VALUES (?, ?, ?, Ativado, ?, ?)
+                        `;
+                        conexao.query(
+                            sql, 
+                            [id, doc.filename, titulo, dataAtual, dataAtual], 
+                            (erro, resultado) => {
+                                if (erro) reject(erro);
+                                else resolve(resultado);
+                            }
+                        );
                     });
                 }
+            }
+
+            // 4. Buscar dados atualizados
+            const professorAtualizado = await new Promise((resolve, reject) => {
+                conexao.query(
+                    `SELECT p.*, c.contrato 
+                     FROM professor p 
+                     LEFT JOIN contrato c ON p.id_contrato = c.id_contrato 
+                     WHERE p.id_professor = ?`, 
+                    [id], 
+                    (erro, resultados) => {
+                        if (erro) reject(erro);
+                        else resolve(resultados[0]);
+                    }
+                );
             });
 
-            // Construir query de atualização
-            const camposAtualizar = [];
-            const valores = [];
-
-            if (nomeprofessore) {
-                camposAtualizar.push("nome = ?");
-                valores.push(nomeprofessore);
-            }
-            if (genero) {
-                camposAtualizar.push("genero = ?");
-                valores.push(genero);
-            }
-            if (nacionalidadeprofessor !== undefined) {
-                camposAtualizar.push("nacionalidade = ?");
-                valores.push(nacionalidadeprofessor || null);
-            }
-            if (estadocivilprofessor !== undefined) {
-                camposAtualizar.push("estadocivil = ?");
-                valores.push(estadocivilprofessor || null);
-            }
-            if (nomepaiprofessor !== undefined) {
-                camposAtualizar.push("nomepai = ?");
-                valores.push(nomepaiprofessor || null);
-            }
-            if (nomemaeprofessor !== undefined) {
-                camposAtualizar.push("nomemae = ?");
-                valores.push(nomemaeprofessor || null);
-            }
-            if (biprofessor) {
-                camposAtualizar.push("bi = ?");
-                valores.push(biprofessor);
-            }
-            if (datanascimentoprofessor !== undefined) {
-                camposAtualizar.push("data_nascimento = ?");
-                valores.push(datanascimentoprofessor || null);
-            }
-            if (residenciaprofessor !== undefined) {
-                camposAtualizar.push("residencia = ?");
-                valores.push(residenciaprofessor || null);
-            }
-            if (telefoneprofessor !== undefined) {
-                camposAtualizar.push("contacto = ?");
-                valores.push(telefoneprofessor || null);
-            }
-            if (whatsappprofessor !== undefined) {
-                camposAtualizar.push("whatsapp = ?");
-                valores.push(whatsappprofessor || null);
-            }
-            if (emailprofessor !== undefined) {
-                camposAtualizar.push("email = ?");
-                valores.push(emailprofessor || null);
-            }
-            if (anoexprienciaprofessor !== undefined) {
-                camposAtualizar.push("anoexperiencia = ?");
-                valores.push(anoexprienciaprofessor || null);
-            }
-            if (titulacaoprofessor !== undefined) {
-                camposAtualizar.push("titulacao = ?");
-                valores.push(titulacaoprofessor || null);
-            }
-            if (dataadmissaprofessor !== undefined) {
-                camposAtualizar.push("data_admissao = ?");
-                valores.push(dataadmissaprofessor || null);
-            }
-            if (tipocontratoprofessor !== undefined) {
-                camposAtualizar.push("tipo_contrato = ?");
-                valores.push(tipocontratoprofessor || null);
-            }
-            if (ibanprofessor !== undefined) {
-                camposAtualizar.push("iban = ?");
-                valores.push(ibanprofessor || null);
-            }
-            if (tiposanguineoprofessor !== undefined) {
-                camposAtualizar.push("tipo_sangue = ?");
-                valores.push(tiposanguineoprofessor || null);
-            }
-            if (condicoesprofessor !== undefined) {
-                camposAtualizar.push("condicoes = ?");
-                valores.push(condicoesprofessor || null);
-            }
-            if (contactoemergenciaprofessor !== undefined) {
-                camposAtualizar.push("contacto_emergencia = ?");
-                valores.push(contactoemergenciaprofessor || null);
-            }
-            if (nomeFoto !== undefined) {
-                camposAtualizar.push("foto = ?");
-                valores.push(nomeFoto);
-            }
-            if (nomeBIPDF !== undefined) {
-                camposAtualizar.push("bi_pdf = ?");
-                valores.push(nomeBIPDF);
-            }
-            if (senhaCriptografada) {
-                camposAtualizar.push("senha = ?");
-                valores.push(senhaCriptografada);
-            }
-
-            if (camposAtualizar.length === 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Nenhum dado",
-                    mensagem: "Nenhum dado para atualizar"
-                });
-            }
-
-            valores.push(id);
-            const query = `UPDATE professor SET ${camposAtualizar.join(", ")} WHERE id_professor = ?`;
-            
-            const [resultado] = await conexao.promise().query(query, valores);
-
-            if (resultado.affectedRows === 0) {
-                return res.status(404).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Erro",
-                    mensagem: "Professor não encontrado ou nenhuma alteração realizada"
-                });
-            }
-
-            // Atualizar documentos na tabela ficheiro_prof
-            if (novosDocumentos.length > 0) {
-                // Deletar documentos antigos do professor
-                await conexao.promise().query(
-                    "DELETE FROM ficheiro_prof WHERE id_professor = ?",
-                    [id]
+            const documentosAtualizados = await new Promise((resolve, reject) => {
+                conexao.query(
+                    "SELECT id_ficheiro, ficheiro, nome, status, data_actualizacao FROM ficheiro_prof WHERE id_professor = ? AND status = 1 ORDER BY data_actualizacao DESC", 
+                    [id], 
+                    (erro, resultados) => {
+                        if (erro) reject(erro);
+                        else resolve(resultados);
+                    }
                 );
-                
-                // Inserir novos documentos
-                const inserirFicheiroSQL = `
-                    INSERT INTO ficheiro_prof (ficheiro, id_professor, nome) 
-                    VALUES (?, ?, ?)
-                `;
-                
-                for (const doc of novosDocumentos) {
-                    await conexao.promise().query(inserirFicheiroSQL, [
-                        doc.nome,
-                        id,
-                        doc.tipo
-                    ]);
-                }
-            }
+            });
 
-            // Enviar email com nova senha se foi redefinida
-            if (redefinirSenha && novaSenha && emailprofessor) {
-                const cargo = "Professor";
-                const codigoProfessor = professorAtual[0].codigo;
-                
-                const emailEnviadoResult = await require("../utils/email").enviarCredenciaisFuncionario(
-                    emailprofessor,
-                    nomeprofessore,
-                    novaSenha,
-                    cargo,
-                    codigoProfessor
-                );
-                
-                emailEnviado = emailEnviadoResult.sucesso;
-            }
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const documentosComUrl = documentosAtualizados.map(doc => ({
+                ...doc,
+                doc_url: doc.ficheiro ? `${baseUrl}/api/img/professores/documentos/${doc.ficheiro}` : null
+            }));
 
-            // Resposta final
             res.status(200).json({
-                sucesso: true,
-                tipo: "sucesso",
-                titulo: "Professor Atualizado!",
-                mensagem: redefinirSenha && emailEnviado 
-                    ? `Professor atualizado com sucesso! Nova senha enviada para ${emailprofessor}`
-                    : redefinirSenha && !emailEnviado
-                    ? "Professor atualizado, mas houve erro ao enviar o email com a nova senha"
-                    : "Professor atualizado com sucesso!",
-                dados: {
-                    id_professor: id,
-                    nome: nomeprofessore,
-                    email: emailprofessor
-                }
+                success: true,
+                message: "Professor atualizado com sucesso!",
+                professor: professorAtualizado,
+                documentos: documentosComUrl
             });
 
-        } catch (erro) {
-            console.error("Erro ao atualizar professor:", erro);
-            return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro interno",
-                mensagem: "Erro interno do servidor: " + erro.message
+        } catch (error) {
+            console.error("Erro ao atualizar professor:", error);
+            res.status(500).json({
+                success: false,
+                message: "Erro ao atualizar professor: " + error.message
             });
         }
-    });
-});
+    }
+);
 
-router.put('/professor/desativar/:id', (req, res) => {
+router.put('/professor/desativar/:id', verificarToken, (req, res) => {
     const { id } = req.params;
-    const sql = "UPDATE professor SET estado = 'Desativado' WHERE id_professor = ?";
+    const sql = "UPDATE professor SET status = 'Eliminado' WHERE id_professor = ?";
     
     conexao.query(sql, [id], (error, result) => {
         if (error) {
@@ -629,6 +435,64 @@ router.put('/professor/desativar/:id', (req, res) => {
             }
         }
     });
+});
+
+router.put('/professor/ativar/:id', verificarToken, (req, res) => {
+    const { id } = req.params;
+    const sql = "UPDATE professor SET status = 'Ativo' WHERE id_professor = ?";
+    
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao desativar o professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.affectedRows === 0) {
+                res.status(404).json({
+                    error: "Professor não encontrado"
+                });
+            } else {
+                res.status(200).json({
+                    message: "Professor desativado com sucesso",
+                    professoresAfetados: result.affectedRows
+                });
+            }
+        }
+    });
+});
+
+router.put("/professor/senha/:id", verificarToken, async (req, res) => {
+    const { id } = req.params;
+    const dataAtual = new Date().toISOString().split('T')[0];
+    try {
+        const funcionario = await new Promise((resolve, reject) => {
+            conexao.query("SELECT nome, email FROM professor WHERE id_professor = ?", [id], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        if (funcionario.length === 0) return res.status(404).json({ success: false, error: "Funcionario nao encontrado" });
+
+
+        const senhaprofessor = gerarSenhaTemporaria();
+        const senhaCriptografada = await criptografarSenha(senhaprofessor);
+        await new Promise((resolve, reject) => {
+            conexao.query("UPDATE professor SET senha = ?, data_atualizacao = ? WHERE id_professor = ?", [senhaCriptografada, dataAtual, id], (erro, resultado) => {
+                if (erro) reject(erro);
+                else resolve(resultado);
+            });
+        });
+
+        const html = `Sua senha foi redefinida. Nova senha: ${senhaprofessor}`;
+        await enviarEmail(funcionario[0].email, 'Senha Redefinida - IPS Metropolitano', html);
+
+        res.status(200).json({ success: true, message: "Senha alterada com sucesso" });
+    } catch (error) {
+        console.error("Erro ao redefinir senha:", error);
+        res.status(500).json({ success: false, error: "Erro interno do servidor" });
+    }
 });
 
 module.exports = router;

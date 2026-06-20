@@ -86,6 +86,7 @@ app.use('/api/img/estudantes/Pagamento_Matricula', express.static(path.join(__di
 app.use('/api/img/estudantes/documentos', express.static(path.join(__dirname, '../client/src/img/estudantes/documentos')));
 app.use('/api/img/topico', express.static(path.join(__dirname, '../client/src/img/Topicos')));
 
+
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',

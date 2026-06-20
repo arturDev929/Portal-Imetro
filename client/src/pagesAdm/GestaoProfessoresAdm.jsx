@@ -135,7 +135,7 @@ function GestaoProfessoresAdm() {
         };
 
         fetchDadosProfessores();
-        const interval = setInterval(fetchDadosProfessores, 300000);
+        const interval = setInterval(fetchDadosProfessores, 1000000);
         
         return () => {
             clearInterval(interval);

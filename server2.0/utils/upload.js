@@ -2,151 +2,148 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const UPLOAD_DIRS = {
-    FUNCIONARIOS: path.join(__dirname, "../../client/src/img/funcionarios"),
-    FUNCIONARIOS_DOCUMENTOS: path.join(__dirname, "../../client/src/img/funcionarios/documentos"),
-    PROFESSORES: path.join(__dirname, "../../client/src/img/professores"),
-    DOC_PROFESSORES: path.join(__dirname, "../../client/src/img/docprofessores")
-};
+// Diretórios de destino - CORRIGIDOS (removido "../" extra)
+const DIR_FOTOS_FUNCIONARIO = path.join(__dirname, "../../client/src/img/funcionarios");
+const DIR_DOCS_FUNCIONARIO = path.join(__dirname, "../../client/src/img/funcionarios/documentos");
+const DIR_FOTOS_PROFESSOR = path.join(__dirname, "../../client/src/img/professores");
+const DIR_DOCS_PROFESSOR = path.join(__dirname, "../../client/src/img/professores/documentos");
 
-const criarPastaSeNaoExistir = (pasta) => {
-    if (!fs.existsSync(pasta)) {
-        fs.mkdirSync(pasta, { recursive: true });
+// Garantir que os diretórios existem
+const diretorios = [
+    DIR_FOTOS_FUNCIONARIO,
+    DIR_DOCS_FUNCIONARIO,
+    DIR_FOTOS_PROFESSOR,
+    DIR_DOCS_PROFESSOR,
+];
+
+diretorios.forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`Diretório criado: ${dir}`);
     }
-};
-
-// Inicializar todas as pastas
-Object.values(UPLOAD_DIRS).forEach(pasta => {
-    criarPastaSeNaoExistir(pasta);
 });
 
-const storage = multer.diskStorage({
+// Log dos diretórios para debug
+console.log("=== DIRETÓRIOS CONFIGURADOS ===");
+console.log("Fotos Funcionários:", DIR_FOTOS_FUNCIONARIO);
+console.log("Docs Funcionários:", DIR_DOCS_FUNCIONARIO);
+console.log("Fotos Professores:", DIR_FOTOS_PROFESSOR);
+console.log("Docs Professores:", DIR_DOCS_PROFESSOR);
+
+const gerarNomeUnico = (arquivo) => {
+    const ext = path.extname(arquivo.originalname);
+    const nomeSemExt = path.basename(arquivo.originalname, ext);
+    const nomeLimpo = nomeSemExt.replace(/[^a-zA-Z0-9]/g, '_');
+    const nomeFinal = `${Date.now()}-${nomeLimpo}${ext}`;
+    console.log(`Nome gerado para ${arquivo.originalname}: ${nomeFinal}`);
+    return nomeFinal;
+};
+
+// Configurações para Funcionários
+const storageFuncionario = multer.diskStorage({
     destination: (req, file, cb) => {
-        let pasta = UPLOAD_DIRS.PROFESSORES;
+        let dest = DIR_DOCS_FUNCIONARIO;
+        if (file.fieldname === "foto") {
+            dest = DIR_FOTOS_FUNCIONARIO;
+        }
+        console.log(`[FUNCIONÁRIO] Salvando ${file.fieldname} em: ${dest}`);
         
-        // CORREÇÃO: DOC_PROFESSORES recebe TODOS os documentos (BI, certificados, diplomas, contratos)
-        if (file.fieldname === "documentos" || file.fieldname === "bipdfprofessor" || 
-            file.fieldname === "docprofessor" || file.fieldname === "documentoprofessor" ||
-            file.fieldname === "certificadoprofessor" || file.fieldname === "diplomaprofessor" ||
-            file.fieldname === "contratoprofessor") {
-            pasta = UPLOAD_DIRS.DOC_PROFESSORES;
-        } else if (file.fieldname === "fotoprofessor" || file.fieldname === "foto") {
-            pasta = UPLOAD_DIRS.PROFESSORES;
+        // Verificar se o diretório existe antes de salvar
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+            console.log(`Diretório criado: ${dest}`);
         }
         
-        criarPastaSeNaoExistir(pasta);
-        cb(null, pasta);
+        cb(null, dest);
     },
-    
     filename: (req, file, cb) => {
-        const extensao = path.extname(file.originalname).toLowerCase();
-        const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 10000);
-        const campo = file.fieldname;
-        
-        const nome = `${campo}_${timestamp}_${random}${extensao}`;
-        cb(null, nome);
-    }
-});
-
-const fileFilter = (req, file, cb) => {
-    // Fotos
-    if (file.fieldname === "foto" || file.fieldname === "fotoprofessor") {
-        const allowed = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/gif"];
-        if (allowed.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error("Formato inválido para foto. Use JPEG, PNG, JPG, WEBP ou GIF"), false);
-        }
-    } 
-    // TODOS os documentos vão para DOC_PROFESSORES
-    else if (file.fieldname === "documentos" || file.fieldname === "bipdfprofessor" || 
-             file.fieldname === "docprofessor" || file.fieldname === "documentoprofessor" ||
-             file.fieldname === "certificadoprofessor" || file.fieldname === "diplomaprofessor" ||
-             file.fieldname === "contratoprofessor") {
-        const allowed = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-        if (allowed.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error("Formato inválido para documento. Use PDF, JPEG, PNG ou JPG"), false);
-        }
-    } 
-    else {
-        cb(null, true);
-    }
-};
-
-const uploadCombinado = multer({ 
-    storage: storage,
-    limits: { 
-        fileSize: 10 * 1024 * 1024,  // 10MB
-        files: 11 
+        const nomeUnico = gerarNomeUnico(file);
+        cb(null, nomeUnico);
     },
-    fileFilter: fileFilter
 });
 
-const deletarArquivo = (caminhoCompleto) => {
-    if (caminhoCompleto && fs.existsSync(caminhoCompleto)) {
-        fs.unlinkSync(caminhoCompleto);
-        return true;
+const uploadCombinado = multer({ storage: storageFuncionario });
+
+// Configurações para Professores
+const storageProfessor = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let dest = DIR_DOCS_PROFESSOR;
+        if (file.fieldname === "foto") {
+            dest = DIR_FOTOS_PROFESSOR;
+        }
+        console.log(`[PROFESSOR] Salvando ${file.fieldname} em: ${dest}`);
+        
+        // Verificar se o diretório existe antes de salvar
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+            console.log(`Diretório criado: ${dest}`);
+        }
+        
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        const nomeUnico = gerarNomeUnico(file);
+        cb(null, nomeUnico);
+    },
+});
+
+const uploadCombinadoProfessor = multer({ storage: storageProfessor }).fields([
+    { name: "foto", maxCount: 1 },
+    { name: "documentos", maxCount: 10 },
+]);
+
+// Helpers de exclusão física de arquivos
+const deletarArquivo = (caminho) => {
+    if (!caminho) return;
+    try {
+        if (fs.existsSync(caminho)) {
+            fs.unlinkSync(caminho);
+            console.log(`Arquivo deletado: ${caminho}`);
+        } else {
+            console.log(`Arquivo não encontrado para deletar: ${caminho}`);
+        }
+    } catch (err) {
+        console.error("Erro ao deletar arquivo:", caminho, err.message);
     }
-    return false;
 };
 
 const deletarFotoFuncionario = (nomeArquivo) => {
     if (nomeArquivo) {
-        const caminho = path.join(UPLOAD_DIRS.FUNCIONARIOS, nomeArquivo);
-        return deletarArquivo(caminho);
+        const caminho = path.join(DIR_FOTOS_FUNCIONARIO, nomeArquivo);
+        console.log(`Deletando foto de funcionário: ${caminho}`);
+        deletarArquivo(caminho);
     }
-    return false;
 };
 
 const deletarDocumentoFuncionario = (nomeArquivo) => {
     if (nomeArquivo) {
-        const caminho = path.join(UPLOAD_DIRS.FUNCIONARIOS_DOCUMENTOS, nomeArquivo);
-        return deletarArquivo(caminho);
+        const caminho = path.join(DIR_DOCS_FUNCIONARIO, nomeArquivo);
+        console.log(`Deletando documento de funcionário: ${caminho}`);
+        deletarArquivo(caminho);
     }
-    return false;
 };
 
 const deletarFotoProfessor = (nomeArquivo) => {
     if (nomeArquivo) {
-        const caminho = path.join(UPLOAD_DIRS.PROFESSORES, nomeArquivo);
-        return deletarArquivo(caminho);
+        const caminho = path.join(DIR_FOTOS_PROFESSOR, nomeArquivo);
+        console.log(`Deletando foto de professor: ${caminho}`);
+        deletarArquivo(caminho);
     }
-    return false;
 };
 
 const deletarDocumentoProfessor = (nomeArquivo) => {
     if (nomeArquivo) {
-        const caminho = path.join(UPLOAD_DIRS.DOC_PROFESSORES, nomeArquivo);
-        return deletarArquivo(caminho);
+        const caminho = path.join(DIR_DOCS_PROFESSOR, nomeArquivo);
+        console.log(`Deletando documento de professor: ${caminho}`);
+        deletarArquivo(caminho);
     }
-    return false;
 };
 
-const uploadProfessor = uploadCombinado.fields([
-    { name: 'fotoprofessor', maxCount: 1 },
-    { name: 'bipdfprofessor', maxCount: 1 },
-    { name: 'certificadoprofessor', maxCount: 5 },
-    { name: 'diplomaprofessor', maxCount: 5 },
-    { name: 'contratoprofessor', maxCount: 3 },
-    { name: 'documentoprofessor', maxCount: 10 }
-]);
-
-const uploadFuncionario = uploadCombinado.fields([
-    { name: 'foto', maxCount: 1 },
-    { name: 'documentos', maxCount: 10 }
-]);
-
 module.exports = {
-    UPLOAD_DIRS,
     uploadCombinado,
-    uploadProfessor,
-    uploadFuncionario,
+    uploadCombinadoProfessor,
     deletarFotoFuncionario,
     deletarDocumentoFuncionario,
     deletarFotoProfessor,
     deletarDocumentoProfessor,
-    deletarArquivo
 };

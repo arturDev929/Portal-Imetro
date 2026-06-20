@@ -2,9 +2,13 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../../infra/conexao");
 const verificarToken = require("../../middlewares/authMiddleware");
-const { uploadCombinado, deletarFotoFuncionario, deletarDocumentoFuncionario } = require("../../utils/upload");
+const upload = require("../../utils/upload");
 const { enviarCredenciaisFuncionario } = require("../../utils/email");
 const { criptografarSenha, gerarId, gerarCodigo, gerarSenhaTemporaria } = require("../../utils/senhas");
+
+// Pega os middlewares já configurados
+const uploadCombinado = upload.uploadCombinado;
+const uploadCombinadoProfessor = upload.uploadCombinadoProfessor;
 
 router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
     { name: "foto", maxCount: 1 },
@@ -15,30 +19,36 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
     const documentos = req.files?.documentos || [];
     const documentosTitulos = req.body.documentos_titulo || [];
 
+    console.log("=== REGISTRANDO FUNCIONÁRIO ===");
+    console.log("Nome:", nome);
+    console.log("Email:", email);
+    console.log("Foto:", foto);
+    console.log("Documentos:", documentos.map(d => d.filename));
+
+    const limparArquivos = () => {
+        if (foto) upload.deletarFotoFuncionario(foto);
+        documentos.forEach(doc => upload.deletarDocumentoFuncionario(doc.filename));
+    };
+
     // Validações
     if (!nome?.trim()) {
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+        limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "Nome é obrigatorio" });
     }
     if (!contacto?.trim()) {
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+        limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "Contacto é obrigatorio" });
     }
     if (!bi?.trim()) {
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+        limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "BI é obrigatorio" });
     }
     if (!cargo?.trim()) {
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+        limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "Cargo é obrigatorio" });
     }
     if (!email?.trim()) {
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+        limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "Email é obrigatorio" });
     }
 
@@ -51,8 +61,7 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         });
         if (verificarContacto.length > 0) {
-            if (foto) deletarFotoFuncionario(foto);
-            documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+            limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Contacto ja em uso" });
         }
 
@@ -63,8 +72,7 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         });
         if (verificarBI.length > 0) {
-            if (foto) deletarFotoFuncionario(foto);
-            documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+            limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "BI ja em uso" });
         }
 
@@ -75,8 +83,7 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         });
         if (verificarEmail.length > 0) {
-            if (foto) deletarFotoFuncionario(foto);
-            documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+            limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Email ja em uso" });
         }
 
@@ -87,8 +94,7 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         });
         if (cargoResult.length === 0) {
-            if (foto) deletarFotoFuncionario(foto);
-            documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
+            limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Cargo nao encontrado" });
         }
 
@@ -98,6 +104,10 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
         const senha_funcionario = gerarSenhaTemporaria();
         const senhaCriptografada = await criptografarSenha(senha_funcionario);
         const dataAtual = new Date().toISOString().split('T')[0];
+
+        console.log("ID Funcionário:", id_func);
+        console.log("Código gerado:", codigo);
+        console.log("Senha gerada:", senha_funcionario);
 
         // Inserir funcionário
         await new Promise((resolve, reject) => {
@@ -122,7 +132,9 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         }
 
-        const emailEnviado = await enviarCredenciaisFuncionario(email, nome, senha_funcionario, cargo, codigo);
+        // CORRIGIDO: enviar apenas 4 parâmetros
+        const emailEnviado = await enviarCredenciaisFuncionario(email, nome, senha_funcionario, codigo);
+        console.log("Email enviado:", emailEnviado);
 
         res.status(201).json({
             sucesso: true,
@@ -132,427 +144,275 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
 
     } catch (erro) {
         console.error("Erro ao registrar funcionario:", erro);
-        if (foto) deletarFotoFuncionario(foto);
-        documentos.forEach(doc => deletarDocumentoFuncionario(doc.filename));
-        res.status(500).json({ sucesso: false, mensagem: "Erro interno ao registrar funcionario" });
+        limparArquivos();
+        res.status(500).json({ sucesso: false, mensagem: "Erro interno ao registrar funcionario: " + erro.message });
     }
 });
 
-router.post('/registrarprofessor', (req, res) => {
+// Rota para registrar professor - CORRIGIDA
+router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, async (req, res) => {
     console.log("=== INICIANDO REGISTRO DE PROFESSOR ===");
     console.log("Body recebido:", req.body);
-    console.log("Files recebidos:", req.files ? Object.keys(req.files) : "Nenhum arquivo");
+    console.log("Files recebidos:", req.files);
     
-    upload.uploadCombinado(req, res, async (err) => {
-        // Erro do multer
-        if (err) {
-            console.error("Erro no upload (multer):", err);
-            
-            if (err instanceof multer.MulterError) {
-                if (err.code === 'FILE_TOO_LARGE') {
-                    console.log("Arquivo muito grande");
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Arquivo muito grande",
-                        mensagem: "O arquivo excede o limite de 10MB"
-                    });
-                }
-                if (err.code === 'LIMIT_FILE_COUNT') {
-                    console.log("Muitos arquivos");
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Muitos arquivos",
-                        mensagem: "Número máximo de arquivos excedido"
-                    });
-                }
+    const { 
+        nome, genero, nacionalidade, nomepai, nomemae, bi, contacto, 
+        whatsapp, email, contactoemergencia, anoexperienca, titulacao, 
+        iban, tiposangue, data_nascimento, data_admissao, estadocivil, 
+        id_contrato, id_user 
+    } = req.body;
+    
+    // Pega o nome do arquivo gerado pelo multer
+    const foto = req.files?.foto ? req.files.foto[0].filename : null;
+    const documentos = req.files?.documentos || [];
+    const documentosTitulos = req.body.documentos_titulo || [];
+
+    console.log("Nome da foto salva:", foto);
+    console.log("Documentos salvos:", documentos.map(d => ({ original: d.originalname, filename: d.filename })));
+
+    const limparArquivos = () => {
+        console.log("Limpando arquivos enviados...");
+        if (foto) {
+            console.log("Deletando foto:", foto);
+            upload.deletarFotoProfessor(foto);
+        }
+        documentos.forEach(doc => {
+            console.log("Deletando documento:", doc.filename);
+            upload.deletarDocumentoProfessor(doc.filename);
+        });
+    };
+
+    try {
+        // Validações
+        console.log("Validando campos obrigatórios...");
+        const camposObrigatorios = [
+            { nome: "nome", valor: nome },
+            { nome: "bi", valor: bi },
+            { nome: "contacto", valor: contacto },
+            { nome: "email", valor: email },
+            { nome: "genero", valor: genero },
+            { nome: "data_nascimento", valor: data_nascimento },
+            { nome: "data_admissao", valor: data_admissao },
+            { nome: "id_contrato", valor: id_contrato }
+        ];
+
+        for (const campo of camposObrigatorios) {
+            if (!campo.valor || campo.valor.toString().trim() === "") {
+                console.log(`Erro: Campo obrigatório ausente - ${campo.nome}`);
+                limparArquivos();
+                return res.status(400).json({ 
+                    sucesso: false, 
+                    mensagem: `O campo ${campo.nome} é obrigatório` 
+                });
             }
+        }
+        console.log("Campos obrigatórios validados com sucesso");
+
+        // Validar nome
+        if (nome.length < 3 || nome.length > 100) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Nome deve ter entre 3 e 100 caracteres" });
+        }
+
+        if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(nome)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Nome deve conter apenas letras e espaços" });
+        }
+
+        // Validar gênero
+        const generosPermitidos = ["Masculino", "Feminino", "Outro"];
+        if (!generosPermitidos.includes(genero)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Gênero inválido" });
+        }
+
+        // Validar BI
+        if (bi.length < 9 || bi.length > 14) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "BI deve ter entre 9 e 14 caracteres" });
+        }
+
+        if (!/^[a-zA-Z0-9]+$/.test(bi)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "BI deve conter apenas letras e números" });
+        }
+
+        // Validar contacto
+        if (!/^[0-9]{9,12}$/.test(contacto)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Contacto deve conter apenas números e ter entre 9 e 12 dígitos" });
+        }
+
+        // Validar WhatsApp
+        if (whatsapp && !/^[0-9]{9,12}$/.test(whatsapp)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "WhatsApp deve conter apenas números e ter entre 9 e 12 dígitos" });
+        }
+
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Email inválido" });
+        }
+
+        if (email.length > 100) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Email deve ter no máximo 100 caracteres" });
+        }
+
+        // Validar datas
+        const dataNascimento = new Date(data_nascimento);
+        const dataAdmissao = new Date(data_admissao);
+        const dataAtual = new Date();
+
+        if (isNaN(dataNascimento.getTime())) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Data de nascimento inválida" });
+        }
+
+        if (isNaN(dataAdmissao.getTime())) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Data de admissão inválida" });
+        }
+
+        const idade = dataAtual.getFullYear() - dataNascimento.getFullYear();
+        if (idade < 18 || idade > 100) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Idade deve estar entre 18 e 100 anos" });
+        }
+
+        if (dataAdmissao > dataAtual) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Data de admissão não pode ser futura" });
+        }
+
+        // Verificar se contacto já existe
+        const verificarContacto = await new Promise((resolve, reject) => {
+            conexao.query("SELECT id_professor FROM professor WHERE contacto = ?", [contacto.trim()], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        
+        if (verificarContacto.length > 0) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Contacto já em uso" });
+        }
+
+        // Verificar se BI já existe
+        const verificarBI = await new Promise((resolve, reject) => {
+            conexao.query("SELECT id_professor FROM professor WHERE bi = ?", [bi.trim()], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        
+        if (verificarBI.length > 0) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "BI já em uso" });
+        }
+
+        // Verificar se email já existe
+        const verificarEmail = await new Promise((resolve, reject) => {
+            conexao.query("SELECT id_professor FROM professor WHERE email = ?", [email.trim()], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        
+        if (verificarEmail.length > 0) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Email já em uso" });
+        }
+
+        // Verificar se contrato existe
+        const verificarContrato = await new Promise((resolve, reject) => {
+            conexao.query("SELECT id_contrato FROM contrato WHERE id_contrato = ? AND status = 'Ativo'", [id_contrato], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        
+        if (verificarContrato.length === 0) {
+            limparArquivos();
+            return res.status(400).json({ sucesso: false, mensagem: "Tipo de contrato inválido" });
+        }
+
+        // Gerar dados
+        const id_professor = gerarId();
+        const codigo = gerarCodigo();
+        const senha_funcionario = gerarSenhaTemporaria();
+        const senhaCriptografada = await criptografarSenha(senha_funcionario);
+
+        console.log("ID Professor:", id_professor);
+        console.log("Código:", codigo);
+        console.log("Senha:", senha_funcionario);
+
+        // Inserir professor
+        await new Promise((resolve, reject) => {
+            const sql = `INSERT INTO professor (
+                id_professor, nome, genero, nacionalidade, nomepai, nomemae, 
+                bi, contacto, whatsapp, email, contactoemergencia, anoexperienca, 
+                titulacao, iban, tiposangue, codigo, senha, data_nascimento, 
+                data_admissao, id_contrato, id_user, foto, estadocivil
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no upload",
-                mensagem: err.message
+            conexao.query(sql, [
+                id_professor, nome, genero, nacionalidade, nomepai, nomemae, 
+                bi, contacto, whatsapp, email, contactoemergencia, anoexperienca, 
+                titulacao, iban, tiposangue, codigo, senhaCriptografada, 
+                data_nascimento, data_admissao, id_contrato, id_user, foto, estadocivil
+            ], (erro, resultado) => {
+                if (erro) reject(erro);
+                else resolve(resultado);
+            });
+        });
+
+        // Inserir documentos
+        for (let i = 0; i < documentos.length; i++) {
+            const doc = documentos[i];
+            const titulo = documentosTitulos[i] || doc.originalname;
+            const id_doc_func = gerarId();
+            
+            await new Promise((resolve, reject) => {
+                const sql = `INSERT INTO ficheiro_prof (id_ficheiro, ficheiro, id_professor, nome) VALUES (?, ?, ?, ?)`;
+                conexao.query(sql, [id_doc_func, titulo, id_professor, doc.filename], (erro, resultado) => {
+                    if (erro) reject(erro);
+                    else resolve(resultado);
+                });
             });
         }
 
-        try {
-            const body = req.body || {};
-            const files = req.files || {};
+        // Enviar email
+        const emailEnviado = await enviarCredenciaisFuncionario(email, nome, senha_funcionario, codigo);
+        console.log("Email enviado:", emailEnviado);
 
-            console.log("Dados após upload:");
-            console.log("- nomeprofessore:", body.nomeprofessore);
-            console.log("- genero:", body.genero);
-            console.log("- biprofessor:", body.biprofessor);
-            console.log("- emailprofessor:", body.emailprofessor);
-            console.log("- idAdm:", body.idAdm);
-
-            const nomeprofessore = body.nomeprofessore || "";
-            const genero = body.genero || "";
-            const nacionalidadeprofessor = body.nacionalidadeprofessor || "";
-            const estadocivilprofessor = body.estadocivilprofessor || "";
-            const nomepaiprofessor = body.nomepaiprofessor || "";
-            const nomemaeprofessor = body.nomemaeprofessor || "";
-            const biprofessor = body.biprofessor || "";
-            const datanascimentoprofessor = body.datanascimentoprofessor || "";
-            const residenciaprofessor = body.residenciaprofessor || "";
-            const telefoneprofessor = body.telefoneprofessor || "";
-            const whatsappprofessor = body.whatsappprofessor || "";
-            const emailprofessor = body.emailprofessor || "";
-            const anoexprienciaprofessor = body.anoexprienciaprofessor || "";
-            const titulacaoprofessor = body.titulacaoprofessor || "";
-            const dataadmissaprofessor = body.dataadmissaprofessor || "";
-            const tipocontratoprofessor = body.tipocontratoprofessor || "";
-            const ibanprofessor = body.ibanprofessor || "";
-            const tiposanguineoprofessor = body.tiposanguineoprofessor || "";
-            const condicoesprofessor = body.condicoesprofessor || "";
-            const contactoemergenciaprofessor = body.contactoemergenciaprofessor || "";
-            const idAdm = body.idAdm || "";
-
-            // VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
-            console.log("Validando campos obrigatórios...");
-            if (!nomeprofessore || !genero || !biprofessor || !idAdm) {
-                console.log("ERRO: Campos obrigatórios faltando");
-                console.log("- nomeprofessore:", !!nomeprofessore);
-                console.log("- genero:", !!genero);
-                console.log("- biprofessor:", !!biprofessor);
-                console.log("- idAdm:", !!idAdm);
-                
-                if (files.fotoprofessor) {
-                    console.log("Deletando foto:", files.fotoprofessor[0].filename);
-                    upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                }
-                if (files.bipdfprofessor) {
-                    console.log("Deletando documento:", files.bipdfprofessor[0].filename);
-                    upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                }
-                
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Campos obrigatórios",
-                    mensagem: "Nome, gênero, BI e Administrador são obrigatórios!"
-                });
+        console.log("=== REGISTRO CONCLUÍDO COM SUCESSO ===");
+        res.status(201).json({
+            sucesso: true,
+            mensagem: `Professor registrado com sucesso! ${emailEnviado.sucesso ? 'Credenciais enviadas por email.' : 'Erro ao enviar email.'}`,
+            dados: { 
+                id: id_professor, 
+                nome, 
+                email, 
+                senha_original: senha_funcionario, 
+                codigo
             }
+        });
 
-            // VALIDAÇÃO DE EMAIL
-            console.log("Validando email...");
-            if (!emailprofessor) {
-                console.log("ERRO: Email não fornecido");
-                if (files.fotoprofessor) upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                if (files.bipdfprofessor) upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Email obrigatório",
-                    mensagem: "Email é obrigatório para enviar as credenciais de acesso!"
-                });
-            }
-
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(emailprofessor)) {
-                console.log("ERRO: Email inválido:", emailprofessor);
-                if (files.fotoprofessor) upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                if (files.bipdfprofessor) upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Email inválido",
-                    mensagem: "Formato de email inválido!"
-                });
-            }
-            console.log("Email válido:", emailprofessor);
-
-            // VERIFICAR BI
-            console.log("Verificando se BI já existe:", biprofessor);
-            const verificarBISQL = "SELECT id_professor FROM professor WHERE bi = ?";
-            conexao.query(verificarBISQL, [biprofessor], async (erro, resultados) => {
-                if (erro) {
-                    console.error("Erro ao verificar BI:", erro);
-                    return res.status(500).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Erro no servidor",
-                        mensagem: "Erro interno do servidor"
-                    });
-                }
-
-                if (resultados.length > 0) {
-                    console.log("ERRO: BI já existe:", biprofessor);
-                    if (files.fotoprofessor) upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                    if (files.bipdfprofessor) upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                    
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "BI existente",
-                        mensagem: "Este número de BI já está registrado!"
-                    });
-                }
-                console.log("BI não existe, pode prosseguir");
-
-                // VERIFICAR EMAIL
-                console.log("Verificando se email já existe:", emailprofessor);
-                const verificarEmailSQL = "SELECT id_professor FROM professor WHERE email = ?";
-                conexao.query(verificarEmailSQL, [emailprofessor], async (erro, emailExiste) => {
-                    if (erro) {
-                        console.error("Erro ao verificar email:", erro);
-                        return res.status(500).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Erro no servidor",
-                            mensagem: "Erro interno do servidor"
-                        });
-                    }
-
-                    if (emailExiste.length > 0) {
-                        console.log("ERRO: Email já existe:", emailprofessor);
-                        if (files.fotoprofessor) upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                        if (files.bipdfprofessor) upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                        
-                        return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Email existente",
-                            mensagem: "Este email já está registrado!"
-                        });
-                    }
-                    console.log("Email não existe, pode prosseguir");
-
-                    try {
-                        // GERAR CÓDIGO DO PROFESSOR
-                        console.log("Gerando código do professor...");
-                        let codigoProfessor;
-                        let codigoProfessorUnico = false;
-                        let tentativas = 0;
-                        const maxTentativas = 10;
-
-                        while (!codigoProfessorUnico && tentativas < maxTentativas) {
-                            codigoProfessor = gerarCodigo();
-                            console.log(`Tentativa ${tentativas + 1}: código gerado ${codigoProfessor}`);
-                            
-                            const verificarCodigoSQL = "SELECT id_professor FROM professor WHERE codigo = ?";
-                            const [resultadosCodigo] = await conexao.promise().query(verificarCodigoSQL, [codigoProfessor]);
-                            
-                            if (resultadosCodigo.length === 0) {
-                                codigoProfessorUnico = true;
-                                console.log("Código único encontrado:", codigoProfessor);
-                            }
-                            tentativas++;
-                        }
-
-                        if (!codigoProfessorUnico) {
-                            console.error("ERRO: Não foi possível gerar código único após", maxTentativas, "tentativas");
-                            throw new Error("Não foi possível gerar um código único");
-                        }
-
-                        // GERAR SENHA TEMPORÁRIA
-                        console.log("Gerando senha temporária...");
-                        const senhaTemporaria = gerarSenhaTemporaria();
-                        console.log("Senha temporária gerada:", senhaTemporaria);
-                        
-                        // CRIPTOGRAFAR SENHA
-                        console.log("Criptografando senha...");
-                        const senhaCriptografada = await criptografarSenha(senhaTemporaria);
-                        console.log("Senha criptografada com sucesso");
-
-                        // NOMES DOS ARQUIVOS
-                        console.log("Processando arquivos...");
-                        let nomeFoto = null;
-                        let nomeBIPDF = null;
-                        let outrosDocumentos = [];
-
-                        if (files.fotoprofessor) {
-                            nomeFoto = files.fotoprofessor[0].filename;
-                            console.log("Foto salva como:", nomeFoto);
-                        }
-
-                        if (files.bipdfprofessor) {
-                            nomeBIPDF = files.bipdfprofessor[0].filename;
-                            console.log("BI PDF salvo como:", nomeBIPDF);
-                        }
-
-                        const camposDoc = ['certificadoprofessor', 'diplomaprofessor', 'contratoprofessor', 'documentoprofessor'];
-                        camposDoc.forEach(campo => {
-                            if (files[campo]) {
-                                files[campo].forEach(file => {
-                                    outrosDocumentos.push({
-                                        tipo: campo,
-                                        nome: file.filename
-                                    });
-                                    console.log(`Documento ${campo} salvo como:`, file.filename);
-                                });
-                            }
-                        });
-
-                        // INSERT DO PROFESSOR
-                        console.log("Inserindo professor no banco de dados...");
-                        const inserirProfessorSQL = `
-                            INSERT INTO professor (
-                                codigo, foto, nome, genero, 
-                                nacionalidade, estadocivil, nomepai, 
-                                nomemae, bi, data_nascimento, bi_pdf,
-                                residencia, contacto, whatsapp, email, 
-                                anoexperiencia, titulacao, data_admissao, 
-                                tipo_contrato, iban, tipo_sangue, condicoes, 
-                                contacto_emergencia, id_adm, senha
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        `;
-
-                        const converterParaNull = (valor) => (valor === "" ? null : valor);
-
-                        const valores = [
-                            codigoProfessor,
-                            nomeFoto,
-                            nomeprofessore,
-                            genero,
-                            converterParaNull(nacionalidadeprofessor),
-                            converterParaNull(estadocivilprofessor),
-                            converterParaNull(nomepaiprofessor),
-                            converterParaNull(nomemaeprofessor),
-                            biprofessor,
-                            converterParaNull(datanascimentoprofessor),
-                            nomeBIPDF,
-                            converterParaNull(residenciaprofessor),
-                            converterParaNull(telefoneprofessor),
-                            converterParaNull(whatsappprofessor),
-                            emailprofessor,
-                            converterParaNull(anoexprienciaprofessor),
-                            converterParaNull(titulacaoprofessor),
-                            converterParaNull(dataadmissaprofessor),
-                            converterParaNull(tipocontratoprofessor),
-                            converterParaNull(ibanprofessor),
-                            converterParaNull(tiposanguineoprofessor),
-                            converterParaNull(condicoesprofessor),
-                            converterParaNull(contactoemergenciaprofessor),
-                            idAdm,
-                            senhaCriptografada
-                        ];
-
-                        console.log("Valores para inserção:", valores);
-
-                        conexao.query(inserirProfessorSQL, valores, async (erro, resultados) => {
-                            if (erro) {
-                                console.error("Erro ao inserir professor:", erro);
-                                console.error("SQL Error:", erro.sqlMessage);
-                                
-                                if (nomeFoto) upload.deletarFotoProfessor(nomeFoto);
-                                if (nomeBIPDF) upload.deletarDocumentoProfessor(nomeBIPDF);
-                                for (const doc of outrosDocumentos) {
-                                    upload.deletarDocumentoProfessor(doc.nome);
-                                }
-                                
-                                return res.status(500).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Erro no cadastro",
-                                    mensagem: "Erro ao registrar professor: " + erro.message
-                                });
-                            }
-
-                            console.log("Professor inserido com sucesso! ID:", resultados.insertId);
-
-                            // INSERIR DOCUMENTOS NA TABELA ficheiro_prof
-                            if (outrosDocumentos.length > 0) {
-                                console.log("Inserindo documentos na tabela ficheiro_prof...");
-                                const inserirFicheiroSQL = `
-                                    INSERT INTO ficheiro_prof (ficheiro, id_professor, nome) 
-                                    VALUES (?, ?, ?)
-                                `;
-                                
-                                for (const doc of outrosDocumentos) {
-                                    await conexao.promise().query(inserirFicheiroSQL, [
-                                        doc.nome,
-                                        resultados.insertId,
-                                        doc.tipo
-                                    ]);
-                                    console.log(`Documento ${doc.tipo} inserido`);
-                                }
-                            }
-
-                            // ENVIAR EMAIL COM AS CREDENCIAIS
-                            console.log("Enviando email com credenciais para:", emailprofessor);
-                            const cargo = "Professor";
-                            const emailEnviado = await enviarCredenciaisFuncionario(
-                                emailprofessor,
-                                nomeprofessore,
-                                senhaTemporaria,
-                                cargo,
-                                codigoProfessor
-                            );
-
-                            if (!emailEnviado.sucesso) {
-                                console.error("Erro ao enviar email:", emailEnviado.erro);
-                                console.log("Retornando aviso - email não enviado");
-                                return res.status(201).json({
-                                    sucesso: true,
-                                    tipo: "aviso",
-                                    titulo: "Professor Registrado!",
-                                    mensagem: "Professor registrado, mas houve erro ao enviar o email. Envie as credenciais manualmente.",
-                                    dados: {
-                                        idprofessor: resultados.insertId,
-                                        nomeprofessore: nomeprofessore,
-                                        codigoProfessor: codigoProfessor,
-                                        senhaTemporaria: senhaTemporaria
-                                    }
-                                });
-                            }
-
-                            console.log("Email enviado com sucesso!");
-                            console.log("=== REGISTRO CONCLUÍDO COM SUCESSO ===");
-                            
-                            // RESPOSTA FINAL
-                            res.status(201).json({
-                                sucesso: true,
-                                tipo: "sucesso",
-                                titulo: "Professor Registrado!",
-                                mensagem: `Professor registrado com sucesso! As credenciais foram enviadas para ${emailprofessor}`,
-                                dados: {
-                                    idprofessor: resultados.insertId,
-                                    nomeprofessore: nomeprofessore,
-                                    codigoProfessor: codigoProfessor,
-                                    email: emailprofessor
-                                }
-                            });
-                        });
-
-                    } catch (erro) {
-                        console.error("Erro no processamento:", erro);
-                        console.error("Stack trace:", erro.stack);
-                        
-                        if (files.fotoprofessor) {
-                            console.log("Deletando foto devido a erro:", files.fotoprofessor[0].filename);
-                            upload.deletarFotoProfessor(files.fotoprofessor[0].filename);
-                        }
-                        if (files.bipdfprofessor) {
-                            console.log("Deletando documento devido a erro:", files.bipdfprofessor[0].filename);
-                            upload.deletarDocumentoProfessor(files.bipdfprofessor[0].filename);
-                        }
-                        
-                        return res.status(500).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Erro no processamento",
-                            mensagem: "Erro ao processar dados: " + erro.message
-                        });
-                    }
-                });
-            });
-
-        } catch (erro) {
-            console.error("Erro no endpoint:", erro);
-            console.error("Stack trace:", erro.stack);
-            return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro interno",
-                mensagem: "Erro interno do servidor: " + erro.message
-            });
-        }
-    });
+    } catch (erro) {
+        console.error("=== ERRO NO REGISTRO DO PROFESSOR ===");
+        console.error("Mensagem de erro:", erro.message);
+        console.error("Stack trace:", erro.stack);
+        
+        limparArquivos();
+        
+        res.status(500).json({ 
+            sucesso: false, 
+            mensagem: erro.message || "Erro interno ao registrar professor"
+        });
+    }
 });
 
 module.exports = router;

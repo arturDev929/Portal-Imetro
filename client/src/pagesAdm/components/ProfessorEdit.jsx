@@ -1,37 +1,16 @@
-// ProfessorEdit.jsx
-import { useState, useEffect, useCallback } from 'react';
-import Api from "../../service/api"
-import {
-    MdEdit,
-    MdDeleteForever,
-    MdRefresh,
-    MdSearch,
-    MdAdd,
-    MdBook,
-    MdPerson,
-    MdEmail,
-    MdPhone,
-    MdLocationOn,
-    MdAttachFile,
-    MdCameraAlt,
-    MdOutlineLocalHospital,
-    MdAddCircleOutline
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+    MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd, MdPerson, MdPhone,
+    MdLock, MdPhotoCamera, MdEmail, MdAttachFile, MdVisibility,
+    MdCalendarToday, MdBloodtype, MdSchool, MdRemoveRedEye, MdClose,
+    MdCheckCircle, MdCancel, MdInfo, MdFileUpload, MdClear, MdContentCopy
 } from "react-icons/md";
-import {
-    FaBook,
-    FaInfoCircle,
-    FaIdCard,
-    FaHeartbeat,
-    FaUniversity,
-    FaBriefcase,
-} from "react-icons/fa";
-import { RiContactsBook3Line } from "react-icons/ri";
+import { FaIdCard, FaChalkboardTeacher, FaUniversity, FaFileContract, FaWhatsapp } from "react-icons/fa";
 import { IoMdPersonAdd } from "react-icons/io";
-import SelectDisciplina from "./SelectDisciplina";
-import SelectProfessor from "./SelectProfessor";
-import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
+import { showSuccessToast, showErrorToast, useConfirmToast } from "../../components/global/CustomToast";
 import Style from "./DepartamentosEdit.module.css";
-import Table from "../../components/global/Table"
+import Api from "../../service/api";
+import Table from '../../components/global/Table';
 
 const API_TIMEOUT = 30000;
 
@@ -42,74 +21,42 @@ function ProfessorEdit() {
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
-
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
-    const [modalInfoAberto, setModalInfoAberto] = useState(false);
-    const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
     const [modalEditarAberto, setModalEditarAberto] = useState(false);
-    const [modalAdicionarDisciplinaAberto, setModalAdicionarDisciplinaAberto] = useState(false);
-
+    const [modalVisualizarAberto, setModalVisualizarAberto] = useState(false);
+    const [modalSenhaGeradaAberto, setModalSenhaGeradaAberto] = useState(false);
+    const [contratos, setContratos] = useState([]);
+    const [fotoPreview, setFotoPreview] = useState(null);
+    const [fotoArquivo, setFotoArquivo] = useState(null);
+    const [documentos, setDocumentos] = useState([]);
+    const [documentosPreview, setDocumentosPreview] = useState([]);
+    const [titulosDocumentos, setTitulosDocumentos] = useState([]);
     const [professorSelecionado, setProfessorSelecionado] = useState(null);
-    const [professorSelecionadoInfo, setProfessorSelecionadoInfo] = useState(null);
-    const [disciplinasProfessor, setDisciplinasProfessor] = useState([]);
-    const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
-    const [removendoDisciplina, setRemovendoDisciplina] = useState(null);
-
-    const [iddisciplina, setIdDisciplina] = useState("");
-    const [idprofessor, setIdProfessor] = useState("");
-
+    const [documentosProfessor, setDocumentosProfessor] = useState([]);
+    const [carregandoDocumentos, setCarregandoDocumentos] = useState(false);
+    const [documentosExistentes, setDocumentosExistentes] = useState([]);
+    const [documentosParaRemover, setDocumentosParaRemover] = useState([]);
+    const [novosDocumentos, setNovosDocumentos] = useState([]);
+    const [novosDocumentosPreview, setNovosDocumentosPreview] = useState([]);
+    const [novosDocumentosTitulos, setNovosDocumentosTitulos] = useState([]);
+    const [abaAtiva, setAbaAtiva] = useState('dados');
+    
+    // Estado para a senha gerada
+    const [senhaGerada, setSenhaGerada] = useState('');
+    const [professorSenhaGerada, setProfessorSenhaGerada] = useState(null);
+    
     const [dadosNovoProfessor, setDadosNovoProfessor] = useState({
-        fotoprofessor: null,
-        nomeprofessore: "",
-        genero: "",
-        nacionalidadeprofessor: "",
-        estadocivilprofessor: "",
-        nomepaiprofessor: "",
-        nomemaeprofessor: "",
-        biprofessor: "",
-        datanascimentoprofessor: "",
-        bipdfprofessor: null,
-        residenciaprofessor: "",
-        telefoneprofessor: "",
-        whatsappprofessor: "",
-        emailprofessor: "",
-        anoexprienciaprofessor: "",
-        titulacaoprofessor: "",
-        dataadmissaprofessor: "",
-        tipocontratoprofessor: "",
-        ibanprofessor: "",
-        tiposanguineoprofessor: "",
-        condicoesprofessor: "",
-        contactoemergenciaprofessor: ""
+        nome: "", genero: "", nacionalidade: "", nomepai: "", nomemae: "", 
+        contacto: "", whatsapp: "", bi: "", email: "", contactoemergencia: "",
+        anoexperienca: "", titulacao: "", iban: "", tiposangue: "",
+        data_nascimento: "", data_admissao: "", estadocivil: "", id_contrato: "", id_user: ""
     });
-
+    
     const [dadosEdicao, setDadosEdicao] = useState({
-        idprofessor: '',
-        codigoprofessor: '',
-        nomeprofessor: '',
-        generoprofessor: '',
-        nacionalidadeprofessor: '',
-        estadocivilprofessor: '',
-        nomepaiprofessor: '',
-        nomemaeprofessor: '',
-        nbiprofessor: '',
-        datanascimentoprofessor: '',
-        residenciaprofessor: '',
-        telefoneprofessor: '',
-        whatsappprofessor: '',
-        emailprofessor: '',
-        anoexperienciaprofessor: '',
-        titulacaoprofessor: '',
-        dataadmissaoprofessor: '',
-        condicoesprofessor: '',
-        ibanprofessor: '',
-        tipocontratoprofessor: '',
-        tiposanguineoprofessor: '',
-        contactoemergenciaprofessor: '',
-        fotoUrl: '',
-        curriculoUrl: '',
-        redefinirSenha: false,
-        fotoFile: null
+        id_professor: '', nome: '', genero: '', nacionalidade: '', nomepai: '', nomemae: '',
+        contacto: '', whatsapp: '', bi: '', email: '', contactoemergencia: '',
+        anoexperienca: '', titulacao: '', iban: '', tiposangue: '',
+        data_nascimento: '', data_admissao: '', estadocivil: '', id_contrato: '', foto: null
     });
 
     const [user, setUser] = useState(null);
@@ -117,715 +64,624 @@ function ProfessorEdit() {
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
-        if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
-        }
+        if (usuarioSalvo) setUser(JSON.parse(usuarioSalvo));
     }, []);
+
+    const apiClient = useMemo(() => {
+        const client = Api.create({
+            timeout: API_TIMEOUT,
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+        client.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("usuarioLogado");
+                    window.location.href = "/";
+                }
+                return Promise.reject(error);
+            }
+        );
+        return client;
+    }, []);
+
+    const fetchContratos = useCallback(async () => {
+        try {
+            const response = await apiClient.get('/contratos');
+            setContratos(response.data || []);
+        } catch (error) {
+            console.error("Erro ao buscar contratos:", error);
+        }
+    }, [apiClient]);
 
     const fetchProfessores = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await Api.get(`/Professores`, {
-                timeout: API_TIMEOUT
-            });
-            setLista(response.data || []);
-            setListaFiltrada(response.data || []);
+            const response = await apiClient.get('/professores');
+            const dados = response.data.map(prof => ({
+                id_professor: prof.id_professor, 
+                nome: prof.nome, 
+                genero: prof.genero,
+                nacionalidade: prof.nacionalidade, 
+                nomepai: prof.nomepai, 
+                nomemae: prof.nomemae,
+                bi: prof.bi, 
+                contacto: prof.contacto, 
+                whatsapp: prof.whatsapp, 
+                email: prof.email,
+                contactoemergencia: prof.contactoemergencia, 
+                anoexperienca: prof.anoexperienca,
+                titulacao: prof.titulacao, 
+                iban: prof.iban, 
+                tiposangue: prof.tiposangue,
+                codigo: prof.codigo, 
+                status: prof.status, 
+                data_nascimento: prof.data_nascimento,
+                data_admissao: prof.data_admissao, 
+                estadocivil: prof.estadocivil,
+                foto: prof.foto, 
+                fotoUrl: prof.fotoUrl, 
+                id_contrato: prof.id_contrato,
+                contrato: prof.contrato
+            }));
+            setLista(dados);
+            setListaFiltrada(dados);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
-
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
-                showSuccessToast(
-                    "Sucesso",
-                    "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} professor(es)` }
-                );
+            if (mostrarNotificacao && dados.length > 0) {
+                showSuccessToast("Sucesso", `${dados.length} professores carregados`);
             }
         } catch (error) {
             console.error("Erro ao buscar professores:", error);
-            if (error.response?.data?.error) {
-                showErrorToast("Erro", error.response.data.error);
-            } else if (error.response?.data?.message) {
-                showErrorToast("Erro", error.response.data.message);
-            } else if (error.response?.status === 404) {
-                showErrorToast("Erro de Conexão", "Endpoint não encontrado");
-            } else if (error.code === 'ECONNABORTED') {
-                showErrorToast("Tempo Esgotado", "Tempo de requisição esgotado");
-            } else {
-                showErrorToast("Erro", "Erro na comunicação com o servidor");
-            }
+            showErrorToast("Erro", "Não foi possível carregar os professores");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [apiClient]);
 
-    const handlePesquisa = useCallback((e) => {
-        const termo = e.target.value;
-        setTermoPesquisa(termo);
+    // ========== FUNÇÃO PARA GERAR SENHA AUTOMATICAMENTE ==========
+    const gerarSenhaProfessor = useCallback(async (id, nome) => {
+        showConfirmToast(
+            `Gerar nova senha para o professor ${nome}?`,
+            async () => {
+                try {
+                    const response = await Api.put(
+                        `/professor/senha/${id}`,
+                        {},
+                        {
+                            headers: { 
+                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        setSenhaGerada(response.data.senha_gerada || '');
+                        setProfessorSenhaGerada({ id, nome });
+                        setModalSenhaGeradaAberto(true);
+                        
+                        showSuccessToast(
+                            "Senha Gerada com Sucesso", 
+                            `Nova senha para ${nome} foi gerada e enviada por email`
+                        );
+                        
+                        await fetchProfessores(false);
+                    }
+                } catch (error) {
+                    console.error("Erro ao gerar senha:", error);
+                    if (error.response?.status === 404) {
+                        showErrorToast("Erro", "Rota não encontrada. Verifique a URL da API.");
+                    } else if (error.response?.status === 401) {
+                        showErrorToast("Erro", "Sessão expirada. Faça login novamente.");
+                    } else {
+                        showErrorToast("Erro", error.response?.data?.error || "Não foi possível gerar a nova senha");
+                    }
+                }
+            },
+            null,
+            "Confirmar Geração de Senha"
+        );
+    }, [showConfirmToast, fetchProfessores]);
 
-        if (termo.trim() === '') {
-            setListaFiltrada(lista);
-        } else {
-            const filtrados = lista.filter(item =>
-                item.nome?.toLowerCase().includes(termo.toLowerCase()) ||
-                (item.codigo && item.codigo.toLowerCase().includes(termo.toLowerCase()))
-            );
-            setListaFiltrada(filtrados);
-        }
-    }, [lista]);
-
-    const limparPesquisa = useCallback(() => {
-        setTermoPesquisa('');
-        setListaFiltrada(lista);
-    }, [lista]);
+    useEffect(() => {
+        fetchProfessores(false);
+        fetchContratos();
+    }, [fetchProfessores, fetchContratos]);
 
     useEffect(() => {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
         } else {
-            const filtrados = lista.filter(item =>
+            const filtrados = lista.filter(item => 
                 item.nome?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
-                (item.codigo && item.codigo.toLowerCase().includes(termoPesquisa.toLowerCase()))
+                item.bi?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                item.contacto?.includes(termoPesquisa) ||
+                item.email?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                item.codigo?.toLowerCase().includes(termoPesquisa.toLowerCase())
             );
             setListaFiltrada(filtrados);
         }
     }, [lista, termoPesquisa]);
 
-    const fetchDisciplinasProfessor = useCallback(async (idProfessor, nomeProfessor) => {
-        if (!idProfessor) return;
-
-        try {
-            setLoadingDisciplinas(true);
-            setProfessorSelecionado({ idprofessor: idProfessor, nomeprofessor: nomeProfessor });
-
-            const response = await Api.get(`/professorVinculadoDisciplinas/${idProfessor}`, {
-                timeout: API_TIMEOUT
-            });
-            setDisciplinasProfessor(response.data || []);
-            setModalDisciplinasAberto(true);
-        } catch (error) {
-            console.error("Erro ao buscar disciplinas do professor:", error);
-            showErrorToast("Erro", "Não foi possível carregar as disciplinas do professor");
-        } finally {
-            setLoadingDisciplinas(false);
-        }
-    }, []);
-
-    const fetchInfoProfessor = useCallback(async (professor) => {
-        try {
-            setLoading(true);
-            const response = await Api.get(`/InformacoesProfessor/${professor.id_professor}`, {
-                timeout: API_TIMEOUT
-            });
-            setProfessorSelecionadoInfo({
-                ...professor,
-                ...response.data
-            });
-            setModalInfoAberto(true);
-        } catch (error) {
-            console.error("Erro ao buscar informações do professor:", error);
-            showErrorToast("Erro", "Não foi possível carregar as informações do professor");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
     const abrirModalAdicionar = useCallback(() => {
-        setDadosNovoProfessor({
-            fotoprofessor: null,
-            nomeprofessore: "",
-            genero: "",
-            nacionalidadeprofessor: "",
-            estadocivilprofessor: "",
-            nomepaiprofessor: "",
-            nomemaeprofessor: "",
-            biprofessor: "",
-            datanascimentoprofessor: "",
-            bipdfprofessor: null,
-            residenciaprofessor: "",
-            telefoneprofessor: "",
-            whatsappprofessor: "",
-            emailprofessor: "",
-            anoexprienciaprofessor: "",
-            titulacaoprofessor: "",
-            dataadmissaprofessor: "",
-            tipocontratoprofessor: "",
-            ibanprofessor: "",
-            tiposanguineoprofessor: "",
-            condicoesprofessor: "",
-            contactoemergenciaprofessor: ""
+        setDadosNovoProfessor({ 
+            nome: "", genero: "", nacionalidade: "", nomepai: "", nomemae: "", 
+            contacto: "", whatsapp: "", bi: "", email: "", contactoemergencia: "",
+            anoexperienca: "", titulacao: "", iban: "", tiposangue: "",
+            data_nascimento: "", data_admissao: "", estadocivil: "", id_contrato: "", 
+            id_user: user?.id || "" 
         });
+        setFotoPreview(null);
+        setFotoArquivo(null);
+        setDocumentos([]);
+        setDocumentosPreview([]);
+        setTitulosDocumentos([]);
+        setAbaAtiva('dados');
         setModalAdicionarAberto(true);
-    }, []);
+    }, [user]);
 
     const fecharModalAdicionar = useCallback(() => {
         if (!salvando) {
             setModalAdicionarAberto(false);
-            setDadosNovoProfessor({
-                fotoprofessor: null,
-                nomeprofessore: "",
-                genero: "",
-                nacionalidadeprofessor: "",
-                estadocivilprofessor: "",
-                nomepaiprofessor: "",
-                nomemaeprofessor: "",
-                biprofessor: "",
-                datanascimentoprofessor: "",
-                bipdfprofessor: null,
-                residenciaprofessor: "",
-                telefoneprofessor: "",
-                whatsappprofessor: "",
-                emailprofessor: "",
-                anoexprienciaprofessor: "",
-                titulacaoprofessor: "",
-                dataadmissaprofessor: "",
-                tipocontratoprofessor: "",
-                ibanprofessor: "",
-                tiposanguineoprofessor: "",
-                condicoesprofessor: "",
-                contactoemergenciaprofessor: ""
+            setDadosNovoProfessor({ 
+                nome: "", genero: "", nacionalidade: "", nomepai: "", nomemae: "", 
+                contacto: "", whatsapp: "", bi: "", email: "", contactoemergencia: "",
+                anoexperienca: "", titulacao: "", iban: "", tiposangue: "",
+                data_nascimento: "", data_admissao: "", estadocivil: "", id_contrato: "", id_user: "" 
             });
+            setFotoPreview(null);
+            setFotoArquivo(null);
+            setDocumentos([]);
+            setDocumentosPreview([]);
+            setTitulosDocumentos([]);
         }
     }, [salvando]);
-
-    const handleNovoProfessorInputChange = useCallback((e) => {
-        const { name, value, files } = e.target;
-
-        if (files && files[0]) {
-            setDadosNovoProfessor((prev) => ({
-                ...prev,
-                [name]: files[0]
-            }));
-        } else {
-            setDadosNovoProfessor((prev) => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    }, []);
-
-    const adicionarProfessor = useCallback(async (e) => {
-        // Prevenir comportamento padrão do formulário
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        if (!user?.id) {
-            showErrorToast("Acesso Negado", "Administrador não autenticado!");
-            return;
-        }
-
-        if (!dadosNovoProfessor.nomeprofessore?.trim()) {
-            showErrorToast("Validação", "Preencha o nome do professor");
-            return;
-        }
-
-        if (!dadosNovoProfessor.emailprofessor?.trim()) {
-            showErrorToast("Validação", "Preencha o email do professor");
-            return;
-        }
-
-        setSalvando(true);
-        try {
-            const formData = new FormData();
-
-            Object.keys(dadosNovoProfessor).forEach(key => {
-                if (dadosNovoProfessor[key] !== null && dadosNovoProfessor[key] !== undefined && dadosNovoProfessor[key] !== "") {
-                    formData.append(key, dadosNovoProfessor[key]);
-                }
-            });
-
-            formData.append('idAdm', user.id);
-
-            const response = await Api.post(`/registrarprofessor`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                timeout: API_TIMEOUT
-            });
-
-            if (response.data.sucesso) {
-                showSuccessToast(
-                    response.data.titulo || "Professor Registrado com Sucesso!",
-                    response.data.mensagem,
-                    response.data.dados && {
-                        "Código do Professor": response.data.dados.codigoProfessor,
-                        "Email": response.data.dados.email
-                    }
-                );
-
-                await fetchProfessores(false);
-                fecharModalAdicionar();
-            } else {
-                showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
-            }
-        } catch (error) {
-            console.error("Erro ao adicionar professor:", error);
-            if (error.response?.data?.mensagem) {
-                showErrorToast("Erro", error.response.data.mensagem);
-            } else {
-                showErrorToast("Erro", "Não foi possível registrar o professor");
-            }
-        } finally {
-            setSalvando(false);
-        }
-    }, [dadosNovoProfessor, user, fetchProfessores, fecharModalAdicionar]);
-
-    const abrirModalEditar = useCallback(async (professor) => {
-        try {
-            setLoading(true);
-            const response = await Api.get(`/InformacoesProfessor/${professor.id_professor}`, {
-                timeout: API_TIMEOUT
-            });
-            const infoCompletas = response.data;
-
-            setDadosEdicao({
-                idprofessor: professor.id_professor,
-                codigoprofessor: professor.codigo || infoCompletas.codigo || '',
-                nomeprofessor: professor.nome || infoCompletas.nome || '',
-                generoprofessor: professor.genero || infoCompletas.genero || '',
-                nacionalidadeprofessor: professor.nacionalidade || infoCompletas.nacionalidade || '',
-                estadocivilprofessor: professor.estadocivil || infoCompletas.estadocivil || '',
-                nomepaiprofessor: professor.nomepai || infoCompletas.nomepai || '',
-                nomemaeprofessor: professor.nomemae || infoCompletas.nomemae || '',
-                nbiprofessor: professor.bi || infoCompletas.bi || '',
-                datanascimentoprofessor: professor.data_nascimento || infoCompletas.data_nascimento || '',
-                residenciaprofessor: professor.residencia || infoCompletas.residencia || '',
-                telefoneprofessor: professor.contacto || infoCompletas.contacto || '',
-                whatsappprofessor: professor.whatsapp || infoCompletas.whatsapp || '',
-                emailprofessor: professor.email || infoCompletas.email || '',
-                anoexperienciaprofessor: professor.anoexperiencia || infoCompletas.anoexperiencia || '',
-                titulacaoprofessor: professor.titulacao || infoCompletas.titulacao || '',
-                dataadmissaoprofessor: professor.data_admissao || infoCompletas.data_admissao || '',
-                condicoesprofessor: professor.condicoes || infoCompletas.condicoes || '',
-                ibanprofessor: professor.iban || infoCompletas.iban || '',
-                tipocontratoprofessor: professor.tipo_contrato || infoCompletas.tipo_contrato || '',
-                tiposanguineoprofessor: professor.tipo_sangue || infoCompletas.tipo_sangue || '',
-                contactoemergenciaprofessor: professor.contacto_emergencia || infoCompletas.contacto_emergencia || '',
-                fotoUrl: professor.fotoUrl || infoCompletas.fotoUrl || '',
-                curriculoUrl: professor.bi_pdf ? `/api/img/professores/${professor.bi_pdf}` : null,
-                redefinirSenha: false,
-                fotoFile: null
-            });
-            setModalEditarAberto(true);
-        } catch (error) {
-            console.error("Erro ao buscar informações para edição:", error);
-            showErrorToast("Erro", "Não foi possível carregar os dados para edição");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    const handleInputChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setDadosEdicao(prev => ({ ...prev, [name]: value }));
-    }, []);
 
     const handleFotoChange = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                showErrorToast("Erro", "A foto não pode exceder 5MB");
+                return;
+            }
+            setFotoArquivo(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setDadosEdicao(prev => ({ ...prev, fotoUrl: reader.result, fotoFile: file }));
-            };
+            reader.onloadend = () => setFotoPreview(reader.result);
             reader.readAsDataURL(file);
         }
     }, []);
 
-    const handleDataNascimentoChange = useCallback((e) => {
-        setDadosEdicao(prev => ({ ...prev, datanascimentoprofessor: e.target.value }));
-    }, []);
-
-    const handleDataAdmissaoChange = useCallback((e) => {
-        setDadosEdicao(prev => ({ ...prev, dataadmissaoprofessor: e.target.value }));
-    }, []);
-
-    const salvarEdicao = useCallback(async (e) => {
-        // Prevenir comportamento padrão do formulário
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
+    const handleDocumentosChange = useCallback((e) => {
+        const files = Array.from(e.target.files);
+        const novosDocs = [], novosPreviews = [], novoTitulos = [];
+        for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                showErrorToast("Erro", `O documento ${file.name} excede 10MB`);
+                continue;
+            }
+            if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+                novosDocs.push(file);
+                novosPreviews.push({ name: file.name, type: file.type });
+                novoTitulos.push(file.name.replace(/\.[^/.]+$/, ''));
+            } else {
+                showErrorToast("Erro", `Formato inválido: ${file.name}`);
+            }
         }
+        setDocumentos(prev => [...prev, ...novosDocs]);
+        setDocumentosPreview(prev => [...prev, ...novosPreviews]);
+        setTitulosDocumentos(prev => [...prev, ...novoTitulos]);
+    }, []);
 
-        if (!dadosEdicao.nomeprofessor?.trim()) {
+    const handleTituloDocumentoChange = useCallback((index, titulo) => {
+        setTitulosDocumentos(prev => { const novos = [...prev]; novos[index] = titulo; return novos; });
+    }, []);
+
+    const removerDocumento = useCallback((index) => {
+        setDocumentos(prev => prev.filter((_, i) => i !== index));
+        setDocumentosPreview(prev => prev.filter((_, i) => i !== index));
+        setTitulosDocumentos(prev => prev.filter((_, i) => i !== index));
+    }, []);
+
+    const copiarCodigo = useCallback((codigo) => {
+        navigator.clipboard.writeText(codigo);
+        showSuccessToast("Copiado!", "Código copiado");
+    }, []);
+
+    const adicionarProfessor = useCallback(async (e) => {
+        e.preventDefault();
+        
+        if (!dadosNovoProfessor.nome?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
             return;
         }
+        
+        if (!dadosNovoProfessor.id_contrato) {
+            showErrorToast("Validação", "Selecione o tipo de contrato");
+            return;
+        }
+        
+        setSalvando(true);
+        try {
+            const formData = new FormData();
+            Object.entries(dadosNovoProfessor).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== "") {
+                    formData.append(key, value);
+                }
+            });
+            if (fotoArquivo) formData.append('foto', fotoArquivo);
+            documentos.forEach((doc, i) => {
+                formData.append('documentos', doc);
+                formData.append('documentos_titulo', titulosDocumentos[i] || doc.name);
+            });
 
+            const response = await Api.post(`/registrarProfessor`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem("token")}` }
+            });
+
+            if (response.data.sucesso) {
+                showSuccessToast("Sucesso", response.data.mensagem);
+                await fetchProfessores(false);
+                fecharModalAdicionar();
+            } else {
+                showErrorToast("Erro", response.data.mensagem || "Não foi possível registrar");
+            }
+        } catch (error) {
+            console.error("Erro ao registrar professor:", error);
+            showErrorToast("Erro", error.response?.data?.mensagem || "Não foi possível registrar o professor");
+        } finally {
+            setSalvando(false);
+        }
+    }, [dadosNovoProfessor, fotoArquivo, documentos, titulosDocumentos, fetchProfessores, fecharModalAdicionar]);
+
+    const abrirModalVisualizar = useCallback(async (professor) => {
+        try {
+            setCarregandoDocumentos(true);
+            setProfessorSelecionado(professor);
+            
+            const response = await apiClient.get(`/professorInfo/${professor.id_professor}`);
+            
+            if (response.data) {
+                setProfessorSelecionado(response.data);
+                setDocumentosProfessor(response.data.documentos || []);
+            }
+            setModalVisualizarAberto(true);
+        } catch (error) {
+            console.error("Erro ao carregar dados do professor:", error);
+            showErrorToast("Erro", "Não foi possível carregar os dados");
+        } finally {
+            setCarregandoDocumentos(false);
+        }
+    }, [apiClient]);
+
+    // ========== FUNÇÃO ABRIR MODAL EDIÇÃO ==========
+    const abrirModalEditar = useCallback(async (professor) => {
+        console.log("=== ABRINDO MODAL DE EDIÇÃO ===");
+        console.log("Professor selecionado:", professor);
+        
+        try {
+            setCarregandoDocumentos(true);
+            
+            // Preencher os dados do formulário com os dados do professor
+            setDadosEdicao({
+                id_professor: professor.id_professor, 
+                nome: professor.nome || '', 
+                genero: professor.genero || '',
+                nacionalidade: professor.nacionalidade || '', 
+                nomepai: professor.nomepai || '', 
+                nomemae: professor.nomemae || '',
+                contacto: professor.contacto || '', 
+                whatsapp: professor.whatsapp || '', 
+                bi: professor.bi || '',
+                email: professor.email || '', 
+                contactoemergencia: professor.contactoemergencia || '',
+                anoexperienca: professor.anoexperienca || '', 
+                titulacao: professor.titulacao || '',
+                iban: professor.iban || '', 
+                tiposangue: professor.tiposangue || '',
+                data_nascimento: professor.data_nascimento || '', 
+                data_admissao: professor.data_admissao || '',
+                estadocivil: professor.estadocivil || '', 
+                id_contrato: professor.id_contrato || '', 
+                foto: professor.foto
+            });
+            
+            // Setar a foto preview
+            setFotoPreview(professor.fotoUrl);
+            setFotoArquivo(null);
+            
+            // Buscar documentos do professor
+            try {
+                console.log("Buscando documentos para o professor ID:", professor.id_professor);
+                
+                const response = await apiClient.get(`/professorDocumentos/${professor.id_professor}`);
+                console.log("Resposta da API de documentos:", response.data);
+                
+                if (response.data && response.data.success) {
+                    const documentos = response.data.documentos || [];
+                    console.log("Documentos encontrados:", documentos.length);
+                    setDocumentosExistentes(documentos);
+                } else {
+                    console.log("Nenhum documento encontrado");
+                    setDocumentosExistentes([]);
+                }
+            } catch (error) {
+                console.error("Erro ao buscar documentos:", error);
+                setDocumentosExistentes([]);
+            }
+            
+            // Resetar estados de documentos novos
+            setDocumentosParaRemover([]);
+            setNovosDocumentos([]);
+            setNovosDocumentosPreview([]);
+            setNovosDocumentosTitulos([]);
+            
+            // Resetar a aba ativa para 'dados'
+            setAbaAtiva('dados');
+            
+            console.log("Abrindo modal de edição...");
+            
+            // Abrir o modal
+            setModalEditarAberto(true);
+            
+        } catch (error) {
+            console.error("Erro ao carregar dados para edição:", error);
+            showErrorToast("Erro", "Não foi possível carregar os dados para edição");
+            setModalEditarAberto(true);
+        } finally {
+            setCarregandoDocumentos(false);
+        }
+    }, [apiClient]);
+
+    // ========== FUNÇÕES DE DOCUMENTOS PARA EDIÇÃO ==========
+    const handleNovosDocumentosChange = useCallback((e) => {
+        const files = Array.from(e.target.files);
+        const novosDocs = [], novosPreviews = [], novoTitulos = [];
+        for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                showErrorToast("Erro", `O documento ${file.name} excede 10MB`);
+                continue;
+            }
+            if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+                novosDocs.push(file);
+                novosPreviews.push({ name: file.name, type: file.type });
+                novoTitulos.push(file.name.replace(/\.[^/.]+$/, ''));
+            } else {
+                showErrorToast("Erro", `Formato inválido: ${file.name}`);
+            }
+        }
+        setNovosDocumentos(prev => [...prev, ...novosDocs]);
+        setNovosDocumentosPreview(prev => [...prev, ...novosPreviews]);
+        setNovosDocumentosTitulos(prev => [...prev, ...novoTitulos]);
+    }, []);
+
+    const removerNovoDocumento = useCallback((index) => {
+        setNovosDocumentos(prev => prev.filter((_, i) => i !== index));
+        setNovosDocumentosPreview(prev => prev.filter((_, i) => i !== index));
+        setNovosDocumentosTitulos(prev => prev.filter((_, i) => i !== index));
+    }, []);
+
+    const marcarDocumentoParaRemover = useCallback((docId) => {
+        console.log("Removendo documento ID:", docId);
+        if (!docId) {
+            showErrorToast("Erro", "ID do documento inválido");
+            return;
+        }
+        
+        setDocumentosParaRemover(prev => [...prev, docId]);
+        setDocumentosExistentes(prev => prev.filter(doc => doc.id_ficheiro !== docId));
+        
+        showSuccessToast("Sucesso", "Documento marcado para remoção");
+    }, []);
+
+    // ========== FUNÇÃO SALVAR EDIÇÃO ==========
+    const salvarEdicao = useCallback(async (e) => {
+        e.preventDefault();
+        
+        console.log("=== SALVANDO EDIÇÃO ===");
+        console.log("Dados de edição:", dadosEdicao);
+        console.log("Documentos para remover:", documentosParaRemover);
+        console.log("Novos documentos:", novosDocumentos.length);
+        
+        if (!dadosEdicao.nome?.trim()) {
+            showErrorToast("Validação", "Preencha o nome do professor");
+            return;
+        }
+        
         setSalvando(true);
         try {
             const formData = new FormData();
             
             // Adicionar todos os campos do formulário
-            Object.keys(dadosEdicao).forEach(key => {
-                if (key !== 'fotoUrl' && key !== 'curriculoUrl' && key !== 'fotoFile' && dadosEdicao[key] !== null && dadosEdicao[key] !== undefined && dadosEdicao[key] !== '') {
-                    formData.append(key, dadosEdicao[key]);
+            Object.entries(dadosEdicao).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && key !== 'id_professor' && value !== "") {
+                    formData.append(key, value);
+                }
+            });
+            
+            // Adicionar foto se houver
+            if (fotoArquivo) {
+                formData.append('foto', fotoArquivo);
+            }
+            
+            // Adicionar documentos para remover
+            documentosParaRemover.forEach(docId => {
+                if (docId) {
+                    formData.append('documentos_remover[]', docId);
+                }
+            });
+            
+            // Adicionar novos documentos
+            novosDocumentos.forEach((doc, i) => {
+                formData.append('documentos[]', doc);
+                formData.append('documentos_titulo[]', novosDocumentosTitulos[i] || doc.name);
+            });
+
+            console.log("Enviando requisição PUT para:", `/atualizarprofessor/${dadosEdicao.id_professor}`);
+            
+            const response = await Api.put(`/atualizarprofessor/${dadosEdicao.id_professor}`, formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data', 
+                    Authorization: `Bearer ${localStorage.getItem("token")}` 
                 }
             });
 
-            // Adicionar foto se foi alterada
-            if (dadosEdicao.fotoFile) {
-                formData.append('fotoprofessor', dadosEdicao.fotoFile);
-            }
+            console.log("Resposta da API:", response.data);
 
-            // Adicionar redefinir senha
-            formData.append('redefinirSenha', dadosEdicao.redefinirSenha ? 'true' : 'false');
-
-            const response = await Api.put(`/atualizarprofessor/${dadosEdicao.idprofessor}`, formData, {
-                timeout: API_TIMEOUT,
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            if (response.data.sucesso) {
-                showSuccessToast(
-                    response.data.titulo || "Sucesso",
-                    response.data.mensagem,
-                    { "Professor": dadosEdicao.nomeprofessor }
-                );
-
+            if (response.data.success) {
+                showSuccessToast("Sucesso", response.data.message || "Professor atualizado com sucesso!");
                 await fetchProfessores(false);
-                fecharModalEditar();
+                setModalEditarAberto(false);
+                
+                // Resetar estados
+                setDocumentosExistentes([]);
+                setDocumentosParaRemover([]);
+                setNovosDocumentos([]);
+                setNovosDocumentosPreview([]);
+                setNovosDocumentosTitulos([]);
             } else {
-                showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
+                showErrorToast("Erro", response.data.message || "Não foi possível atualizar");
             }
         } catch (error) {
-            console.error("Erro ao atualizar professor:", error);
-            if (error.response?.data?.mensagem) {
-                showErrorToast("Erro", error.response.data.mensagem);
-            } else {
-                showErrorToast("Erro", "Não foi possível atualizar o professor");
-            }
+            console.error("Erro ao salvar edição:", error);
+            showErrorToast("Erro", error.response?.data?.message || "Não foi possível atualizar o professor");
         } finally {
             setSalvando(false);
         }
-    }, [dadosEdicao, fetchProfessores]);
+    }, [dadosEdicao, fotoArquivo, documentosParaRemover, novosDocumentos, novosDocumentosTitulos, fetchProfessores]);
 
-    const abrirModalAdicionarDisciplina = useCallback(() => {
-        setModalAdicionarDisciplinaAberto(true);
-    }, []);
-
-    const fecharModalAdicionarDisciplina = useCallback(() => {
-        setModalAdicionarDisciplinaAberto(false);
-        setIdDisciplina("");
-        setIdProfessor("");
-    }, []);
-
-    const adicionarDisciplinaProfessor = useCallback(async (e) => {
-        // Prevenir comportamento padrão do formulário
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        if (!iddisciplina || !idprofessor) {
-            showErrorToast("Seleção Incompleta", "Por favor, selecione uma disciplina e um professor.");
-            return;
-        }
-
-        setSalvando(true);
-
-        try {
-            const response = await Api.post(`/registrerDisciplinaProfessor`, {
-                iddisciplina,
-                idprofessor
-            }, {
-                timeout: API_TIMEOUT,
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = response.data;
-
-            if (data.sucesso) {
-                showSuccessToast(
-                    data.titulo || "Disciplina Adicionada",
-                    data.mensagem || "Disciplina adicionada ao professor com sucesso.",
-                    {
-                        "Professor": data.dados?.professor_nome,
-                        "Disciplina": data.dados?.disciplina_nome
-                    }
-                );
-                fecharModalAdicionarDisciplina();
-            } else {
-                showErrorToast(data.titulo || "Erro", data.mensagem);
-            }
-
-        } catch (error) {
-            console.error("Erro:", error);
-            showErrorToast("Erro no Processamento", error.message);
-        } finally {
-            setSalvando(false);
-        }
-    }, [iddisciplina, idprofessor, fecharModalAdicionarDisciplina]);
-
-    const removerDisciplina = useCallback(async (iddisciplina, disciplinaNome, idProfessor, professorNome) => {
-        showConfirmToast(
-            `Tem certeza que deseja desvincular a disciplina "${disciplinaNome}" do professor ${professorNome}?`,
-            async () => {
-                try {
-                    setRemovendoDisciplina(iddisciplina);
-                    showInfoToast("Processando", `Removendo disciplina...`);
-
-                    await Api.delete(`/desvincularProfessor/${iddisciplina}/${idProfessor}`, {
-                        timeout: API_TIMEOUT
-                    });
-
-                    showSuccessToast(
-                        "Sucesso",
-                        "Disciplina desvinculada com sucesso",
-                        { "Disciplina": disciplinaNome }
-                    );
-
-                    const response = await Api.get(`/professorVinculadoDisciplinas/${idProfessor}`, {
-                        timeout: API_TIMEOUT
-                    });
-                    setDisciplinasProfessor(response.data || []);
-
-                } catch (error) {
-                    console.error("Erro ao remover disciplina:", error);
-                    showErrorToast("Erro", "Não foi possível desvincular a disciplina");
-                } finally {
-                    setRemovendoDisciplina(null);
+    const desativarProfessor = useCallback((id, nome) => {
+        showConfirmToast(`Deseja realmente desativar o professor ${nome}?`, async () => {
+            try {
+                const response = await Api.put(`/professor/desativar/${id}`, {}, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                });
+                if (response.status === 200) {
+                    await fetchProfessores(false);
+                    showSuccessToast("Sucesso", `Professor ${nome} desativado`);
                 }
-            },
-            null,
-            "Confirmar Desvinculação"
-        );
-    }, [showConfirmToast]);
-
-    const deletarProfessor = (id, nome) => {
-        showConfirmToast(
-            `Tens a certeza que pretendes desativar todas as funcionalidades do professor ${nome}?`,
-            async () => {
-                try {
-                    const response = await Api.put(`/professor/desativar/${id}`, {}, {
-                        timeout: API_TIMEOUT
-                    });
-
-                    if (response.status === 200) {
-                        await fetchProfessores(false);
-                        showSuccessToast(`Professor ${nome} desativado com sucesso!`);
-                    }
-                } catch (error) {
-                    console.error("Erro ao desativar professor:", error);
-                    if (error.response) {
-                        showErrorToast(error.response.data.error || `Erro ao desativar professor ${nome}`);
-                    } else if (error.request) {
-                        showErrorToast("Erro de conexão com o servidor");
-                    } else {
-                        showErrorToast(`Erro ao desativar professor ${nome}`);
-                    }
-                }
+            } catch (error) {
+                console.error("Erro ao desativar professor:", error);
+                showErrorToast("Erro", "Não foi possível desativar o professor");
             }
-        );
-    };
+        }, null, "Confirmar Desativação");
+    }, [showConfirmToast, fetchProfessores]);
 
-    const fecharModalInfo = useCallback(() => {
-        setModalInfoAberto(false);
-        setProfessorSelecionadoInfo(null);
-    }, []);
-
-    const fecharModalDisciplinas = useCallback(() => {
-        setModalDisciplinasAberto(false);
-        setDisciplinasProfessor([]);
-        setProfessorSelecionado(null);
-    }, []);
-
-    const fecharModalEditar = useCallback(() => {
-        setModalEditarAberto(false);
-        setDadosEdicao({
-            idprofessor: '',
-            codigoprofessor: '',
-            nomeprofessor: '',
-            generoprofessor: '',
-            nacionalidadeprofessor: '',
-            estadocivilprofessor: '',
-            nomepaiprofessor: '',
-            nomemaeprofessor: '',
-            nbiprofessor: '',
-            datanascimentoprofessor: '',
-            residenciaprofessor: '',
-            telefoneprofessor: '',
-            whatsappprofessor: '',
-            emailprofessor: '',
-            anoexperienciaprofessor: '',
-            titulacaoprofessor: '',
-            dataadmissaoprofessor: '',
-            condicoesprofessor: '',
-            ibanprofessor: '',
-            tipocontratoprofessor: '',
-            tiposanguineoprofessor: '',
-            contactoemergenciaprofessor: '',
-            fotoUrl: '',
-            curriculoUrl: '',
-            redefinirSenha: false,
-            fotoFile: null
-        });
-    }, []);
-
-    useEffect(() => {
-        fetchProfessores(false);
-    }, [fetchProfessores]);
-
-    const isEmpty = lista.length === 0 && !loading;
-    const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
-
-    const headers = ['Foto', 'Nome', 'Titulação', 'Código', 'Disciplinas', 'Info', 'Editar', 'Apagar'];
+    const headers = ['Foto', 'Nome', 'Código', 'Visualizar', 'Senha', 'Editar', 'Desativar'];
 
     const renderRow = useCallback((item) => (
         <tr key={item.id_professor}>
+            <td className="align-middle text-center">
+                <div 
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', backgroundColor: '#e0e0e0', overflow: 'hidden', margin: '0 auto' }}
+                    onClick={() => abrirModalVisualizar(item)}
+                >
+                    {item.fotoUrl ? (
+                        <img src={item.fotoUrl} alt={item.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <MdPerson size={20} color="#999" />
+                        </div>
+                    )}
+                </div>
+            </td>
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                {item.nome}
+                <br/>
+            </td>
             <td className="align-middle">
-                <img
-                    src={item.fotoUrl || '/default-avatar.png'}
-                    alt={`Foto de ${item.nome}`}
-                    className="img-fluid rounded-circle"
-                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                    onError={(e) => {
-                        e.target.src = '/default-avatar.png';
-                    }}
-                />
-            </td>
-            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
-                <MdPerson className="me-2 mb-1" />{item.nome}
-            </td>
-            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
-                {item.titulacao || 'Não informado'}
-            </td>
-            <td className="align-middle text-muted">
-                <small>{item.codigo || 'N/I'}</small>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <code style={{ backgroundColor: '#f5f5f5', padding: '2px 6px', borderRadius: '4px' }}>{item.codigo || 'N/I'}</code>
+                    {item.codigo && (
+                        <MdContentCopy 
+                            size={14} 
+                            style={{ color: '#999', cursor: 'pointer' }}
+                            onClick={() => copiarCodigo(item.codigo)}
+                            title="Copiar código"
+                        />
+                    )}
+                </div>
             </td>
             <td className="text-center">
-                <button
-                    className={`btn btn-sm ${Style.btnOutros}`}
-                    onClick={() => fetchDisciplinasProfessor(item.id_professor, item.nome)}
-                    disabled={loading || loadingDisciplinas || isConfirming}
-                    title={`Ver disciplinas de ${item.nome}`}
-                >
-                    <FaBook />
-                </button>
-            </td>
-            <td className="text-center">
-                <button
-                    className={`btn btn-sm ${Style.btnOutros}`}
-                    onClick={() => fetchInfoProfessor(item)}
-                    disabled={loading || isConfirming}
-                    title={`Informações de ${item.nome}`}
-                >
-                    <FaInfoCircle />
-                </button>
-            </td>
-            <td className="text-center">
-                <button
-                    className={`btn btn-sm ${Style.btnEditar}`}
-                    onClick={() => abrirModalEditar(item)}
+                <button 
+                    className={`btn btn-sm ${Style.btnVisualizar}`} 
+                    onClick={() => abrirModalVisualizar(item)} 
                     disabled={loading || salvando || isConfirming}
-                    title={`Editar ${item.nome}`}
+                    title="Visualizar informações"
+                >
+                    <MdRemoveRedEye />
+                </button>
+            </td>
+            <td className="text-center">
+                <button 
+                    className={`btn btn-sm ${Style.btnOutros}`} 
+                    onClick={() => gerarSenhaProfessor(item.id_professor, item.nome)} 
+                    disabled={loading || salvando || isConfirming}
+                    title="Gerar nova senha"
+                >
+                    <MdLock />
+                </button>
+            </td>
+            <td className="text-center">
+                <button 
+                    className={`btn btn-sm ${Style.btnEditar}`} 
+                    onClick={() => {
+                        console.log("Botão EDITAR clicado para:", item.nome);
+                        abrirModalEditar(item);
+                    }} 
+                    disabled={loading || salvando || isConfirming}
+                    title="Editar professor"
                 >
                     <MdEdit />
                 </button>
             </td>
             <td className="text-center">
-                <button
-                    className={`btn btn-sm ${Style.btnDeletar}`}
-                    onClick={() => deletarProfessor(item.id_professor, item.nome)}
+                <button 
+                    className={`btn btn-sm ${Style.btnDeletar}`} 
+                    onClick={() => desativarProfessor(item.id_professor, item.nome)} 
                     disabled={loading || salvando || isConfirming}
-                    title={`Excluir ${item.nome}`}
+                    title="Desativar professor"
                 >
                     <MdDeleteForever />
                 </button>
             </td>
         </tr>
-    ), [fetchDisciplinasProfessor, fetchInfoProfessor, abrirModalEditar, deletarProfessor, loading, loadingDisciplinas, isConfirming, salvando]);
+    ), [loading, salvando, isConfirming, abrirModalVisualizar, abrirModalEditar, desativarProfessor, copiarCodigo, gerarSenhaProfessor]);
 
-    const renderConteudo = () => {
-        if (loading) {
-            return (
-                <div className="text-center py-5">
-                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
-                        <span className="visually-hidden">Carregando...</span>
-                    </div>
-                    <p className="text-muted mb-0">Carregando professores...</p>
-                </div>
-            );
-        }
-
-        if (semResultados) {
-            return (
-                <div className="text-center py-5">
-                    <MdSearch size={48} className="text-muted mb-3" />
-                    <p className="text-muted mb-2">Nenhum professor encontrado para "{termoPesquisa}"</p>
-                    <button 
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={limparPesquisa}
-                    >
-                        Limpar pesquisa
-                    </button>
-                </div>
-            );
-        }
-
-        if (isEmpty) {
-            return (
-                <div className="text-center py-5">
-                    <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                    <p className="text-muted mb-3">Nenhum professor encontrado</p>
-                    <button className="btn btn-outline-primary" onClick={() => fetchProfessores(true)}>
-                        <MdRefresh className="me-1" />
-                        Carregar professores
-                    </button>
-                </div>
-            );
-        }
-
-        return (
-            <div className="table-responsive">
-                <Table 
-                    headers={headers}
-                    data={listaFiltrada}
-                    renderRow={renderRow}
-                    className="table table-hover table-striped border"
-                />
-            </div>
-        );
-    };
+    const Abas = ({ abaAtiva, setAbaAtiva }) => (
+        <div className="d-flex border-bottom mb-4">
+            <button
+                type="button"
+                className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'dados' ? 'fw-bold border-bottom border-2' : 'text-muted'}`}
+                onClick={() => setAbaAtiva('dados')}
+                style={{ borderBottomColor: abaAtiva === 'dados' ? 'var(--dourado)' : 'transparent' }}
+            >
+                <MdPerson className="me-2" /> Dados Pessoais
+            </button>
+            <button
+                type="button"
+                className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'documentos' ? 'fw-bold border-bottom border-2' : 'text-muted'}`}
+                onClick={() => setAbaAtiva('documentos')}
+                style={{ borderBottomColor: abaAtiva === 'documentos' ? 'var(--dourado)' : 'transparent' }}
+            >
+                <MdAttachFile className="me-2" /> Documentos
+            </button>
+        </div>
+    );
 
     return (
         <div className="row mb-4">
             <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="h4 mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                        <MdPerson className="me-2 mb-2" />
-                        Professores
+                        <FaChalkboardTeacher className="me-2 mb-2"/>Professores
                     </h2>
                     <div className="d-flex gap-2">
-                        {ultimaAtualizacao && (
-                            <small className="text-muted align-self-end small">
-                                Atualizado: {ultimaAtualizacao}
-                            </small>
-                        )}
-                        <button
-                            className={`btn btn-sm ${Style.AtulizarDepartamento}`}
-                            onClick={() => fetchProfessores(true)}
-                            disabled={loading || isConfirming}
-                            title="Atualizar lista"
-                        >
+                        {ultimaAtualizacao && <small className="text-muted align-self-end">Atualizado: {ultimaAtualizacao}</small>}
+                        <button className={`btn btn-sm ${Style.AtulizarDepartamento}`} onClick={() => fetchProfessores(true)} disabled={loading || isConfirming}>
                             <MdRefresh />
                         </button>
-                        <button
-                            className={`btn btn-sm ${Style.btnSubmit}`}
-                            onClick={abrirModalAdicionar}
-                            disabled={loading || salvando || isConfirming}
-                            title="Adicionar novo professor"
-                        >
-                            <MdAdd className="me-1" />
-                            Novo Professor
-                        </button>
-                        <button
-                            className={`btn btn-sm ${Style.btnOutros}`}
-                            onClick={abrirModalAdicionarDisciplina}
-                            disabled={loading || salvando || isConfirming}
-                            title="Adicionar disciplina a professor"
-                        >
-                            <MdAddCircleOutline className="me-1" />
-                            Vincular Disciplina
+                        <button className={`btn btn-sm ${Style.btnSubmit}`} onClick={abrirModalAdicionar} disabled={loading || salvando || isConfirming}>
+                            <MdAdd className="me-1" />Novo Professor
                         </button>
                     </div>
                 </div>
@@ -834,1123 +690,251 @@ function ProfessorEdit() {
                     <div className="col-md-8 mx-auto">
                         <div className="card shadow-sm border-0">
                             <div className="card-body p-3">
-                                <div className="d-flex align-items-center gap-2">
-                                    <div className="position-relative flex-grow-1">
-                                        <div className="input-group">
-                                            <span className="input-group-text border-end-0" style={{ backgroundColor: 'var(--cinza-claro)' }}>
-                                                <MdSearch className="text-muted" size={20} />
-                                            </span>
-                                            <input
-                                                type="text"
-                                                className="form-control border-start-0 ps-0"
-                                                placeholder="Pesquisar professor por nome ou código..."
-                                                value={termoPesquisa}
-                                                onChange={handlePesquisa}
-                                                disabled={loading}
-                                                style={{
-                                                    borderLeft: 'none',
-                                                    boxShadow: 'none',
-                                                    backgroundColor: 'var(--cinza-claro)',
-                                                    padding: '10px'
-                                                }}
-                                            />
-                                            {termoPesquisa && (
-                                                <button
-                                                    className="btn border-start-0"
-                                                    type="button"
-                                                    onClick={limparPesquisa}
-                                                    disabled={loading}
-                                                    style={{
-                                                        borderLeft: 'none',
-                                                        backgroundColor: 'var(--danger)',
-                                                        color: 'var(--branco)'
-                                                    }}
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                                <div className="input-group">
+                                    <span className="input-group-text border-end-0" style={{ backgroundColor: 'var(--cinza-claro)' }}>
+                                        <MdSearch size={20} />
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        className="form-control border-start-0 ps-0" 
+                                        placeholder="Pesquisar professor por nome, BI, contacto, email ou código..." 
+                                        value={termoPesquisa} 
+                                        onChange={(e) => setTermoPesquisa(e.target.value)} 
+                                        style={{ borderLeft: 'none', boxShadow: 'none', backgroundColor: 'var(--cinza-claro)', padding: '10px' }}
+                                    />
+                                    {termoPesquisa && (
+                                        <button className="btn border-start-0" onClick={() => setTermoPesquisa('')} style={{ backgroundColor: 'var(--danger)', color: 'var(--branco)' }}>
+                                            ✕
+                                        </button>
+                                    )}
                                 </div>
-
-                                {!loading && termoPesquisa && listaFiltrada.length > 0 && (
-                                    <div className="mt-2 text-muted small">
-                                        <span className="badge bg-light text-dark p-2">
-                                            {listaFiltrada.length} {listaFiltrada.length === 1 ? 'professor encontrado' : 'professores encontrados'}
-                                        </span>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {renderConteudo()}
+                {loading ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status"></div>
+                        <p>Carregando...</p>
+                    </div>
+                ) : listaFiltrada.length === 0 ? (
+                    <div className="text-center py-5">
+                        <p>Nenhum professor encontrado</p>
+                    </div>
+                ) : (
+                    <div className="table-responsive">
+                        <Table headers={headers} data={listaFiltrada} renderRow={renderRow} className="table table-hover table-striped border" />
+                    </div>
+                )}
             </div>
+
+            {/* Modal Visualizar Professor */}
+            {modalVisualizarAberto && professorSelecionado && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered modal-lg">
+                        <div className="modal-content">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5><MdPerson className="me-2" />Informações do Professor</h5>
+                                <button className="btn-close btn-close-white" onClick={() => setModalVisualizarAberto(false)} />
+                            </div>
+                            <div className="modal-body">
+                                {carregandoDocumentos ? (
+                                    <div className="text-center py-5">
+                                        <div className="spinner-border text-primary"></div>
+                                        <p>Carregando...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="row mb-4">
+                                            <div className="col-md-3 text-center">
+                                                <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#ccc', margin: 'auto', overflow: 'hidden' }}>
+                                                    {professorSelecionado.fotoUrl ? (
+                                                        <img src={professorSelecionado.fotoUrl} alt={professorSelecionado.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                                            <MdPerson size={50} color="#666" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className={`badge mt-2 ${professorSelecionado.status === 'Ativo' ? 'bg-success' : 'bg-danger'}`}>
+                                                    {professorSelecionado.status || 'Ativo'}
+                                                </span>
+                                            </div>
+                                            <div className="col-md-9">
+                                                <h3>{professorSelecionado.nome}</h3>
+                                                <div className="row mt-3">
+                                                    <div className="col-md-6">
+                                                        <p><strong>Código:</strong> {professorSelecionado.codigo || 'N/I'}</p>
+                                                        <p><FaIdCard className="me-2" /> <strong>BI:</strong> {professorSelecionado.bi || 'N/I'}</p>
+                                                        <p><MdPhone className="me-2" /> <strong>Contacto:</strong> {professorSelecionado.contacto || 'N/I'}</p>
+                                                        {professorSelecionado.whatsapp && (
+                                                            <p><FaWhatsapp className="me-2" /> <strong>WhatsApp:</strong> {professorSelecionado.whatsapp}</p>
+                                                        )}
+                                                        <p><MdEmail className="me-2" /> <strong>Email:</strong> {professorSelecionado.email || 'N/I'}</p>
+                                                        <p><strong>Contacto Emergência:</strong> {professorSelecionado.contactoemergencia || 'N/I'}</p>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        <p><strong>Gênero:</strong> {professorSelecionado.genero || 'N/I'}</p>
+                                                        <p><strong>Estado Civil:</strong> {professorSelecionado.estadocivil || 'N/I'}</p>
+                                                        <p><strong>Nacionalidade:</strong> {professorSelecionado.nacionalidade || 'N/I'}</p>
+                                                        <p><strong>Nome do Pai:</strong> {professorSelecionado.nomepai || 'N/I'}</p>
+                                                        <p><strong>Nome da Mãe:</strong> {professorSelecionado.nomemae || 'N/I'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr />
+                                        
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <h6 className="mb-3">Informações Acadêmicas</h6>
+                                                <p><MdSchool className="me-2" /> <strong>Titulação:</strong> {professorSelecionado.titulacao || 'N/I'}</p>
+                                                <p><strong>Anos de Experiência:</strong> {professorSelecionado.anoexperienca || '0'} anos</p>
+                                                <p><FaFileContract className="me-2" /> <strong>Contrato:</strong> {professorSelecionado.contrato || 'N/I'}</p>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <h6 className="mb-3">Informações Pessoais</h6>
+                                                <p><MdBloodtype className="me-2" /> <strong>Tipo Sanguíneo:</strong> {professorSelecionado.tiposangue || 'N/I'}</p>
+                                                <p><MdCalendarToday className="me-2" /> <strong>Data Nascimento:</strong> {professorSelecionado.data_nascimento ? new Date(professorSelecionado.data_nascimento).toLocaleDateString() : 'N/I'}</p>
+                                                <p><MdCalendarToday className="me-2" /> <strong>Data Admissão:</strong> {professorSelecionado.data_admissao ? new Date(professorSelecionado.data_admissao).toLocaleDateString() : 'N/I'}</p>
+                                                <p><FaUniversity className="me-2" /> <strong>IBAN:</strong> {professorSelecionado.iban || 'N/I'}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr />
+                                        
+                                        <h5 className="mb-3">Documentos ({documentosProfessor.length})</h5>
+                                        {documentosProfessor.length === 0 ? (
+                                            <p className="text-muted">Nenhum documento anexado</p>
+                                        ) : (
+                                            <div className="row">
+                                                {documentosProfessor.map(doc => (
+                                                    <div key={doc.id_ficheiro} className="col-md-6 mb-3">
+                                                        <div className="card">
+                                                            <div className="card-body">
+                                                                <h6 className="card-title">{doc.titulo || 'Documento'}</h6>
+                                                                <p className="card-text small text-muted">
+                                                                    <MdAttachFile className="me-1" />
+                                                                    {doc.ficheiro || 'Arquivo'}<br/>
+                                                                    Data: {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleString() : 'N/I'}
+                                                                    <br/>
+                                                                    Status: <span className={`badge ${doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
+                                                                        {doc.status === 1 ? 'Ativo' : 'Inativo'}
+                                                                    </span>
+                                                                </p>
+                                                                {doc.doc_url && (
+                                                                    <a href={doc.doc_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                                                                        <MdVisibility className="me-1" /> Visualizar
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            <div className="modal-footer">
+                                <button className={`btn ${Style.btnCancelar}`} onClick={() => setModalVisualizarAberto(false)}>
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal Adicionar Professor */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
-                        <div className="modal-content shadow-lg border-0">
+                        <div className="modal-content">
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <IoMdPersonAdd className="me-2" />
-                                    Registrar Novo Professor
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalAdicionar}
-                                    disabled={salvando || isConfirming}
-                                />
+                                <h5><IoMdPersonAdd className="me-2" />Registrar Professor</h5>
+                                <button className="btn-close btn-close-white" onClick={fecharModalAdicionar} />
                             </div>
-                            <form onSubmit={adicionarProfessor} encType="multipart/form-data">
-                                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                                    <div className="container-fluid">
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <IoMdPersonAdd className="me-2" />
-                                            Dados Pessoais
-                                        </h6>
-
-                                        <div className="row">
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Foto do Professor</label>
-                                                <input
-                                                    type="file"
-                                                    className="form-control shadow-sm"
-                                                    name="fotoprofessor"
-                                                    accept="image/*"
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Nome Completo *</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nome Completo..."
-                                                    className="form-control shadow-sm"
-                                                    name="nomeprofessore"
-                                                    value={dadosNovoProfessor.nomeprofessore}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Gênero *</label>
-                                                <select
-                                                    className="form-control shadow-sm"
-                                                    name="genero"
-                                                    value={dadosNovoProfessor.genero}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                    required
-                                                >
-                                                    <option value="">Selecione o gênero</option>
-                                                    <option value="Masculino">Masculino</option>
-                                                    <option value="Feminino">Feminino</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Nacionalidade</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nacionalidade..."
-                                                    className="form-control shadow-sm"
-                                                    name="nacionalidadeprofessor"
-                                                    value={dadosNovoProfessor.nacionalidadeprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Estado Civil</label>
-                                                <select
-                                                    className="form-control shadow-sm"
-                                                    name="estadocivilprofessor"
-                                                    value={dadosNovoProfessor.estadocivilprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Selecione o estado civil</option>
-                                                    <option value="Solteiro(a)">Solteiro(a)</option>
-                                                    <option value="Casado(a)">Casado(a)</option>
-                                                    <option value="Divorciado(a)">Divorciado(a)</option>
-                                                    <option value="Viúvo(a)">Viúvo(a)</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Nome do Pai</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nome do Pai..."
-                                                    className="form-control shadow-sm"
-                                                    name="nomepaiprofessor"
-                                                    value={dadosNovoProfessor.nomepaiprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Nome da Mãe</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nome da Mãe..."
-                                                    className="form-control shadow-sm"
-                                                    name="nomemaeprofessor"
-                                                    value={dadosNovoProfessor.nomemaeprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Nº do B.I *</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nº B.I..."
-                                                    className="form-control shadow-sm"
-                                                    name="biprofessor"
-                                                    value={dadosNovoProfessor.biprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Data de Nascimento</label>
-                                                <input
-                                                    type="date"
-                                                    className="form-control shadow-sm"
-                                                    name="datanascimentoprofessor"
-                                                    value={dadosNovoProfessor.datanascimentoprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label small text-muted mb-1">B.I Frente e Verso/Curriculum Vitae (PDF)</label>
-                                                <input
-                                                    type="file"
-                                                    className="form-control shadow-sm"
-                                                    name="bipdfprofessor"
-                                                    accept=".pdf,application/pdf"
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
-                                            <RiContactsBook3Line className="me-2" />
-                                            Dados de Contato
-                                        </h6>
-
-                                        <div className="row">
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label small text-muted mb-1">Residência</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Residência..."
-                                                    className="form-control shadow-sm"
-                                                    name="residenciaprofessor"
-                                                    value={dadosNovoProfessor.residenciaprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label small text-muted mb-1">Telefone</label>
-                                                <input
-                                                    type="tel"
-                                                    placeholder="Telefone..."
-                                                    className="form-control shadow-sm"
-                                                    name="telefoneprofessor"
-                                                    value={dadosNovoProfessor.telefoneprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label small text-muted mb-1">WhatsApp</label>
-                                                <input
-                                                    type="tel"
-                                                    placeholder="WhatsApp..."
-                                                    className="form-control shadow-sm"
-                                                    name="whatsappprofessor"
-                                                    value={dadosNovoProfessor.whatsappprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Email *</label>
-                                                <input
-                                                    type="email"
-                                                    placeholder="Email..."
-                                                    className="form-control shadow-sm"
-                                                    name="emailprofessor"
-                                                    value={dadosNovoProfessor.emailprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Contacto de Emergência</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Contacto de Emergência..."
-                                                    className="form-control shadow-sm"
-                                                    name="contactoemergenciaprofessor"
-                                                    value={dadosNovoProfessor.contactoemergenciaprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
-                                            <FaBriefcase className="me-2" />
-                                            Dados Profissionais
-                                        </h6>
-
-                                        <div className="row">
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Anos de Experiência</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Anos de Experiência..."
-                                                    className="form-control shadow-sm"
-                                                    name="anoexprienciaprofessor"
-                                                    value={dadosNovoProfessor.anoexprienciaprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    min="1"
-                                                    max="50"
-                                                    step="1"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Titulação</label>
-                                                <select
-                                                    className="form-control shadow-sm"
-                                                    name="titulacaoprofessor"
-                                                    value={dadosNovoProfessor.titulacaoprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Selecione o Titulo</option>
-                                                    <option value="Licenciatura">Licenciatura</option>
-                                                    <option value="Mestrado">Mestrado</option>
-                                                    <option value="Doutoramento">Doutoramento</option>
-                                                    <option value="Pós-Doutoramento">Pós-Doutoramento</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Data de Admissão</label>
-                                                <input
-                                                    type="date"
-                                                    className="form-control shadow-sm"
-                                                    name="dataadmissaprofessor"
-                                                    value={dadosNovoProfessor.dataadmissaprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Tipo de Contrato</label>
-                                                <select
-                                                    className="form-control shadow-sm"
-                                                    name="tipocontratoprofessor"
-                                                    value={dadosNovoProfessor.tipocontratoprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Selecione o tipo de Contrato</option>
-                                                    <option value="Efetivo">Efetivo</option>
-                                                    <option value="Contratado">Contratado</option>
-                                                    <option value="Substituto">Substituto</option>
-                                                    <option value="Estagiário">Estagiário</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">IBAN</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="IBAN..."
-                                                    className="form-control shadow-sm"
-                                                    name="ibanprofessor"
-                                                    value={dadosNovoProfessor.ibanprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3 mt-4" style={{ color: 'var(--azul-escuro)' }}>
-                                            <MdOutlineLocalHospital className="me-2" />
-                                            Dados de Saúde
-                                        </h6>
-
-                                        <div className="row">
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Tipo Sanguíneo</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Tipo Sanguíneo..."
-                                                    className="form-control shadow-sm"
-                                                    name="tiposanguineoprofessor"
-                                                    value={dadosNovoProfessor.tiposanguineoprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label small text-muted mb-1">Condições de Saúde/Alergia</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Condições de Saúde/Alergia..."
-                                                    className="form-control shadow-sm"
-                                                    name="condicoesprofessor"
-                                                    value={dadosNovoProfessor.condicoesprofessor}
-                                                    onChange={handleNovoProfessorInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={fecharModalAdicionar}
-                                        disabled={salvando || isConfirming}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className={`btn ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !dadosNovoProfessor.nomeprofessore?.trim() || !dadosNovoProfessor.emailprofessor?.trim()}
-                                    >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Registrando...
-                                            </>
-                                        ) : (
-                                            'Registrar Professor'
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Adicionar Disciplina */}
-            {modalAdicionarDisciplinaAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-lg">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <MdAddCircleOutline className="me-2" />
-                                    Adicionar Disciplina ao Professor
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalAdicionarDisciplina}
-                                    disabled={salvando || isConfirming}
-                                />
-                            </div>
-                            <form onSubmit={adicionarDisciplinaProfessor}>
+                            <form onSubmit={adicionarProfessor}>
                                 <div className="modal-body">
-                                    <div className="row g-3">
-                                        <div className="col-12">
-                                            <SelectDisciplina
-                                                onChange={(e) => setIdDisciplina(e.target.value)}
-                                                value={iddisciplina}
-                                                name="iddisciplina"
-                                                disabled={salvando || isConfirming}
-                                            />
-                                        </div>
-                                        <div className="col-12">
-                                            <SelectProfessor
-                                                onChange={(e) => setIdProfessor(e.target.value)}
-                                                value={idprofessor}
-                                                name="idprofessor"
-                                                disabled={salvando || isConfirming}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={fecharModalAdicionarDisciplina}
-                                        disabled={salvando || isConfirming}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className={`btn ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !iddisciplina || !idprofessor}
-                                    >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Processando...
-                                            </>
-                                        ) : (
-                                            'Adicionar Disciplina'
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Disciplinas do Professor */}
-            {modalDisciplinasAberto && professorSelecionado && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-lg">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <FaBook className="me-2" />
-                                    Disciplinas do Professor {professorSelecionado.nomeprofessor}
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalDisciplinas}
-                                    disabled={loadingDisciplinas || isConfirming}
-                                />
-                            </div>
-                            <div className="modal-body">
-                                {loadingDisciplinas ? (
-                                    <div className="text-center py-4">
-                                        <div className="spinner-border text-primary mb-3" role="status">
-                                            <span className="visually-hidden">Carregando...</span>
-                                        </div>
-                                        <p className="text-muted">Carregando disciplinas...</p>
-                                    </div>
-                                ) : disciplinasProfessor.length > 0 ? (
-                                    <div className="row">
-                                        {disciplinasProfessor.map((disciplina) => (
-                                            <div key={disciplina.id_dp} className="col-md-6 mb-2">
-                                                <div className="p-3 border rounded d-flex justify-content-between align-items-center"
-                                                    style={{ backgroundColor: 'var(--cinza-claro)' }}>
-                                                    <div className="d-flex align-items-center">
-                                                        <MdBook className="me-2" style={{ color: 'var(--azul-escuro)' }} />
-                                                        <span className="fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
-                                                            {disciplina.disciplina}
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        className={`btn btn-sm ${Style.btnDeletar}`}
-                                                        onClick={() => removerDisciplina(
-                                                            disciplina.id_disciplina,
-                                                            disciplina.disciplina,
-                                                            professorSelecionado.idprofessor,
-                                                            professorSelecionado.nomeprofessor
-                                                        )}
-                                                        disabled={removendoDisciplina === disciplina.id_disciplina || isConfirming}
-                                                        title="Desvincular disciplina"
-                                                    >
-                                                        {removendoDisciplina === disciplina.id_disciplina ? (
-                                                            <span className="spinner-border spinner-border-sm"></span>
-                                                        ) : (
-                                                            <MdDeleteForever />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-4" style={{ color: 'var(--azul-escuro)' }}>
-                                        <MdBook size={48} className="text-muted mb-3" />
-                                        <p className="mb-0">Nenhuma disciplina atribuída a este professor.</p>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="modal-footer border-0">
-                                <button
-                                    type="button"
-                                    className={`btn ${Style.btnCancelar}`}
-                                    onClick={fecharModalDisciplinas}
-                                >
-                                    Fechar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Informações do Professor */}
-            {modalInfoAberto && professorSelecionadoInfo && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-xl">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <FaInfoCircle className="me-2" />
-                                    Informações do Professor - {professorSelecionadoInfo.nome}
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalInfo}
-                                />
-                            </div>
-                            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                                <div className="container-fluid">
-                                    <div className="row mb-4">
-                                        <div className="col-md-2 text-center">
-                                            <img
-                                                src={professorSelecionadoInfo.fotoUrl || '/default-avatar.png'}
-                                                className="rounded-circle border"
-                                                style={{ width: '120px', height: '120px', objectFit: 'cover' }}
-                                                alt={professorSelecionadoInfo.nome}
-                                            />
-                                            <h6 className="mt-2 mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                                Código: {professorSelecionadoInfo.codigo || 'N/I'}
-                                            </h6>
-                                        </div>
-                                        <div className="col-md-10">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <h6 className="card-title" style={{ color: 'var(--azul-escuro)' }}>
-                                                        <MdPerson className="me-2" />
-                                                        Dados Pessoais
-                                                    </h6>
-                                                    <div className="row">
-                                                        <div className="col-md-6">
-                                                            <p className="mb-1"><strong>Nome Completo:</strong> {professorSelecionadoInfo.nome || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Gênero:</strong> {professorSelecionadoInfo.genero || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Nacionalidade:</strong> {professorSelecionadoInfo.nacionalidade || 'Não informado'}</p>
-                                                        </div>
-                                                        <div className="col-md-6">
-                                                            <p className="mb-1"><strong>Estado Civil:</strong> {professorSelecionadoInfo.estadocivil || 'Não informado'}</p>
-                                                            <p className="mb-1"><strong>Data Nascimento:</strong> {professorSelecionadoInfo.data_nascimento ? new Date(professorSelecionadoInfo.data_nascimento).toLocaleDateString('pt-BR') : 'Não informada'}</p>
-                                                            <p className="mb-1"><strong>Nº do BI:</strong> {professorSelecionadoInfo.bi || 'Não informado'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr className="my-4" />
-
-                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                        <RiContactsBook3Line className="me-2" />
-                                        Contato e Residência
-                                    </h6>
-                                    <div className="row mb-4">
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0 h-100">
-                                                <div className="card-body">
-                                                    <p className="mb-1"><MdLocationOn className="me-1" /> <strong>Residência:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.residencia || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0 h-100">
-                                                <div className="card-body">
-                                                    <p className="mb-1"><MdPhone className="me-1" /> <strong>Telefone:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.contacto || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0 h-100">
-                                                <div className="card-body">
-                                                    <p className="mb-1"><MdEmail className="me-1" /> <strong>Email:</strong></p>
-                                                    <p className="mb-0">{professorSelecionadoInfo.email || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr className="my-4" />
-
-                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                        <FaBriefcase className="me-2" />
-                                        Dados Profissionais
-                                    </h6>
-                                    <div className="row mb-4">
-                                        <div className="col-md-3">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Anos de Experiência:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.anoexperiencia || '0'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Titularidade:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.titulacao || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Data Admissão:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.data_admissao ? new Date(professorSelecionadoInfo.data_admissao).toLocaleDateString('pt-BR') : 'Não informada'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-3">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Tipo Contrato:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tipo_contrato || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr className="my-4" />
-
-                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                        <FaUniversity className="me-2" />/<FaHeartbeat className="me-2" />
-                                        Dados Bancários e Saúde
-                                    </h6>
-                                    <div className="row mb-4">
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>IBAN:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.iban || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Tipo Sanguíneo:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.tipo_sangue || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    <strong>Contacto Emergência:</strong>
-                                                    <p className="mb-0 mt-1">{professorSelecionadoInfo.contacto_emergencia || 'Não informado'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                        <MdAttachFile className="me-2" />
-                                        Documentos
-                                    </h6>
-                                    <div className="row mb-4">
-                                        <div className="col-md-12">
-                                            <div className="card bg-light border-0">
-                                                <div className="card-body">
-                                                    {professorSelecionadoInfo.bi_pdf ? (
-                                                        <a
-                                                            href={`/api/img/professores/${professorSelecionadoInfo.bi_pdf}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="btn btn-primary"
-                                                        >
-                                                            <MdAttachFile className="me-2" />
-                                                            Visualizar Documento (BI/CV)
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-muted">Nenhum documento anexado</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-footer border-0">
-                                <button
-                                    type="button"
-                                    className={`btn ${Style.btnCancelar}`}
-                                    onClick={fecharModalInfo}
-                                >
-                                    Fechar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Editar Professor */}
-            {modalEditarAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-xl">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <MdEdit className="me-2" />
-                                    Editar Professor - {dadosEdicao.nomeprofessor}
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalEditar}
-                                    disabled={salvando || isConfirming}
-                                />
-                            </div>
-                            <form onSubmit={salvarEdicao} encType="multipart/form-data">
-                                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                                    <div className="container-fluid">
-                                        <div className="row mb-4">
-                                            <div className="col-md-12 text-center">
-                                                <div className="position-relative d-inline-block">
-                                                    <img
-                                                        src={dadosEdicao.fotoUrl || '/default-avatar.png'}
-                                                        className="rounded-circle border"
-                                                        style={{ width: '120px', height: '120px', objectFit: 'cover' }}
-                                                        alt={dadosEdicao.nomeprofessor}
-                                                    />
-                                                    <label
-                                                        htmlFor="fotoProfessor"
-                                                        className="position-absolute bottom-0 end-0 bg-white rounded-circle p-2 shadow-sm"
-                                                        style={{ cursor: 'pointer', transform: 'translate(-10%, -10%)' }}
-                                                    >
-                                                        <MdCameraAlt style={{ color: 'var(--azul-escuro)' }} />
-                                                    </label>
-                                                    <input
-                                                        type="file"
-                                                        className="d-none"
-                                                        id="fotoProfessor"
-                                                        accept="image/*"
-                                                        onChange={handleFotoChange}
-                                                        disabled={salvando || isConfirming}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="row mb-3">
-                                            <div className="col-md-12">
-                                                <div className="form-check">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="form-check-input"
-                                                        id="redefinirSenha"
-                                                        checked={dadosEdicao.redefinirSenha}
-                                                        onChange={(e) => setDadosEdicao(prev => ({ ...prev, redefinirSenha: e.target.checked }))}
-                                                        disabled={salvando || isConfirming}
-                                                    />
-                                                    <label className="form-check-label" htmlFor="redefinirSenha">
-                                                        Redefinir senha e enviar nova por email
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <MdPerson className="me-2" />
-                                            Identificação Básica
-                                        </h6>
+                                    <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+                                    
+                                    {abaAtiva === 'dados' && (
                                         <div className="row">
-                                            <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="codigoprofessor"
-                                                    value={dadosEdicao.codigoprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Código do Professor"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome completo *</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.nome} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nome: e.target.value })} required />
                                             </div>
-                                            <div className="col-md-8 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="nomeprofessor"
-                                                    value={dadosEdicao.nomeprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nome Completo *"
-                                                    disabled={salvando || isConfirming}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <FaIdCard className="me-2" />
-                                            Dados Pessoais
-                                        </h6>
-                                        <div className="row">
                                             <div className="col-md-3 mb-3">
-                                                <select
-                                                    className="form-select shadow-sm"
-                                                    name="generoprofessor"
-                                                    value={dadosEdicao.generoprofessor}
-                                                    onChange={handleInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Gênero</option>
+                                                <label className="form-label">Gênero *</label>
+                                                <select className="form-control" value={dadosNovoProfessor.genero} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, genero: e.target.value })} required>
+                                                    <option value="">Selecione</option>
                                                     <option value="Masculino">Masculino</option>
                                                     <option value="Feminino">Feminino</option>
                                                     <option value="Outro">Outro</option>
                                                 </select>
                                             </div>
                                             <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="nacionalidadeprofessor"
-                                                    value={dadosEdicao.nacionalidadeprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nacionalidade"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <select
-                                                    className="form-select shadow-sm"
-                                                    name="estadocivilprofessor"
-                                                    value={dadosEdicao.estadocivilprofessor}
-                                                    onChange={handleInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Estado Civil</option>
-                                                    <option value="Solteiro(a)">Solteiro(a)</option>
-                                                    <option value="Casado(a)">Casado(a)</option>
-                                                    <option value="Divorciado(a)">Divorciado(a)</option>
-                                                    <option value="Viúvo(a)">Viúvo(a)</option>
+                                                <label className="form-label">Estado Civil</label>
+                                                <select className="form-control" value={dadosNovoProfessor.estadocivil} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, estadocivil: e.target.value })}>
+                                                    <option value="">Selecione</option>
+                                                    <option value="Solteiro">Solteiro</option>
+                                                    <option value="Casado">Casado</option>
+                                                    <option value="Divorciado">Divorciado</option>
+                                                    <option value="Viúvo">Viúvo</option>
+                                                    <option value="União Estável">União Estável</option>
                                                 </select>
                                             </div>
-                                            <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="date"
-                                                    className="form-control shadow-sm"
-                                                    name="datanascimentoprofessor"
-                                                    value={dadosEdicao.datanascimentoprofessor}
-                                                    onChange={handleDataNascimentoChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="nomepaiprofessor"
-                                                    value={dadosEdicao.nomepaiprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nome do Pai"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="nomemaeprofessor"
-                                                    value={dadosEdicao.nomemaeprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nome da Mãe"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="nbiprofessor"
-                                                    value={dadosEdicao.nbiprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Nº do BI"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <RiContactsBook3Line className="me-2" />
-                                            Contato e Residência
-                                        </h6>
-                                        <div className="row">
                                             <div className="col-md-6 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="residenciaprofessor"
-                                                    value={dadosEdicao.residenciaprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Residência"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                                <label className="form-label">Nacionalidade</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.nacionalidade} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nacionalidade: e.target.value })} />
                                             </div>
-                                            <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="tel"
-                                                    className="form-control shadow-sm"
-                                                    name="telefoneprofessor"
-                                                    value={dadosEdicao.telefoneprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Telefone"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome do Pai</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.nomepai} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nomepai: e.target.value })} />
                                             </div>
-                                            <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="tel"
-                                                    className="form-control shadow-sm"
-                                                    name="whatsappprofessor"
-                                                    value={dadosEdicao.whatsappprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="WhatsApp"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome da Mãe</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.nomemae} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nomemae: e.target.value })} />
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">BI *</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.bi} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, bi: e.target.value })} required />
                                             </div>
                                             <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="email"
-                                                    className="form-control shadow-sm"
-                                                    name="emailprofessor"
-                                                    value={dadosEdicao.emailprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Email"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                                <label className="form-label">Contacto *</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.contacto} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, contacto: e.target.value })} required />
                                             </div>
                                             <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="contactoemergenciaprofessor"
-                                                    value={dadosEdicao.contactoemergenciaprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Contacto de Emergência"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <FaBriefcase className="me-2" />
-                                            Dados Profissionais
-                                        </h6>
-                                        <div className="row">
-                                            <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="number"
-                                                    className="form-control shadow-sm"
-                                                    name="anoexperienciaprofessor"
-                                                    value={dadosEdicao.anoexperienciaprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Anos de Experiência"
-                                                    min="0"
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <select
-                                                    className="form-select shadow-sm"
-                                                    name="titulacaoprofessor"
-                                                    value={dadosEdicao.titulacaoprofessor}
-                                                    onChange={handleInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Titularidade</option>
-                                                    <option value="Licenciatura">Licenciatura</option>
-                                                    <option value="Mestrado">Mestrado</option>
-                                                    <option value="Doutoramento">Doutoramento</option>
-                                                    <option value="Pós-Doutoramento">Pós-Doutoramento</option>
-                                                </select>
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <input
-                                                    type="date"
-                                                    className="form-control shadow-sm"
-                                                    name="dataadmissaoprofessor"
-                                                    value={dadosEdicao.dataadmissaoprofessor}
-                                                    onChange={handleDataAdmissaoChange}
-                                                    disabled={salvando || isConfirming}
-                                                />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <select
-                                                    className="form-select shadow-sm"
-                                                    name="tipocontratoprofessor"
-                                                    value={dadosEdicao.tipocontratoprofessor}
-                                                    onChange={handleInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Tipo Contrato</option>
-                                                    <option value="Efetivo">Efetivo</option>
-                                                    <option value="Contratado">Contratado</option>
-                                                    <option value="Substituto">Substituto</option>
-                                                    <option value="Estagiário">Estagiário</option>
-                                                </select>
+                                                <label className="form-label">WhatsApp</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.whatsapp} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, whatsapp: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="ibanprofessor"
-                                                    value={dadosEdicao.ibanprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="IBAN"
-                                                    disabled={salvando || isConfirming}
-                                                />
+                                                <label className="form-label">Contacto Emergência</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.contactoemergencia} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, contactoemergencia: e.target.value })} />
                                             </div>
-                                        </div>
-
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <MdOutlineLocalHospital className="me-2" />
-                                            Dados de Saúde
-                                        </h6>
-                                        <div className="row">
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Email *</label>
+                                                <input type="email" className="form-control" value={dadosNovoProfessor.email} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, email: e.target.value })} required />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Anos Experiência</label>
+                                                <input type="number" className="form-control" value={dadosNovoProfessor.anoexperienca} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, anoexperienca: e.target.value })} />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Titulação</label>
+                                                <input type="text" className="form-control" value={dadosNovoProfessor.titulacao} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, titulacao: e.target.value })} />
+                                            </div>
                                             <div className="col-md-4 mb-3">
-                                                <select
-                                                    className="form-select shadow-sm"
-                                                    name="tiposanguineoprofessor"
-                                                    value={dadosEdicao.tiposanguineoprofessor}
-                                                    onChange={handleInputChange}
-                                                    disabled={salvando || isConfirming}
-                                                >
-                                                    <option value="">Tipo Sanguíneo</option>
+                                                <label className="form-label">IBAN</label>
+                                                <input type="text" placeholder="AO06000600000052757230254" className="form-control" value={dadosNovoProfessor.iban} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, iban: e.target.value })} />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Tipo Sanguíneo</label>
+                                                <select className="form-control" value={dadosNovoProfessor.tiposangue} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, tiposangue: e.target.value })}>
+                                                    <option value="">Selecione</option>
                                                     <option value="A+">A+</option>
                                                     <option value="A-">A-</option>
                                                     <option value="B+">B+</option>
@@ -1962,79 +946,566 @@ function ProfessorEdit() {
                                                 </select>
                                             </div>
                                             <div className="col-md-4 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control shadow-sm"
-                                                    name="condicoesprofessor"
-                                                    value={dadosEdicao.condicoesprofessor}
-                                                    onChange={handleInputChange}
-                                                    placeholder="Condições Especiais"
-                                                    disabled={salvando || isConfirming}
+                                                <label className="form-label">Data Nascimento *</label>
+                                                <input type="date" className="form-control" value={dadosNovoProfessor.data_nascimento} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, data_nascimento: e.target.value })} required />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Data Admissão *</label>
+                                                <input type="date" className="form-control" value={dadosNovoProfessor.data_admissao} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, data_admissao: e.target.value })} required />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Tipo de Contrato *</label>
+                                                <select className="form-control" value={dadosNovoProfessor.id_contrato} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, id_contrato: e.target.value })} required>
+                                                    <option value="">Selecione</option>
+                                                    {contratos.map(contrato => (
+                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>
+                                                            {contrato.contrato}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label">Foto do Professor</label>
+                                                <input type="file" accept="image/*" className="form-control" onChange={handleFotoChange} />
+                                                <small className="text-muted d-block">Formatos: JPG, PNG. Máximo 5MB</small>
+                                            </div>
+                                            {fotoPreview && (
+                                                <div className="col-md-12 mb-3 text-center">
+                                                    <img src={fotoPreview} alt="Preview" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {abaAtiva === 'documentos' && (
+                                        <div>
+                                            <div className="mb-3">
+                                                <label className="form-label">Documentos (PDF/Imagem)</label>
+                                                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="form-control" onChange={handleDocumentosChange} />
+                                                <small className="text-muted">Formatos: PDF, JPG, PNG. Máximo 10MB por arquivo</small>
+                                            </div>
+                                            {documentosPreview.map((doc, i) => (
+                                                <div key={i} className="d-flex gap-2 mb-2">
+                                                    <input type="text" placeholder="Título do documento" className="form-control" value={titulosDocumentos[i] || ''} onChange={(e) => handleTituloDocumentoChange(i, e.target.value)} required />
+                                                    <button type="button" className="btn btn-danger" onClick={() => removerDocumento(i)}>Remover</button>
+                                                </div>
+                                            ))}
+                                            {documentosPreview.length === 0 && (
+                                                <div className="text-center py-4 text-muted">
+                                                    <MdAttachFile size={32} />
+                                                    <p className="mt-2">Nenhum documento selecionado</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className={`btn ${Style.btnCancelar}`} onClick={fecharModalAdicionar}>Cancelar</button>
+                                    <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando}>
+                                        {salvando ? "Registrando..." : "Registrar"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ========== MODAL EDIÇÃO COMPLETO ========== */}
+            {modalEditarAberto && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered modal-xl">
+                        <div className="modal-content">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5><MdEdit className="me-2" />Editar Professor</h5>
+                                <button 
+                                    className="btn-close btn-close-white" 
+                                    onClick={() => {
+                                        console.log("Fechando modal de edição");
+                                        setModalEditarAberto(false);
+                                    }} 
+                                    disabled={salvando}
+                                />
+                            </div>
+                            <form onSubmit={salvarEdicao}>
+                                <div className="modal-body">
+                                    <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+                                    
+                                    {abaAtiva === 'dados' && (
+                                        <div className="row">
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome *</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.nome} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nome: e.target.value })} 
+                                                    required 
                                                 />
                                             </div>
-                                        </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Gênero</label>
+                                                <select 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.genero} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, genero: e.target.value })}
+                                                >
+                                                    <option value="">Selecione</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                    <option value="Feminino">Feminino</option>
+                                                    <option value="Outro">Outro</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Estado Civil</label>
+                                                <select 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.estadocivil} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, estadocivil: e.target.value })}
+                                                >
+                                                    <option value="">Selecione</option>
+                                                    <option value="Solteiro">Solteiro</option>
+                                                    <option value="Casado">Casado</option>
+                                                    <option value="Divorciado">Divorciado</option>
+                                                    <option value="Viúvo">Viúvo</option>
+                                                    <option value="União Estável">União Estável</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nacionalidade</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.nacionalidade} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nacionalidade: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome do Pai</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.nomepai} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomepai: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Nome da Mãe</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.nomemae} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomemae: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">BI</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.bi} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, bi: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Contacto</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.contacto} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, contacto: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">WhatsApp</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.whatsapp} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, whatsapp: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Contacto Emergência</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.contactoemergencia} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, contactoemergencia: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label">Email</label>
+                                                <input 
+                                                    type="email" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.email} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, email: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Anos Experiência</label>
+                                                <input 
+                                                    type="number" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.anoexperienca} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, anoexperienca: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-3 mb-3">
+                                                <label className="form-label">Titulação</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.titulacao} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, titulacao: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">IBAN</label>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.iban} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, iban: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Tipo Sanguíneo</label>
+                                                <select 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.tiposangue} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, tiposangue: e.target.value })}
+                                                >
+                                                    <option value="">Selecione</option>
+                                                    <option value="A+">A+</option>
+                                                    <option value="A-">A-</option>
+                                                    <option value="B+">B+</option>
+                                                    <option value="B-">B-</option>
+                                                    <option value="AB+">AB+</option>
+                                                    <option value="AB-">AB-</option>
+                                                    <option value="O+">O+</option>
+                                                    <option value="O-">O-</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Data Nascimento</label>
+                                                <input 
+                                                    type="date" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.data_nascimento} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_nascimento: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Data Admissão</label>
+                                                <input 
+                                                    type="date" 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.data_admissao} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_admissao: e.target.value })} 
+                                                />
+                                            </div>
+                                            <div className="col-md-4 mb-3">
+                                                <label className="form-label">Tipo de Contrato</label>
+                                                <select 
+                                                    className="form-control" 
+                                                    value={dadosEdicao.id_contrato} 
+                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, id_contrato: e.target.value })}
+                                                >
+                                                    <option value="">Selecione</option>
+                                                    {contratos.map(contrato => (
+                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>
+                                                            {contrato.contrato}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
-                                            <MdAttachFile className="me-2" />
-                                            Documentos
-                                        </h6>
-                                        <div className="row">
+                                            {/* Seção para Gerar Senha no Modal de Edição */}
                                             <div className="col-md-12 mb-3">
-                                                <div className="card bg-light border-0">
+                                                <div className="card bg-light">
                                                     <div className="card-body">
-                                                        {dadosEdicao.curriculoUrl && (
-                                                            <a
-                                                                href={dadosEdicao.curriculoUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="btn btn-outline-primary mb-3"
-                                                            >
-                                                                <MdAttachFile className="me-2" />
-                                                                Visualizar Documento Atual
-                                                            </a>
-                                                        )}
-                                                        <input
-                                                            type="file"
-                                                            className="form-control"
-                                                            name="bipdfprofessor"
-                                                            accept=".pdf,.doc,.docx"
-                                                            onChange={handleNovoProfessorInputChange}
-                                                            disabled={salvando || isConfirming}
-                                                        />
+                                                        <h6 className="mb-3">
+                                                            <MdLock className="me-2" />
+                                                            Gerenciar Senha
+                                                        </h6>
+                                                        <button 
+                                                            type="button" 
+                                                            className="btn btn-warning w-100"
+                                                            onClick={() => {
+                                                                if (dadosEdicao.id_professor) {
+                                                                    gerarSenhaProfessor(
+                                                                        dadosEdicao.id_professor, 
+                                                                        dadosEdicao.nome
+                                                                    );
+                                                                }
+                                                            }}
+                                                            disabled={salvando}
+                                                        >
+                                                            <MdLock className="me-2" />
+                                                            Gerar Nova Senha
+                                                        </button>
                                                         <small className="text-muted d-block mt-2">
-                                                            Formatos aceitos: PDF, DOC, DOCX
+                                                            Uma nova senha aleatória será gerada e enviada 
+                                                            para o email do professor
                                                         </small>
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div className="col-md-12 mb-3">
+                                                <label className="form-label">Foto</label>
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    className="form-control" 
+                                                    onChange={(e) => { 
+                                                        const file = e.target.files[0]; 
+                                                        if (file) { 
+                                                            if (file.size <= 5 * 1024 * 1024) {
+                                                                setFotoArquivo(file); 
+                                                                const reader = new FileReader(); 
+                                                                reader.onloadend = () => setFotoPreview(reader.result); 
+                                                                reader.readAsDataURL(file);
+                                                            } else {
+                                                                showErrorToast("Erro", "A foto não pode exceder 5MB");
+                                                            }
+                                                        } 
+                                                    }} 
+                                                />
+                                            </div>
+                                            {fotoPreview && (
+                                                <div className="col-md-12 mb-3 text-center">
+                                                    <img src={fotoPreview} alt="Preview" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
+                                    )}
+                                    
+                                    {abaAtiva === 'documentos' && (
+                                        <div>
+                                            <div className="mb-4">
+                                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                                    <h6 className="mb-0">Documentos Atuais</h6>
+                                                    <span className="badge bg-primary">{documentosExistentes.length}</span>
+                                                </div>
+                                                
+                                                {carregandoDocumentos ? (
+                                                    <div className="text-center py-4">
+                                                        <div className="spinner-border text-primary" role="status" />
+                                                        <p className="mt-2 text-muted">Carregando documentos...</p>
+                                                    </div>
+                                                ) : documentosExistentes.length === 0 ? (
+                                                    <div className="text-center py-4 bg-light rounded">
+                                                        <MdAttachFile size={40} className="text-muted mb-2" />
+                                                        <p className="text-muted mb-0">Nenhum documento anexado</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="list-group">
+                                                        {documentosExistentes.map((doc) => (
+                                                            <div key={doc.id_ficheiro} className="list-group-item d-flex justify-content-between align-items-center">
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className="me-3">
+                                                                        <MdAttachFile size={24} className="text-primary" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <strong>{doc.ficheiro || 'Documento'}</strong>
+                                                                        <br/>
+                                                                        <small className="text-muted">
+                                                                            📅 {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                                                                            {doc.status !== undefined && (
+                                                                                <span className={`ms-2 badge ${doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
+                                                                                    {doc.status === 1 ? 'Ativo' : 'Inativo'}
+                                                                                </span>
+                                                                            )}
+                                                                        </small>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    {doc.doc_url && (
+                                                                        <a 
+                                                                            href={doc.doc_url} 
+                                                                            target="_blank" 
+                                                                            rel="noopener noreferrer" 
+                                                                            className="btn btn-sm btn-outline-primary me-2"
+                                                                            title="Visualizar documento"
+                                                                        >
+                                                                            <MdVisibility />
+                                                                        </a>
+                                                                    )}
+                                                                    <button 
+                                                                        type="button" 
+                                                                        className="btn btn-sm btn-outline-danger"
+                                                                        onClick={() => {
+                                                                            if (doc.id_ficheiro) {
+                                                                                marcarDocumentoParaRemover(doc.id_ficheiro);
+                                                                            } else {
+                                                                                showErrorToast("Erro", "Não foi possível identificar o documento");
+                                                                            }
+                                                                        }}
+                                                                        title="Remover documento"
+                                                                    >
+                                                                        <MdDeleteForever />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            <hr />
+                                            
+                                            <div>
+                                                <h6 className="mb-3">Adicionar Novos Documentos</h6>
+                                                <div className="border rounded p-3 bg-light">
+                                                    <div className="mb-3">
+                                                        <input 
+                                                            type="file" 
+                                                            multiple 
+                                                            accept=".pdf,.jpg,.jpeg,.png" 
+                                                            className="form-control" 
+                                                            onChange={handleNovosDocumentosChange} 
+                                                            id="novosDocumentos"
+                                                        />
+                                                        <label htmlFor="novosDocumentos" className="form-label mt-2">
+                                                            <small className="text-muted">
+                                                                <MdFileUpload className="me-1" />
+                                                                Formatos: PDF, JPG, JPEG, PNG | Máximo 10MB por arquivo
+                                                            </small>
+                                                        </label>
+                                                    </div>
+                                                    
+                                                    {novosDocumentosPreview.length > 0 && (
+                                                        <div className="mt-3">
+                                                            <h6 className="mb-2">Novos Documentos Selecionados ({novosDocumentosPreview.length})</h6>
+                                                            {novosDocumentosPreview.map((doc, i) => (
+                                                                <div key={i} className="d-flex gap-2 mb-2">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Título do documento *" 
+                                                                        className="form-control" 
+                                                                        value={novosDocumentosTitulos[i] || ''} 
+                                                                        onChange={(e) => { 
+                                                                            const novos = [...novosDocumentosTitulos]; 
+                                                                            novos[i] = e.target.value; 
+                                                                            setNovosDocumentosTitulos(novos); 
+                                                                        }} 
+                                                                        required 
+                                                                    />
+                                                                    <button 
+                                                                        type="button" 
+                                                                        className="btn btn-danger"
+                                                                        onClick={() => removerNovoDocumento(i)}
+                                                                        title="Remover este documento"
+                                                                    >
+                                                                        <MdClear />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={fecharModalEditar}
-                                        disabled={salvando || isConfirming}
+                                <div className="modal-footer">
+                                    <button 
+                                        type="button" 
+                                        className={`btn ${Style.btnCancelar}`} 
+                                        onClick={() => {
+                                            console.log("Cancelando edição");
+                                            setModalEditarAberto(false);
+                                        }}
+                                        disabled={salvando}
                                     >
                                         Cancelar
                                     </button>
-                                    <button
-                                        type="submit"
-                                        className={`btn ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !dadosEdicao.nomeprofessor?.trim()}
+                                    <button 
+                                        type="submit" 
+                                        className={`btn ${Style.btnSubmit}`} 
+                                        disabled={salvando}
                                     >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Salvando...
-                                            </>
-                                        ) : (
-                                            'Salvar Alterações'
-                                        )}
+                                        {salvando ? "Salvando..." : "Salvar"}
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ========== MODAL SENHA GERADA ========== */}
+            {modalSenhaGeradaAberto && professorSenhaGerada && (
+                <div className="modal fade show d-block" tabIndex="-1" 
+                    style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header" 
+                                style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5>
+                                    <MdLock className="me-2" />
+                                    Senha Gerada com Sucesso
+                                </h5>
+                                <button 
+                                    className="btn-close btn-close-white" 
+                                    onClick={() => setModalSenhaGeradaAberto(false)}
+                                />
+                            </div>
+                            <div className="modal-body text-center py-4">
+                                <div className="mb-3">
+                                    <div className="display-1 text-success mb-3">✓</div>
+                                    <h5>Nova senha gerada para:</h5>
+                                    <h4 className="text-primary">{professorSenhaGerada.nome}</h4>
+                                </div>
+                                
+                                <div className="alert alert-info">
+                                    <p className="mb-1">
+                                        <strong>Senha:</strong>
+                                    </p>
+                                    <div className="bg-white p-3 rounded border">
+                                        <code style={{ 
+                                            fontSize: '24px', 
+                                            fontWeight: 'bold',
+                                            letterSpacing: '2px'
+                                        }}>
+                                            {senhaGerada}
+                                        </code>
+                                    </div>
+                                </div>
+                                
+                                <p className="text-muted mt-3">
+                                    <MdEmail className="me-2" />
+                                    A senha foi enviada para o email do professor
+                                </p>
+                                
+                                <div className="alert alert-warning small">
+                                    <strong>Atenção:</strong> Guarde esta senha em segurança. 
+                                    O professor poderá alterá-la após o primeiro login.
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button 
+                                    type="button" 
+                                    className={`btn ${Style.btnSubmit}`}
+                                    onClick={() => {
+                                        setModalSenhaGeradaAberto(false);
+                                        navigator.clipboard?.writeText(senhaGerada);
+                                        showSuccessToast("Copiado!", "Senha copiada para a área de transferência");
+                                    }}
+                                >
+                                    Copiar Senha
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className={`btn ${Style.btnCancelar}`}
+                                    onClick={() => setModalSenhaGeradaAberto(false)}
+                                >
+                                    Fechar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

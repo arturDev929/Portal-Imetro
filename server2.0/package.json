@@ -15,7 +15,8 @@
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
-    "test": "npm test"
+    "test": "npm test",
+    "start": "nodemon app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

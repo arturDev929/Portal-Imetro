@@ -266,6 +266,28 @@ router.get("/funcionario/documentos/:id", verificarToken, async (req, res) => {
     }
 });
 
+router.get("/professorDocumentos/:id", verificarToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const sql = `SELECT id_ficheiro, ficheiro, status, data_actualizacao,nome  FROM ficheiro_prof WHERE id_professor = ? ORDER BY data_actualizacao DESC`;
+        const documentos = await new Promise((resolve, reject) => {
+            conexao.query(sql, [id], (erro, resultados) => {
+                if (erro) reject(erro);
+                else resolve(resultados);
+            });
+        });
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const documentosComUrl = documentos.map(doc => ({
+            ...doc,
+            doc_url: doc.doc ? `${baseUrl}/api/img/professores/documentos/${doc.nome}` : null
+        }));
+        res.status(200).json({ success: true, documentos: documentosComUrl });
+    } catch (error) {
+        console.error("Erro ao buscar documentos:", error);
+        res.status(500).json({ success: false, error: "Erro interno do servidor" });
+    }
+});
+
 router.get('/estatisticasProfessores', (req, res) => {
     const sql = `
         SELECT 
@@ -356,7 +378,7 @@ router.get('/distribuicaoTitulacaoDesativados', (req, res) => {
 });
 
 router.get('/Professores', (req, res) => {
-    const sql = "SELECT * FROM professor WHERE status = 'Ativo' ORDER BY nome ASC";
+    const sql = "SELECT * FROM professor p INNER JOIN contrato c ON p.id_contrato = c.id_contrato WHERE p.status = 'Ativo' ORDER BY p.nome ASC";
     conexao.query(sql, (error, result) => {
         if (error) {
             console.error("Erro ao buscar professores:", error);
@@ -372,6 +394,63 @@ router.get('/Professores', (req, res) => {
             }))
             res.status(200).json(professoresComFoto);
         }
+    });
+});
+
+router.get('/professorInfo/:id_professor', (req, res) => {
+    const { id_professor } = req.params;
+    
+    // Primeiro, busca os dados do professor e contrato
+    const sqlProfessor = `
+        SELECT p.*, c.contrato 
+        FROM professor p 
+        INNER JOIN contrato c ON p.id_contrato = c.id_contrato 
+        WHERE p.id_professor = ?
+    `;
+    
+    conexao.query(sqlProfessor, [id_professor], (error, professorResult) => {
+        if (error) {
+            console.error("Erro ao buscar informações do professor:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+        
+        if (professorResult.length === 0) {
+            return res.status(404).json({
+                error: "Professor não encontrado"
+            });
+        }
+        
+        const professor = professorResult[0];
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        
+        // Depois, busca os documentos do professor
+        const sqlDocumentos = "SELECT id_ficheiro, ficheiro, nome, data_actualizacao FROM ficheiro_prof WHERE id_professor = ? ORDER BY nome DESC";
+        
+        conexao.query(sqlDocumentos, [id_professor], (errorDocs, documentosResult) => {
+            if (errorDocs) {
+                console.error("Erro ao buscar documentos:", errorDocs);
+                // Continua mesmo sem documentos
+            }
+            
+            const documentos = (documentosResult || []).map(doc => ({
+                id_ficheiro: doc.id_ficheiro,
+                titulo: doc.ficheiro,
+                nome_arquivo: doc.nome,
+                data_upload: doc.data_actualizacao,
+                url: `${baseUrl}/api/img/professores/documentos/${doc.nome}`
+            }));
+            
+            const professorCompleto = {
+                ...professor,
+                fotoUrl: professor.foto ? `${baseUrl}/api/img/professores/${professor.foto}` : null,
+                documentos: documentos
+            };
+            
+            res.status(200).json(professorCompleto);
+        });
     });
 });
 
@@ -566,5 +645,18 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
         res.status(200).json(result);
     });
 });
+
+router.get('/contratos', (req, res) => {
+    const sql = `SELECT id_contrato,contrato FROM contrato WHERE status = 'Ativo' ORDER BY contrato ASC`;
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar contratos:", error);
+            return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+        res.status(200).json(result);
+    });
+});
+
+
 
 module.exports = router;
