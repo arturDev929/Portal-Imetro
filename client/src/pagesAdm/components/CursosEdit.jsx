@@ -1,19 +1,13 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
-    MdEdit,
-    MdDeleteForever,
-    MdRefresh,
-    MdExpandMore,
-    MdExpandLess,
-    MdRemoveCircleOutline,
-    MdSearch,
-    MdAdd
+    MdEdit, MdDeleteForever, MdRefresh, MdExpandMore, MdExpandLess,
+    MdRemoveCircleOutline, MdSearch, MdAdd
 } from "react-icons/md";
 import { IoMdSchool } from "react-icons/io";
 import { FaBook, FaCalendarAlt, FaLayerGroup } from "react-icons/fa";
 import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "./CustomToast";
-import Style from "./DepartamentosEdit.module.css"
+import Style from "./DepartamentosEdit.module.css";
 import Table from "../../components/global/Table";
 
 const API_TIMEOUT = 5000;
@@ -25,17 +19,11 @@ function CursosEdit() {
     const [departamentos, setDepartamentos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
-    const [dadosEdicao, setDadosEdicao] = useState({
-        idcurso: '',
-        curso: '',
-        idcategoriacurso: ''
-    });
+    const [user, setUser] = useState(null);
+    const [dadosEdicao, setDadosEdicao] = useState({ idcurso: '', curso: '', idcategoriacurso: '' });
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
-    const [dadosNovoCurso, setDadosNovoCurso] = useState({
-        curso: '',
-        idcategoriacurso: ''
-    });
+    const [dadosNovoCurso, setDadosNovoCurso] = useState({ curso: '', idcategoriacurso: '' });
     const [anosCurriculares, setAnosCurriculares] = useState([]);
     const [loadingAnos, setLoadingAnos] = useState(false);
     const [modalDisciplinasAberto, setModalDisciplinasAberto] = useState(false);
@@ -47,6 +35,18 @@ function CursosEdit() {
     const [removendoDisciplina, setRemovendoDisciplina] = useState(null);
 
     const { showConfirmToast, isConfirming } = useConfirmToast();
+
+    useEffect(() => {
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            try {
+                setUser(JSON.parse(usuarioSalvo));
+            } catch (error) {
+                console.error("Erro ao parsear usuário:", error);
+                setUser(null);
+            }
+        }
+    }, []);
 
     const apiClient = useMemo(() => {
         const client = api.create({
@@ -77,17 +77,21 @@ function CursosEdit() {
     const fetchCursos = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/cursos');
-            setLista(response.data || []);
-            setListaFiltrada(response.data || []);
+            const response = await apiClient.get('/Cursos');
+
+            const dadosMapeados = response.data.map(item => ({
+                idcurso: item.id_curso,
+                curso: item.curso,
+                idcategoriacurso: item.id_categoria,
+                categoriacurso: item.categoria
+            }));
+
+            setLista(dadosMapeados || []);
+            setListaFiltrada(dadosMapeados || []);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
 
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
-                showSuccessToast(
-                    "Sucesso",
-                    "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} curso(s)` }
-                );
+            if (mostrarNotificacao && dadosMapeados && dadosMapeados.length > 0) {
+                showSuccessToast("Sucesso", "Dados atualizados com sucesso", { "Quantidade": `${dadosMapeados.length} curso(s)` });
             }
         } catch (error) {
             console.error("Erro ao buscar cursos:", error);
@@ -106,41 +110,8 @@ function CursosEdit() {
         }
     }, [apiClient]);
 
-    const handlePesquisa = useCallback((e) => {
-        const termo = e.target.value;
-        setTermoPesquisa(termo);
-
-        if (termo.trim() === '') {
-            setListaFiltrada(lista);
-        } else {
-            const filtrados = lista.filter(item =>
-                item.curso.toLowerCase().includes(termo.toLowerCase()) ||
-                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termo.toLowerCase()))
-            );
-            setListaFiltrada(filtrados);
-        }
-    }, [lista]);
-
-    const limparPesquisa = useCallback(() => {
-        setTermoPesquisa('');
-        setListaFiltrada(lista);
-    }, [lista]);
-
-    useEffect(() => {
-        if (termoPesquisa.trim() === '') {
-            setListaFiltrada(lista);
-        } else {
-            const filtrados = lista.filter(item =>
-                item.curso.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
-                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termoPesquisa.toLowerCase()))
-            );
-            setListaFiltrada(filtrados);
-        }
-    }, [lista, termoPesquisa]);
-
     const fetchAnosCurriculares = useCallback(async (idCurso) => {
         if (!idCurso) {
-            console.log('ID do curso não fornecido');
             setAnosCurriculares([]);
             return;
         }
@@ -148,17 +119,23 @@ function CursosEdit() {
         try {
             setLoadingAnos(true);
             const response = await apiClient.get(`/anoCurricular/${idCurso}`);
-
             const data = response.data;
 
             if (Array.isArray(data)) {
-                setAnosCurriculares(data);
+                setAnosCurriculares(data.map(item => ({
+                    idanocurricular: item.id_anocurricular,
+                    anocurricular: item.ano,
+                    idcurso: item.id_curso
+                })));
             } else if (data && typeof data === 'object') {
-                setAnosCurriculares([data]);
+                setAnosCurriculares([{
+                    idanocurricular: data.id_anocurricular,
+                    anocurricular: data.ano,
+                    idcurso: data.id_curso
+                }]);
             } else {
                 setAnosCurriculares([]);
             }
-
         } catch (error) {
             console.error("Erro ao buscar anos curriculares:", error);
             setAnosCurriculares([]);
@@ -168,10 +145,7 @@ function CursosEdit() {
     }, [apiClient]);
 
     const fetchDisciplinasPorCurso = useCallback(async (idCurso, nomeCurso) => {
-        if (!idCurso) {
-            console.log('ID do curso não fornecido');
-            return;
-        }
+        if (!idCurso) return;
 
         try {
             setLoadingDisciplinas(true);
@@ -179,20 +153,16 @@ function CursosEdit() {
             setCursoSelecionadoId(idCurso);
 
             const response = await apiClient.get(`/disciplinasPorCurso/${idCurso}`);
-            console.log('Resposta disciplinas:', response.data);
-
             setDisciplinasCurso(response.data);
             setModalDisciplinasAberto(true);
 
             if (response.data && response.data.disciplinas) {
-                const anos = Object.keys(response.data.disciplinas);
                 const expandidoInicial = {};
-                anos.forEach(ano => {
+                Object.keys(response.data.disciplinas).forEach(ano => {
                     expandidoInicial[ano] = true;
                 });
                 setAnoExpandido(expandidoInicial);
             }
-
         } catch (error) {
             console.error("Erro ao buscar disciplinas do curso:", error);
             showErrorToast("Erro", "Não foi possível carregar as disciplinas do curso");
@@ -200,6 +170,21 @@ function CursosEdit() {
             setLoadingDisciplinas(false);
         }
     }, [apiClient]);
+
+    // ✅ fecharModal e fecharModalAdicionar definidos ANTES de serem usados
+    const fecharModal = useCallback(() => {
+        if (!salvando) {
+            setDadosEdicao({ idcurso: '', curso: '', idcategoriacurso: '' });
+            setAnosCurriculares([]);
+        }
+    }, [salvando]);
+
+    const fecharModalAdicionar = useCallback(() => {
+        if (!salvando) {
+            setModalAdicionarAberto(false);
+            setDadosNovoCurso({ curso: '', idcategoriacurso: '' });
+        }
+    }, [salvando]);
 
     const removerDisciplinaDoCurso = useCallback(async (idsemestre, disciplinaNome) => {
         showConfirmToast(
@@ -211,14 +196,9 @@ function CursosEdit() {
 
                     await apiClient.delete(`/disciplinaSemestre/${idsemestre}`);
 
-                    showSuccessToast(
-                        "Sucesso",
-                        "Disciplina removida do curso com sucesso",
-                        { "Disciplina": disciplinaNome }
-                    );
+                    showSuccessToast("Sucesso", "Disciplina removida do curso com sucesso", { "Disciplina": disciplinaNome });
 
                     await fetchDisciplinasPorCurso(cursoSelecionadoId, cursoSelecionado);
-
                 } catch (error) {
                     console.error("Erro ao remover disciplina:", error);
                     showErrorToast("Erro", "Não foi possível remover a disciplina do curso");
@@ -237,10 +217,8 @@ function CursosEdit() {
             async () => {
                 try {
                     showInfoToast("Processando", "Excluindo ano curricular...");
-
                     await apiClient.delete(`/anocurricular/${idanocurricular}`);
                     showSuccessToast("Sucesso", "Ano curricular excluído");
-
                     await fetchAnosCurriculares(dadosEdicao.idcurso);
                 } catch (error) {
                     console.error("Erro ao excluir ano curricular:", error);
@@ -252,26 +230,14 @@ function CursosEdit() {
         );
     }, [apiClient, dadosEdicao.idcurso, fetchAnosCurriculares, showConfirmToast]);
 
-    const fecharModalAdicionar = useCallback(() => {
-        if (!salvando) {
-            setModalAdicionarAberto(false);
-            setDadosNovoCurso({
-                curso: '',
-                idcategoriacurso: ''
-            });
-        }
-    }, [salvando]);
-
-    const abrirModalAdicionar = useCallback(() => {
-        setDadosNovoCurso({
-            curso: '',
-            idcategoriacurso: ''
-        });
-        setModalAdicionarAberto(true);
-    }, []);
-
+    // ✅ Agora adicionarCurso pode referenciar fecharModalAdicionar com segurança
     const adicionarCurso = useCallback(async (e) => {
         e?.preventDefault();
+
+        if (!user || !user.id) {
+            showErrorToast("Erro", "Usuário não autenticado");
+            return;
+        }
 
         const nome = dadosNovoCurso.curso?.trim();
         const departamentoId = dadosNovoCurso.idcategoriacurso;
@@ -288,68 +254,36 @@ function CursosEdit() {
 
         setSalvando(true);
         try {
-            await apiClient.post('/registrarcurso', {
+            const response = await apiClient.post('/registrarcurso', {
                 curso: nome,
-                idcategoriacurso: departamentoId
+                idcategoriacurso: departamentoId,
+                idAdm: user.id
             });
 
-            const deptSelecionado = departamentos.find(d => d.idcategoriacurso === departamentoId);
+            if (response.data.sucesso) {
+                const deptSelecionado = departamentos.find(d => d.idcategoriacurso === departamentoId);
 
-            showSuccessToast(
-                "Sucesso",
-                "Licenciatura adicionada com sucesso",
-                {
+                showSuccessToast("Sucesso", response.data.titulo || "Licenciatura adicionada com sucesso", {
                     "Nome": nome,
-                    "Departamento": deptSelecionado?.categoriacurso
-                }
-            );
+                    "Departamento": deptSelecionado?.categoriacurso || 'N/D'
+                });
 
-            await fetchCursos(false);
-            fecharModalAdicionar();
+                await fetchCursos(false);
+                fecharModalAdicionar();
+            } else {
+                showErrorToast("Erro", response.data.mensagem || "Erro ao adicionar curso");
+            }
         } catch (error) {
             console.error("Erro ao adicionar licenciatura:", error);
+            if (error.response?.data?.mensagem) {
+                showErrorToast("Erro", error.response.data.mensagem);
+            }
         } finally {
             setSalvando(false);
         }
-    }, [dadosNovoCurso, apiClient, fetchCursos, departamentos, fecharModalAdicionar]);
+    }, [dadosNovoCurso, apiClient, fetchCursos, departamentos, fecharModalAdicionar, user]);
 
-    const toggleAnoExpandido = useCallback((ano) => {
-        setAnoExpandido(prev => ({
-            ...prev,
-            [ano]: !prev[ano]
-        }));
-    }, []);
-
-    useEffect(() => {
-        fetchCursos(false);
-        fetchDepartamentos();
-    }, [fetchCursos, fetchDepartamentos]);
-
-    const abrirModalEditar = useCallback(async (item) => {
-        setDadosEdicao({
-            idcurso: item.idcurso,
-            curso: item.curso || '',
-            idcategoriacurso: item.idcategoriacurso || ''
-        });
-
-        await fetchAnosCurriculares(item.idcurso);
-    }, [fetchAnosCurriculares]);
-
-    const fecharModal = useCallback(() => {
-        if (!salvando) {
-            setDadosEdicao({ idcurso: '', curso: '', idcategoriacurso: '' });
-            setAnosCurriculares([]);
-        }
-    }, [salvando]);
-
-    const toggleModal = useCallback(async (abrir = true, item = null) => {
-        if (abrir && item) {
-            await abrirModalEditar(item);
-        } else {
-            fecharModal();
-        }
-    }, [abrirModalEditar, fecharModal]);
-
+    // ✅ Agora salvarEdicao pode referenciar fecharModal com segurança
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
 
@@ -368,30 +302,85 @@ function CursosEdit() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/curso/${dadosEdicao.idcurso}`, {
+            const response = await apiClient.put(`/Curso/${dadosEdicao.idcurso}`, {
                 curso: nome,
                 idcategoriacurso: departamentoId
             });
 
-            const deptSelecionado = departamentos.find(d => d.idcategoriacurso === departamentoId);
+            if (response.data.success) {
+                const deptSelecionado = departamentos.find(d => d.idcategoriacurso === departamentoId);
 
-            showSuccessToast(
-                "Sucesso",
-                response.data.message || "Curso atualizado",
-                {
+                showSuccessToast("Sucesso", response.data.message || "Curso atualizado", {
                     "Nome": nome,
                     "Departamento": deptSelecionado?.categoriacurso || 'N/D'
-                }
-            );
+                });
 
-            await fetchCursos(false);
-            fecharModal();
+                await fetchCursos(false);
+                fecharModal();
+            } else {
+                showErrorToast("Erro", response.data.error || "Erro ao atualizar curso");
+            }
         } catch (error) {
             console.error("Erro ao editar:", error);
+            if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            }
         } finally {
             setSalvando(false);
         }
     }, [dadosEdicao, apiClient, fetchCursos, fecharModal, departamentos]);
+
+    const deletarCurso = useCallback(async (id, nome) => {
+        showConfirmToast(
+            `Tem certeza que deseja excluir o curso "${nome}"? Esta ação também excluirá todos os anos curriculares associados e não pode ser desfeita.`,
+            async () => {
+                try {
+                    showInfoToast("Processando", "Excluindo curso...");
+                    const response = await apiClient.delete(`/curso/${id}`);
+
+                    if (response.data.success) {
+                        showSuccessToast("Sucesso", response.data.message || "Curso excluído com sucesso");
+                        await fetchCursos(false);
+                    } else {
+                        showErrorToast("Erro", response.data.error || "Erro ao excluir curso");
+                    }
+                } catch (error) {
+                    console.error("Erro ao deletar:", error);
+                    if (error.response?.data?.error) {
+                        showErrorToast("Erro", error.response.data.error);
+                    }
+                }
+            },
+            null,
+            "Confirmar Exclusão de Curso"
+        );
+    }, [apiClient, fetchCursos, showConfirmToast]);
+
+    const abrirModalEditar = useCallback(async (item) => {
+        setDadosEdicao({
+            idcurso: item.idcurso,
+            curso: item.curso || '',
+            idcategoriacurso: item.idcategoriacurso || ''
+        });
+        await fetchAnosCurriculares(item.idcurso);
+    }, [fetchAnosCurriculares]);
+
+    const toggleModal = useCallback(async (abrir = true, item = null) => {
+        if (abrir && item) {
+            await abrirModalEditar(item);
+        } else {
+            fecharModal();
+        }
+    }, [abrirModalEditar, fecharModal]);
+
+    const abrirModalAdicionar = useCallback(() => {
+        setDadosNovoCurso({ curso: '', idcategoriacurso: '' });
+        setModalAdicionarAberto(true);
+    }, []);
+
+    const toggleAnoExpandido = useCallback((ano) => {
+        setAnoExpandido(prev => ({ ...prev, [ano]: !prev[ano] }));
+    }, []);
 
     const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
@@ -403,40 +392,56 @@ function CursosEdit() {
         setDadosNovoCurso(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    const deletarCurso = useCallback(async (id, nome) => {
-        showConfirmToast(
-            `Tem certeza que deseja excluir o curso "${nome}"? Esta ação também excluirá todos os anos curriculares associados e não pode ser desfeita.`,
-            async () => {
-                try {
-                    showInfoToast("Processando", "Excluindo curso...");
+    const handlePesquisa = useCallback((e) => {
+        const termo = e.target.value;
+        setTermoPesquisa(termo);
 
-                    const response = await apiClient.delete(`/curso/${id}`);
+        if (termo.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            setListaFiltrada(lista.filter(item =>
+                item.curso.toLowerCase().includes(termo.toLowerCase()) ||
+                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termo.toLowerCase()))
+            ));
+        }
+    }, [lista]);
 
-                    showSuccessToast(
-                        "Sucesso",
-                        response.data.message || "Curso excluído com sucesso"
-                    );
+    const limparPesquisa = useCallback(() => {
+        setTermoPesquisa('');
+        setListaFiltrada(lista);
+    }, [lista]);
 
-                    await fetchCursos(false);
-                } catch (error) {
-                    console.error("Erro ao deletar:", error);
-                }
-            },
-            null,
-            "Confirmar Exclusão de Curso"
-        );
-    }, [apiClient, fetchCursos, showConfirmToast]);
+    useEffect(() => {
+        fetchCursos(false);
+        fetchDepartamentos();
+    }, [fetchCursos, fetchDepartamentos]);
+
+    useEffect(() => {
+        if (termoPesquisa.trim() === '') {
+            setListaFiltrada(lista);
+        } else {
+            setListaFiltrada(lista.filter(item =>
+                item.curso.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                (item.categoriacurso && item.categoriacurso.toLowerCase().includes(termoPesquisa.toLowerCase()))
+            ));
+        }
+    }, [lista, termoPesquisa]);
 
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcurso !== '';
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
     const headers = ['Nome da Licenciatura', 'Departamento', 'Disciplinas', 'Editar', 'Apagar'];
+
     const renderRow = useCallback((item) => (
         <tr key={item.idcurso}>
-            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}><IoMdSchool className="me-2 mb-2" />{item.curso}</td>
-            <td className="align-middle" style={{ color: 'var(--azul-escuro)' }}>{item.categoriacurso}</td>
-
+            <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
+                <IoMdSchool className="me-2 mb-2" />
+                {item.curso}
+            </td>
+            <td className="align-middle" style={{ color: 'var(--azul-escuro)' }}>
+                {item.categoriacurso}
+            </td>
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnOutros}`}
@@ -468,12 +473,13 @@ function CursosEdit() {
                 </button>
             </td>
         </tr>
-    ), [fetchDisciplinasPorCurso, toggleModal, deletarCurso, loading, salvando, isConfirming]);
+    ), [fetchDisciplinasPorCurso, toggleModal, deletarCurso, loading, salvando, isConfirming, loadingDisciplinas]);
+
     const renderConteudo = () => {
         if (loading) {
             return (
                 <div className="text-center py-5">
-                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{ width: '3rem', height: '3rem' }} role="status">
                         <span className="visually-hidden">Carregando...</span>
                     </div>
                     <p className="text-muted mb-0">Carregando cursos...</p>
@@ -486,10 +492,7 @@ function CursosEdit() {
                 <div className="text-center py-5">
                     <MdSearch size={48} className="text-muted mb-3" />
                     <p className="text-muted mb-2">Nenhum curso encontrado para "{termoPesquisa}"</p>
-                    <button 
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={limparPesquisa}
-                    >
+                    <button className="btn btn-outline-primary btn-sm" onClick={limparPesquisa}>
                         Limpar pesquisa
                     </button>
                 </div>
@@ -511,7 +514,7 @@ function CursosEdit() {
 
         return (
             <div className="table-responsive">
-                <Table 
+                <Table
                     headers={headers}
                     data={listaFiltrada}
                     renderRow={renderRow}
@@ -572,12 +575,7 @@ function CursosEdit() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{
-                                                    borderLeft: 'none',
-                                                    boxShadow: 'none',
-                                                    backgroundColor: 'var(--cinza-claro)',
-                                                    padding: '10px'
-                                                }}
+                                                style={{ borderLeft: 'none', boxShadow: 'none', backgroundColor: 'var(--cinza-claro)', padding: '10px' }}
                                             />
                                             {termoPesquisa && (
                                                 <button
@@ -585,11 +583,7 @@ function CursosEdit() {
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{
-                                                        borderLeft: 'none',
-                                                        backgroundColor: 'var(--danger)',
-                                                        color: 'var(--branco)'
-                                                    }}
+                                                    style={{ borderLeft: 'none', backgroundColor: 'var(--danger)', color: 'var(--branco)' }}
                                                 >
                                                     ✕
                                                 </button>
@@ -636,7 +630,6 @@ function CursosEdit() {
                                             <input
                                                 type="text"
                                                 className="form-control form-control-lg shadow-sm"
-                                                id="novoCurso"
                                                 name="curso"
                                                 value={dadosNovoCurso.curso}
                                                 onChange={handleNovoCursoInputChange}
@@ -650,7 +643,6 @@ function CursosEdit() {
                                         <div className="col-md-6 mb-3">
                                             <select
                                                 className="form-select form-control-lg shadow-sm"
-                                                id="novoDepartamento"
                                                 name="idcategoriacurso"
                                                 value={dadosNovoCurso.idcategoriacurso}
                                                 onChange={handleNovoCursoInputChange}
@@ -682,13 +674,8 @@ function CursosEdit() {
                                         disabled={salvando || isConfirming || !dadosNovoCurso.curso.trim() || !dadosNovoCurso.idcategoriacurso}
                                     >
                                         {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Adicionando...
-                                            </>
-                                        ) : (
-                                            'Adicionar Licenciatura'
-                                        )}
+                                            <><span className="spinner-border spinner-border-sm me-2"></span>Adicionando...</>
+                                        ) : 'Adicionar Licenciatura'}
                                     </button>
                                 </div>
                             </form>
@@ -704,7 +691,7 @@ function CursosEdit() {
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5 className="modal-title mb-0">
                                     <MdEdit className="me-2 mb-1" />
-                                    Editar a Licenciatura em - {dadosEdicao.curso}
+                                    Editar a Licenciatura - {dadosEdicao.curso}
                                 </h5>
                                 <button
                                     type="button"
@@ -720,7 +707,6 @@ function CursosEdit() {
                                             <input
                                                 type="text"
                                                 className="form-control form-control-lg shadow-sm"
-                                                id="editarCurso"
                                                 name="curso"
                                                 value={dadosEdicao.curso}
                                                 onChange={handleInputChange}
@@ -734,7 +720,6 @@ function CursosEdit() {
                                         <div className="col-md-6 mb-3">
                                             <select
                                                 className="form-select form-control-lg shadow-sm"
-                                                id="editarDepartamento"
                                                 name="idcategoriacurso"
                                                 value={dadosEdicao.idcategoriacurso}
                                                 onChange={handleInputChange}
@@ -752,7 +737,7 @@ function CursosEdit() {
                                     </div>
 
                                     <div className="border-top pt-3 mt-3">
-                                        <h6 className={`mb-3`} style={{ color: 'var(--azul-escuro)' }}>
+                                        <h6 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                             <FaCalendarAlt className="me-2 mb-1" />
                                             Anos Curriculares
                                         </h6>
@@ -768,31 +753,27 @@ function CursosEdit() {
                                                 Nenhum ano curricular cadastrado para este curso
                                             </div>
                                         ) : (
-                                            <div>
-                                                <div className="d-flex flex-column gap-2">
-                                                    {anosCurriculares.map((ano) => (
-                                                        <div
-                                                            key={ano.idanocurricular}
-                                                            className="d-flex justify-content-between align-items-center bg-light rounded-3 px-3 py-2 shadow-sm border"
-                                                        >
-                                                            <div className="d-flex align-items-center">
-                                                                <i className="bi bi-calendar-check me-2 text-primary"></i>
-                                                                <span className="fw-semibold">
-                                                                    {ano.anocurricular}
-                                                                </span>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                className={`btn ${Style.btnDeletar}`}
-                                                                onClick={() => deletarAnoCurricular(ano.idanocurricular, ano.anocurricular)}
-                                                                disabled={salvando || isConfirming}
-                                                                title="Excluir ano curricular"
-                                                            >
-                                                                <MdDeleteForever />
-                                                            </button>
+                                            <div className="d-flex flex-column gap-2">
+                                                {anosCurriculares.map((ano) => (
+                                                    <div
+                                                        key={ano.idanocurricular}
+                                                        className="d-flex justify-content-between align-items-center bg-light rounded-3 px-3 py-2 shadow-sm border"
+                                                    >
+                                                        <div className="d-flex align-items-center">
+                                                            <i className="bi bi-calendar-check me-2 text-primary"></i>
+                                                            <span className="fw-semibold">{ano.anocurricular}</span>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                        <button
+                                                            type="button"
+                                                            className={`btn ${Style.btnDeletar}`}
+                                                            onClick={() => deletarAnoCurricular(ano.idanocurricular, ano.anocurricular)}
+                                                            disabled={salvando || isConfirming}
+                                                            title="Excluir ano curricular"
+                                                        >
+                                                            <MdDeleteForever />
+                                                        </button>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
@@ -812,13 +793,8 @@ function CursosEdit() {
                                         disabled={salvando || isConfirming || !dadosEdicao.curso.trim() || !dadosEdicao.idcategoriacurso}
                                     >
                                         {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Salvando...
-                                            </>
-                                        ) : (
-                                            'Salvar Alterações'
-                                        )}
+                                            <><span className="spinner-border spinner-border-sm me-2"></span>Salvando...</>
+                                        ) : 'Salvar Alterações'}
                                     </button>
                                 </div>
                             </form>
@@ -862,16 +838,10 @@ function CursosEdit() {
                                             <div className="col-md-12">
                                                 <div className="card bg-light border-0">
                                                     <div className="card-body" style={{ color: 'var(--azul-escuro)' }}>
-                                                        <h6 className="card-title">
-                                                            Informações do Curso
-                                                        </h6>
+                                                        <h6 className="card-title">Informações do Curso</h6>
                                                         <ul className="list-unstyled mb-0">
-                                                            <li className="mb-1">
-                                                                <strong>Licenciatura:</strong> {disciplinasCurso.curso}
-                                                            </li>
-                                                            <li className="mb-1">
-                                                                <strong>Departamento:</strong> {disciplinasCurso.categoria}
-                                                            </li>
+                                                            <li className="mb-1"><strong>Licenciatura:</strong> {disciplinasCurso.curso}</li>
+                                                            <li className="mb-1"><strong>Departamento:</strong> {disciplinasCurso.categoria}</li>
                                                             <li>
                                                                 <strong>Total de Disciplinas:</strong>
                                                                 <span className="badge ms-2" style={{ background: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
@@ -891,12 +861,7 @@ function CursosEdit() {
                                                 <p>Esta Licenciatura ainda não possui disciplinas cadastradas.</p>
                                             </div>
                                         ) : (
-                                            <div className="disciplinas-container" style={{
-                                                maxHeight: '60vh',
-                                                overflowY: 'auto',
-                                                paddingRight: '10px',
-                                                backgroundColor: 'var(--cinza-claro)',
-                                            }}>
+                                            <div className="disciplinas-container" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '10px', backgroundColor: 'var(--cinza-claro)' }}>
                                                 {Object.entries(disciplinasCurso.disciplinas || {}).map(([ano, semestres]) => (
                                                     <div key={ano} className="mb-4">
                                                         <div
@@ -940,9 +905,7 @@ function CursosEdit() {
                                                                                         <li
                                                                                             key={disciplina.id}
                                                                                             className="list-group-item border-0 py-2 px-3 d-flex justify-content-between align-items-center"
-                                                                                            style={{
-                                                                                                backgroundColor: index % 2 === 0 ? 'var(--branco)' : 'var(--cinza-claro)'
-                                                                                            }}
+                                                                                            style={{ backgroundColor: index % 2 === 0 ? 'var(--branco)' : 'var(--cinza-claro)' }}
                                                                                         >
                                                                                             <div className="d-flex align-items-center">
                                                                                                 <i className="bi bi-book me-2 text-muted"></i>
@@ -979,7 +942,7 @@ function CursosEdit() {
                                     <div className="text-center py-4" style={{ backgroundColor: 'var(--danger)', color: 'var(--azul-escuro)' }}>
                                         <i className="bi bi-exclamation-octagon display-4 d-block mb-3"></i>
                                         <h5 className="alert-heading">Erro ao carregar dados</h5>
-                                        <p>Não foi possível carregar as disciplinas a Licenciatura.</p>
+                                        <p>Não foi possível carregar as disciplinas da Licenciatura.</p>
                                     </div>
                                 )}
                             </div>

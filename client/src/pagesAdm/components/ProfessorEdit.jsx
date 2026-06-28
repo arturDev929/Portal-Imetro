@@ -41,7 +41,6 @@ function ProfessorEdit() {
     const [novosDocumentosTitulos, setNovosDocumentosTitulos] = useState([]);
     const [abaAtiva, setAbaAtiva] = useState('dados');
     
-    // Estado para a senha gerada
     const [senhaGerada, setSenhaGerada] = useState('');
     const [professorSenhaGerada, setProfessorSenhaGerada] = useState(null);
     
@@ -84,6 +83,24 @@ function ProfessorEdit() {
             }
         );
         return client;
+    }, []);
+
+    const formatarDataParaInput = useCallback((data) => {
+        if (!data) return '';
+        if (typeof data === 'string' && data.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return data;
+        }
+        try {
+            const dataObj = new Date(data);
+            if (isNaN(dataObj.getTime())) return '';
+            const ano = dataObj.getFullYear();
+            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dataObj.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        } catch (error) {
+            console.warn('Erro ao formatar data:', data, error);
+            return '';
+        }
     }, []);
 
     const fetchContratos = useCallback(async () => {
@@ -139,7 +156,6 @@ function ProfessorEdit() {
         }
     }, [apiClient]);
 
-    // ========== FUNÇÃO PARA GERAR SENHA AUTOMATICAMENTE ==========
     const gerarSenhaProfessor = useCallback(async (id, nome) => {
         showConfirmToast(
             `Gerar nova senha para o professor ${nome}?`,
@@ -148,23 +164,13 @@ function ProfessorEdit() {
                     const response = await Api.put(
                         `/professor/senha/${id}`,
                         {},
-                        {
-                            headers: { 
-                                Authorization: `Bearer ${localStorage.getItem("token")}`
-                            }
-                        }
+                        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
                     );
-                    
                     if (response.data.success) {
                         setSenhaGerada(response.data.senha_gerada || '');
                         setProfessorSenhaGerada({ id, nome });
                         setModalSenhaGeradaAberto(true);
-                        
-                        showSuccessToast(
-                            "Senha Gerada com Sucesso", 
-                            `Nova senha para ${nome} foi gerada e enviada por email`
-                        );
-                        
+                        showSuccessToast("Senha Gerada com Sucesso", `Nova senha para ${nome} foi gerada e enviada por email`);
                         await fetchProfessores(false);
                     }
                 } catch (error) {
@@ -289,17 +295,14 @@ function ProfessorEdit() {
 
     const adicionarProfessor = useCallback(async (e) => {
         e.preventDefault();
-        
         if (!dadosNovoProfessor.nome?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
             return;
         }
-        
         if (!dadosNovoProfessor.id_contrato) {
             showErrorToast("Validação", "Selecione o tipo de contrato");
             return;
         }
-        
         setSalvando(true);
         try {
             const formData = new FormData();
@@ -337,31 +340,36 @@ function ProfessorEdit() {
         try {
             setCarregandoDocumentos(true);
             setProfessorSelecionado(professor);
-            
             const response = await apiClient.get(`/professorInfo/${professor.id_professor}`);
-            
             if (response.data) {
                 setProfessorSelecionado(response.data);
-                setDocumentosProfessor(response.data.documentos || []);
+                try {
+                    const docsResponse = await apiClient.get(`/professorDocumentos/${professor.id_professor}`);
+                    if (docsResponse.data && docsResponse.data.success) {
+                        setDocumentosProfessor(docsResponse.data.documentos || []);
+                    } else {
+                        setDocumentosProfessor([]);
+                    }
+                } catch (error) {
+                    console.error("❌ Erro ao buscar documentos:", error);
+                    setDocumentosProfessor([]);
+                }
             }
             setModalVisualizarAberto(true);
         } catch (error) {
-            console.error("Erro ao carregar dados do professor:", error);
+            console.error("❌ Erro ao carregar dados do professor:", error);
             showErrorToast("Erro", "Não foi possível carregar os dados");
         } finally {
             setCarregandoDocumentos(false);
         }
     }, [apiClient]);
 
-    // ========== FUNÇÃO ABRIR MODAL EDIÇÃO ==========
     const abrirModalEditar = useCallback(async (professor) => {
-        console.log("=== ABRINDO MODAL DE EDIÇÃO ===");
-        console.log("Professor selecionado:", professor);
-        
         try {
             setCarregandoDocumentos(true);
+            const dataNascimentoFormatada = formatarDataParaInput(professor.data_nascimento);
+            const dataAdmissaoFormatada = formatarDataParaInput(professor.data_admissao);
             
-            // Preencher os dados do formulário com os dados do professor
             setDadosEdicao({
                 id_professor: professor.id_professor, 
                 nome: professor.nome || '', 
@@ -378,61 +386,43 @@ function ProfessorEdit() {
                 titulacao: professor.titulacao || '',
                 iban: professor.iban || '', 
                 tiposangue: professor.tiposangue || '',
-                data_nascimento: professor.data_nascimento || '', 
-                data_admissao: professor.data_admissao || '',
+                data_nascimento: dataNascimentoFormatada,
+                data_admissao: dataAdmissaoFormatada,
                 estadocivil: professor.estadocivil || '', 
                 id_contrato: professor.id_contrato || '', 
                 foto: professor.foto
             });
             
-            // Setar a foto preview
             setFotoPreview(professor.fotoUrl);
             setFotoArquivo(null);
             
-            // Buscar documentos do professor
             try {
-                console.log("Buscando documentos para o professor ID:", professor.id_professor);
-                
                 const response = await apiClient.get(`/professorDocumentos/${professor.id_professor}`);
-                console.log("Resposta da API de documentos:", response.data);
-                
                 if (response.data && response.data.success) {
-                    const documentos = response.data.documentos || [];
-                    console.log("Documentos encontrados:", documentos.length);
-                    setDocumentosExistentes(documentos);
+                    setDocumentosExistentes(response.data.documentos || []);
                 } else {
-                    console.log("Nenhum documento encontrado");
                     setDocumentosExistentes([]);
                 }
             } catch (error) {
-                console.error("Erro ao buscar documentos:", error);
+                console.error("❌ Erro ao buscar documentos:", error);
                 setDocumentosExistentes([]);
             }
             
-            // Resetar estados de documentos novos
             setDocumentosParaRemover([]);
             setNovosDocumentos([]);
             setNovosDocumentosPreview([]);
             setNovosDocumentosTitulos([]);
-            
-            // Resetar a aba ativa para 'dados'
             setAbaAtiva('dados');
-            
-            console.log("Abrindo modal de edição...");
-            
-            // Abrir o modal
             setModalEditarAberto(true);
-            
         } catch (error) {
-            console.error("Erro ao carregar dados para edição:", error);
+            console.error("❌ Erro ao carregar dados para edição:", error);
             showErrorToast("Erro", "Não foi possível carregar os dados para edição");
             setModalEditarAberto(true);
         } finally {
             setCarregandoDocumentos(false);
         }
-    }, [apiClient]);
+    }, [apiClient, formatarDataParaInput]);
 
-    // ========== FUNÇÕES DE DOCUMENTOS PARA EDIÇÃO ==========
     const handleNovosDocumentosChange = useCallback((e) => {
         const files = Array.from(e.target.files);
         const novosDocs = [], novosPreviews = [], novoTitulos = [];
@@ -461,26 +451,18 @@ function ProfessorEdit() {
     }, []);
 
     const marcarDocumentoParaRemover = useCallback((docId) => {
-        console.log("Removendo documento ID:", docId);
         if (!docId) {
             showErrorToast("Erro", "ID do documento inválido");
             return;
         }
-        
         setDocumentosParaRemover(prev => [...prev, docId]);
         setDocumentosExistentes(prev => prev.filter(doc => doc.id_ficheiro !== docId));
-        
         showSuccessToast("Sucesso", "Documento marcado para remoção");
     }, []);
 
-    // ========== FUNÇÃO SALVAR EDIÇÃO ==========
+    // ✅ FUNÇÃO CORRIGIDA - sem colchetes nos campos do FormData
     const salvarEdicao = useCallback(async (e) => {
         e.preventDefault();
-        
-        console.log("=== SALVANDO EDIÇÃO ===");
-        console.log("Dados de edição:", dadosEdicao);
-        console.log("Documentos para remover:", documentosParaRemover);
-        console.log("Novos documentos:", novosDocumentos.length);
         
         if (!dadosEdicao.nome?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
@@ -491,33 +473,29 @@ function ProfessorEdit() {
         try {
             const formData = new FormData();
             
-            // Adicionar todos os campos do formulário
             Object.entries(dadosEdicao).forEach(([key, value]) => {
                 if (value !== undefined && value !== null && key !== 'id_professor' && value !== "") {
                     formData.append(key, value);
                 }
             });
             
-            // Adicionar foto se houver
             if (fotoArquivo) {
                 formData.append('foto', fotoArquivo);
             }
             
-            // Adicionar documentos para remover
+            // ✅ CORRIGIDO: sem [] no nome do campo
             documentosParaRemover.forEach(docId => {
                 if (docId) {
-                    formData.append('documentos_remover[]', docId);
+                    formData.append('documentos_remover', docId);
                 }
             });
             
-            // Adicionar novos documentos
+            // ✅ CORRIGIDO: sem [] no nome do campo
             novosDocumentos.forEach((doc, i) => {
-                formData.append('documentos[]', doc);
-                formData.append('documentos_titulo[]', novosDocumentosTitulos[i] || doc.name);
+                formData.append('documentos', doc);
+                formData.append('documentos_titulo', novosDocumentosTitulos[i] || doc.name);
             });
 
-            console.log("Enviando requisição PUT para:", `/atualizarprofessor/${dadosEdicao.id_professor}`);
-            
             const response = await Api.put(`/atualizarprofessor/${dadosEdicao.id_professor}`, formData, {
                 headers: { 
                     'Content-Type': 'multipart/form-data', 
@@ -525,14 +503,10 @@ function ProfessorEdit() {
                 }
             });
 
-            console.log("Resposta da API:", response.data);
-
             if (response.data.success) {
                 showSuccessToast("Sucesso", response.data.message || "Professor atualizado com sucesso!");
                 await fetchProfessores(false);
                 setModalEditarAberto(false);
-                
-                // Resetar estados
                 setDocumentosExistentes([]);
                 setDocumentosParaRemover([]);
                 setNovosDocumentos([]);
@@ -542,7 +516,7 @@ function ProfessorEdit() {
                 showErrorToast("Erro", response.data.message || "Não foi possível atualizar");
             }
         } catch (error) {
-            console.error("Erro ao salvar edição:", error);
+            console.error("❌ Erro ao salvar edição:", error);
             showErrorToast("Erro", error.response?.data?.message || "Não foi possível atualizar o professor");
         } finally {
             setSalvando(false);
@@ -560,7 +534,7 @@ function ProfessorEdit() {
                     showSuccessToast("Sucesso", `Professor ${nome} desativado`);
                 }
             } catch (error) {
-                console.error("Erro ao desativar professor:", error);
+                console.error("❌ Erro ao desativar professor:", error);
                 showErrorToast("Erro", "Não foi possível desativar o professor");
             }
         }, null, "Confirmar Desativação");
@@ -586,7 +560,6 @@ function ProfessorEdit() {
             </td>
             <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
                 {item.nome}
-                <br/>
             </td>
             <td className="align-middle">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -602,45 +575,22 @@ function ProfessorEdit() {
                 </div>
             </td>
             <td className="text-center">
-                <button 
-                    className={`btn btn-sm ${Style.btnVisualizar}`} 
-                    onClick={() => abrirModalVisualizar(item)} 
-                    disabled={loading || salvando || isConfirming}
-                    title="Visualizar informações"
-                >
+                <button className={`btn btn-sm ${Style.btnVisualizar}`} onClick={() => abrirModalVisualizar(item)} disabled={loading || salvando || isConfirming} title="Visualizar informações">
                     <MdRemoveRedEye />
                 </button>
             </td>
             <td className="text-center">
-                <button 
-                    className={`btn btn-sm ${Style.btnOutros}`} 
-                    onClick={() => gerarSenhaProfessor(item.id_professor, item.nome)} 
-                    disabled={loading || salvando || isConfirming}
-                    title="Gerar nova senha"
-                >
+                <button className={`btn btn-sm ${Style.btnOutros}`} onClick={() => gerarSenhaProfessor(item.id_professor, item.nome)} disabled={loading || salvando || isConfirming} title="Gerar nova senha">
                     <MdLock />
                 </button>
             </td>
             <td className="text-center">
-                <button 
-                    className={`btn btn-sm ${Style.btnEditar}`} 
-                    onClick={() => {
-                        console.log("Botão EDITAR clicado para:", item.nome);
-                        abrirModalEditar(item);
-                    }} 
-                    disabled={loading || salvando || isConfirming}
-                    title="Editar professor"
-                >
+                <button className={`btn btn-sm ${Style.btnEditar}`} onClick={() => abrirModalEditar(item)} disabled={loading || salvando || isConfirming} title="Editar professor">
                     <MdEdit />
                 </button>
             </td>
             <td className="text-center">
-                <button 
-                    className={`btn btn-sm ${Style.btnDeletar}`} 
-                    onClick={() => desativarProfessor(item.id_professor, item.nome)} 
-                    disabled={loading || salvando || isConfirming}
-                    title="Desativar professor"
-                >
+                <button className={`btn btn-sm ${Style.btnDeletar}`} onClick={() => desativarProfessor(item.id_professor, item.nome)} disabled={loading || salvando || isConfirming} title="Desativar professor">
                     <MdDeleteForever />
                 </button>
             </td>
@@ -649,20 +599,10 @@ function ProfessorEdit() {
 
     const Abas = ({ abaAtiva, setAbaAtiva }) => (
         <div className="d-flex border-bottom mb-4">
-            <button
-                type="button"
-                className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'dados' ? 'fw-bold border-bottom border-2' : 'text-muted'}`}
-                onClick={() => setAbaAtiva('dados')}
-                style={{ borderBottomColor: abaAtiva === 'dados' ? 'var(--dourado)' : 'transparent' }}
-            >
+            <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'dados' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('dados')} style={{ borderBottomColor: abaAtiva === 'dados' ? 'var(--dourado)' : 'transparent' }}>
                 <MdPerson className="me-2" /> Dados Pessoais
             </button>
-            <button
-                type="button"
-                className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'documentos' ? 'fw-bold border-bottom border-2' : 'text-muted'}`}
-                onClick={() => setAbaAtiva('documentos')}
-                style={{ borderBottomColor: abaAtiva === 'documentos' ? 'var(--dourado)' : 'transparent' }}
-            >
+            <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'documentos' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('documentos')} style={{ borderBottomColor: abaAtiva === 'documentos' ? 'var(--dourado)' : 'transparent' }}>
                 <MdAttachFile className="me-2" /> Documentos
             </button>
         </div>
@@ -703,9 +643,7 @@ function ProfessorEdit() {
                                         style={{ borderLeft: 'none', boxShadow: 'none', backgroundColor: 'var(--cinza-claro)', padding: '10px' }}
                                     />
                                     {termoPesquisa && (
-                                        <button className="btn border-start-0" onClick={() => setTermoPesquisa('')} style={{ backgroundColor: 'var(--danger)', color: 'var(--branco)' }}>
-                                            ✕
-                                        </button>
+                                        <button className="btn border-start-0" onClick={() => setTermoPesquisa('')} style={{ backgroundColor: 'var(--danger)', color: 'var(--branco)' }}>✕</button>
                                     )}
                                 </div>
                             </div>
@@ -719,9 +657,7 @@ function ProfessorEdit() {
                         <p>Carregando...</p>
                     </div>
                 ) : listaFiltrada.length === 0 ? (
-                    <div className="text-center py-5">
-                        <p>Nenhum professor encontrado</p>
-                    </div>
+                    <div className="text-center py-5"><p>Nenhum professor encontrado</p></div>
                 ) : (
                     <div className="table-responsive">
                         <Table headers={headers} data={listaFiltrada} renderRow={renderRow} className="table table-hover table-striped border" />
@@ -729,14 +665,13 @@ function ProfessorEdit() {
                 )}
             </div>
 
-            {/* Modal Visualizar Professor */}
             {modalVisualizarAberto && professorSelecionado && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content">
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5><MdPerson className="me-2" />Informações do Professor</h5>
-                                <button className="btn-close btn-close-white" onClick={() => setModalVisualizarAberto(false)} />
+                                <button className="btn-close btn-close-white" onClick={() => { setModalVisualizarAberto(false); setDocumentosProfessor([]); }} />
                             </div>
                             <div className="modal-body">
                                 {carregandoDocumentos ? (
@@ -766,12 +701,10 @@ function ProfessorEdit() {
                                                 <div className="row mt-3">
                                                     <div className="col-md-6">
                                                         <p><strong>Código:</strong> {professorSelecionado.codigo || 'N/I'}</p>
-                                                        <p><FaIdCard className="me-2" /> <strong>BI:</strong> {professorSelecionado.bi || 'N/I'}</p>
-                                                        <p><MdPhone className="me-2" /> <strong>Contacto:</strong> {professorSelecionado.contacto || 'N/I'}</p>
-                                                        {professorSelecionado.whatsapp && (
-                                                            <p><FaWhatsapp className="me-2" /> <strong>WhatsApp:</strong> {professorSelecionado.whatsapp}</p>
-                                                        )}
-                                                        <p><MdEmail className="me-2" /> <strong>Email:</strong> {professorSelecionado.email || 'N/I'}</p>
+                                                        <p><FaIdCard className="me-2" /><strong>BI:</strong> {professorSelecionado.bi || 'N/I'}</p>
+                                                        <p><MdPhone className="me-2" /><strong>Contacto:</strong> {professorSelecionado.contacto || 'N/I'}</p>
+                                                        {professorSelecionado.whatsapp && <p><FaWhatsapp className="me-2" /><strong>WhatsApp:</strong> {professorSelecionado.whatsapp}</p>}
+                                                        <p><MdEmail className="me-2" /><strong>Email:</strong> {professorSelecionado.email || 'N/I'}</p>
                                                         <p><strong>Contacto Emergência:</strong> {professorSelecionado.contactoemergencia || 'N/I'}</p>
                                                     </div>
                                                     <div className="col-md-6">
@@ -780,55 +713,60 @@ function ProfessorEdit() {
                                                         <p><strong>Nacionalidade:</strong> {professorSelecionado.nacionalidade || 'N/I'}</p>
                                                         <p><strong>Nome do Pai:</strong> {professorSelecionado.nomepai || 'N/I'}</p>
                                                         <p><strong>Nome da Mãe:</strong> {professorSelecionado.nomemae || 'N/I'}</p>
+                                                        <p><MdCalendarToday className="me-2" /><strong>Data Nascimento:</strong> {professorSelecionado.data_nascimento || 'N/I'}</p>
+                                                        <p><MdCalendarToday className="me-2" /><strong>Data Admissão:</strong> {professorSelecionado.data_admissao || 'N/I'}</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        
                                         <hr />
-                                        
                                         <div className="row">
                                             <div className="col-md-6">
                                                 <h6 className="mb-3">Informações Acadêmicas</h6>
-                                                <p><MdSchool className="me-2" /> <strong>Titulação:</strong> {professorSelecionado.titulacao || 'N/I'}</p>
+                                                <p><MdSchool className="me-2" /><strong>Titulação:</strong> {professorSelecionado.titulacao || 'N/I'}</p>
                                                 <p><strong>Anos de Experiência:</strong> {professorSelecionado.anoexperienca || '0'} anos</p>
-                                                <p><FaFileContract className="me-2" /> <strong>Contrato:</strong> {professorSelecionado.contrato || 'N/I'}</p>
+                                                <p><FaFileContract className="me-2" /><strong>Contrato:</strong> {professorSelecionado.contrato || 'N/I'}</p>
                                             </div>
                                             <div className="col-md-6">
                                                 <h6 className="mb-3">Informações Pessoais</h6>
-                                                <p><MdBloodtype className="me-2" /> <strong>Tipo Sanguíneo:</strong> {professorSelecionado.tiposangue || 'N/I'}</p>
-                                                <p><MdCalendarToday className="me-2" /> <strong>Data Nascimento:</strong> {professorSelecionado.data_nascimento ? new Date(professorSelecionado.data_nascimento).toLocaleDateString() : 'N/I'}</p>
-                                                <p><MdCalendarToday className="me-2" /> <strong>Data Admissão:</strong> {professorSelecionado.data_admissao ? new Date(professorSelecionado.data_admissao).toLocaleDateString() : 'N/I'}</p>
-                                                <p><FaUniversity className="me-2" /> <strong>IBAN:</strong> {professorSelecionado.iban || 'N/I'}</p>
+                                                <p><MdBloodtype className="me-2" /><strong>Tipo Sanguíneo:</strong> {professorSelecionado.tiposangue || 'N/I'}</p>
+                                                <p><FaUniversity className="me-2" /><strong>IBAN:</strong> {professorSelecionado.iban || 'N/I'}</p>
                                             </div>
                                         </div>
-                                        
                                         <hr />
-                                        
                                         <h5 className="mb-3">Documentos ({documentosProfessor.length})</h5>
                                         {documentosProfessor.length === 0 ? (
-                                            <p className="text-muted">Nenhum documento anexado</p>
+                                            <div className="text-center py-4 bg-light rounded">
+                                                <MdAttachFile size={40} className="text-muted mb-2" />
+                                                <p className="text-muted mb-0">Nenhum documento anexado</p>
+                                            </div>
                                         ) : (
                                             <div className="row">
-                                                {documentosProfessor.map(doc => (
-                                                    <div key={doc.id_ficheiro} className="col-md-6 mb-3">
-                                                        <div className="card">
+                                                {documentosProfessor.map((doc, index) => (
+                                                    <div key={doc.id_ficheiro || index} className="col-md-6 mb-3">
+                                                        <div className="card border-0 shadow-sm h-100">
                                                             <div className="card-body">
-                                                                <h6 className="card-title">{doc.titulo || 'Documento'}</h6>
-                                                                <p className="card-text small text-muted">
-                                                                    <MdAttachFile className="me-1" />
-                                                                    {doc.ficheiro || 'Arquivo'}<br/>
-                                                                    Data: {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleString() : 'N/I'}
-                                                                    <br/>
-                                                                    Status: <span className={`badge ${doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
-                                                                        {doc.status === 1 ? 'Ativo' : 'Inativo'}
-                                                                    </span>
-                                                                </p>
-                                                                {doc.doc_url && (
-                                                                    <a href={doc.doc_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                                                                        <MdVisibility className="me-1" /> Visualizar
-                                                                    </a>
-                                                                )}
+                                                                <div className="d-flex align-items-start">
+                                                                    <div className="me-3"><MdAttachFile size={30} className="text-primary" /></div>
+                                                                    <div className="flex-grow-1">
+                                                                        <h6 className="card-title mb-1">{doc.titulo || doc.ficheiro || 'Documento sem título'}</h6>
+                                                                        <p className="card-text small text-muted mb-2">
+                                                                            {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                                                                            {doc.status !== undefined && (
+                                                                                <span className={`ms-2 badge ${doc.status === 'Ativo' || doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
+                                                                                    {doc.status === 'Ativo' || doc.status === 1 ? 'Ativo' : 'Inativo'}
+                                                                                </span>
+                                                                            )}
+                                                                        </p>
+                                                                        {doc.doc_url ? (
+                                                                            <a href={doc.doc_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                                                                                <MdVisibility className="me-1" /> Visualizar
+                                                                            </a>
+                                                                        ) : (
+                                                                            <span className="text-muted small"><MdVisibility className="me-1" /> URL não disponível</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -839,16 +777,13 @@ function ProfessorEdit() {
                                 )}
                             </div>
                             <div className="modal-footer">
-                                <button className={`btn ${Style.btnCancelar}`} onClick={() => setModalVisualizarAberto(false)}>
-                                    Fechar
-                                </button>
+                                <button className={`btn ${Style.btnCancelar}`} onClick={() => { setModalVisualizarAberto(false); setDocumentosProfessor([]); }}>Fechar</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal Adicionar Professor */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
@@ -860,7 +795,6 @@ function ProfessorEdit() {
                             <form onSubmit={adicionarProfessor}>
                                 <div className="modal-body">
                                     <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
-                                    
                                     {abaAtiva === 'dados' && (
                                         <div className="row">
                                             <div className="col-md-6 mb-3">
@@ -958,9 +892,7 @@ function ProfessorEdit() {
                                                 <select className="form-control" value={dadosNovoProfessor.id_contrato} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, id_contrato: e.target.value })} required>
                                                     <option value="">Selecione</option>
                                                     {contratos.map(contrato => (
-                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>
-                                                            {contrato.contrato}
-                                                        </option>
+                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>{contrato.contrato}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -976,7 +908,6 @@ function ProfessorEdit() {
                                             )}
                                         </div>
                                     )}
-                                    
                                     {abaAtiva === 'documentos' && (
                                         <div>
                                             <div className="mb-3">
@@ -1001,9 +932,7 @@ function ProfessorEdit() {
                                 </div>
                                 <div className="modal-footer">
                                     <button type="button" className={`btn ${Style.btnCancelar}`} onClick={fecharModalAdicionar}>Cancelar</button>
-                                    <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando}>
-                                        {salvando ? "Registrando..." : "Registrar"}
-                                    </button>
+                                    <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando}>{salvando ? "Registrando..." : "Registrar"}</button>
                                 </div>
                             </form>
                         </div>
@@ -1011,45 +940,26 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* ========== MODAL EDIÇÃO COMPLETO ========== */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content">
                             <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
                                 <h5><MdEdit className="me-2" />Editar Professor</h5>
-                                <button 
-                                    className="btn-close btn-close-white" 
-                                    onClick={() => {
-                                        console.log("Fechando modal de edição");
-                                        setModalEditarAberto(false);
-                                    }} 
-                                    disabled={salvando}
-                                />
+                                <button className="btn-close btn-close-white" onClick={() => setModalEditarAberto(false)} disabled={salvando} />
                             </div>
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body">
                                     <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
-                                    
                                     {abaAtiva === 'dados' && (
                                         <div className="row">
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">Nome *</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.nome} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nome: e.target.value })} 
-                                                    required 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.nome} onChange={(e) => setDadosEdicao({ ...dadosEdicao, nome: e.target.value })} required />
                                             </div>
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label">Gênero</label>
-                                                <select 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.genero} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, genero: e.target.value })}
-                                                >
+                                                <select className="form-control" value={dadosEdicao.genero} onChange={(e) => setDadosEdicao({ ...dadosEdicao, genero: e.target.value })}>
                                                     <option value="">Selecione</option>
                                                     <option value="Masculino">Masculino</option>
                                                     <option value="Feminino">Feminino</option>
@@ -1058,11 +968,7 @@ function ProfessorEdit() {
                                             </div>
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label">Estado Civil</label>
-                                                <select 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.estadocivil} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, estadocivil: e.target.value })}
-                                                >
+                                                <select className="form-control" value={dadosEdicao.estadocivil} onChange={(e) => setDadosEdicao({ ...dadosEdicao, estadocivil: e.target.value })}>
                                                     <option value="">Selecione</option>
                                                     <option value="Solteiro">Solteiro</option>
                                                     <option value="Casado">Casado</option>
@@ -1073,110 +979,51 @@ function ProfessorEdit() {
                                             </div>
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">Nacionalidade</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.nacionalidade} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nacionalidade: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.nacionalidade} onChange={(e) => setDadosEdicao({ ...dadosEdicao, nacionalidade: e.target.value })} />
                                             </div>
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">Nome do Pai</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.nomepai} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomepai: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.nomepai} onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomepai: e.target.value })} />
                                             </div>
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">Nome da Mãe</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.nomemae} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomemae: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.nomemae} onChange={(e) => setDadosEdicao({ ...dadosEdicao, nomemae: e.target.value })} />
                                             </div>
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">BI</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.bi} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, bi: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.bi} onChange={(e) => setDadosEdicao({ ...dadosEdicao, bi: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Contacto</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.contacto} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, contacto: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.contacto} onChange={(e) => setDadosEdicao({ ...dadosEdicao, contacto: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">WhatsApp</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.whatsapp} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, whatsapp: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.whatsapp} onChange={(e) => setDadosEdicao({ ...dadosEdicao, whatsapp: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Contacto Emergência</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.contactoemergencia} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, contactoemergencia: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.contactoemergencia} onChange={(e) => setDadosEdicao({ ...dadosEdicao, contactoemergencia: e.target.value })} />
                                             </div>
                                             <div className="col-md-6 mb-3">
                                                 <label className="form-label">Email</label>
-                                                <input 
-                                                    type="email" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.email} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, email: e.target.value })} 
-                                                />
+                                                <input type="email" className="form-control" value={dadosEdicao.email} onChange={(e) => setDadosEdicao({ ...dadosEdicao, email: e.target.value })} />
                                             </div>
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label">Anos Experiência</label>
-                                                <input 
-                                                    type="number" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.anoexperienca} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, anoexperienca: e.target.value })} 
-                                                />
+                                                <input type="number" className="form-control" value={dadosEdicao.anoexperienca} onChange={(e) => setDadosEdicao({ ...dadosEdicao, anoexperienca: e.target.value })} />
                                             </div>
                                             <div className="col-md-3 mb-3">
                                                 <label className="form-label">Titulação</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.titulacao} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, titulacao: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.titulacao} onChange={(e) => setDadosEdicao({ ...dadosEdicao, titulacao: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">IBAN</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.iban} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, iban: e.target.value })} 
-                                                />
+                                                <input type="text" className="form-control" value={dadosEdicao.iban} onChange={(e) => setDadosEdicao({ ...dadosEdicao, iban: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Tipo Sanguíneo</label>
-                                                <select 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.tiposangue} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, tiposangue: e.target.value })}
-                                                >
+                                                <select className="form-control" value={dadosEdicao.tiposangue} onChange={(e) => setDadosEdicao({ ...dadosEdicao, tiposangue: e.target.value })}>
                                                     <option value="">Selecione</option>
                                                     <option value="A+">A+</option>
                                                     <option value="A-">A-</option>
@@ -1190,90 +1037,35 @@ function ProfessorEdit() {
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Data Nascimento</label>
-                                                <input 
-                                                    type="date" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.data_nascimento} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_nascimento: e.target.value })} 
-                                                />
+                                                <input type="date" className="form-control" value={dadosEdicao.data_nascimento} onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_nascimento: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Data Admissão</label>
-                                                <input 
-                                                    type="date" 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.data_admissao} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_admissao: e.target.value })} 
-                                                />
+                                                <input type="date" className="form-control" value={dadosEdicao.data_admissao} onChange={(e) => setDadosEdicao({ ...dadosEdicao, data_admissao: e.target.value })} />
                                             </div>
                                             <div className="col-md-4 mb-3">
                                                 <label className="form-label">Tipo de Contrato</label>
-                                                <select 
-                                                    className="form-control" 
-                                                    value={dadosEdicao.id_contrato} 
-                                                    onChange={(e) => setDadosEdicao({ ...dadosEdicao, id_contrato: e.target.value })}
-                                                >
+                                                <select className="form-control" value={dadosEdicao.id_contrato} onChange={(e) => setDadosEdicao({ ...dadosEdicao, id_contrato: e.target.value })}>
                                                     <option value="">Selecione</option>
                                                     {contratos.map(contrato => (
-                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>
-                                                            {contrato.contrato}
-                                                        </option>
+                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>{contrato.contrato}</option>
                                                     ))}
                                                 </select>
                                             </div>
-
-                                            {/* Seção para Gerar Senha no Modal de Edição */}
                                             <div className="col-md-12 mb-3">
                                                 <div className="card bg-light">
                                                     <div className="card-body">
-                                                        <h6 className="mb-3">
-                                                            <MdLock className="me-2" />
-                                                            Gerenciar Senha
-                                                        </h6>
-                                                        <button 
-                                                            type="button" 
-                                                            className="btn btn-warning w-100"
-                                                            onClick={() => {
-                                                                if (dadosEdicao.id_professor) {
-                                                                    gerarSenhaProfessor(
-                                                                        dadosEdicao.id_professor, 
-                                                                        dadosEdicao.nome
-                                                                    );
-                                                                }
-                                                            }}
-                                                            disabled={salvando}
-                                                        >
-                                                            <MdLock className="me-2" />
-                                                            Gerar Nova Senha
+                                                        <h6 className="mb-3"><MdLock className="me-2" />Gerenciar Senha</h6>
+                                                        <button type="button" className="btn btn-warning w-100" onClick={() => { if (dadosEdicao.id_professor) gerarSenhaProfessor(dadosEdicao.id_professor, dadosEdicao.nome); }} disabled={salvando}>
+                                                            <MdLock className="me-2" />Gerar Nova Senha
                                                         </button>
-                                                        <small className="text-muted d-block mt-2">
-                                                            Uma nova senha aleatória será gerada e enviada 
-                                                            para o email do professor
-                                                        </small>
+                                                        <small className="text-muted d-block mt-2">Uma nova senha aleatória será gerada e enviada para o email do professor</small>
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <div className="col-md-12 mb-3">
                                                 <label className="form-label">Foto</label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*" 
-                                                    className="form-control" 
-                                                    onChange={(e) => { 
-                                                        const file = e.target.files[0]; 
-                                                        if (file) { 
-                                                            if (file.size <= 5 * 1024 * 1024) {
-                                                                setFotoArquivo(file); 
-                                                                const reader = new FileReader(); 
-                                                                reader.onloadend = () => setFotoPreview(reader.result); 
-                                                                reader.readAsDataURL(file);
-                                                            } else {
-                                                                showErrorToast("Erro", "A foto não pode exceder 5MB");
-                                                            }
-                                                        } 
-                                                    }} 
-                                                />
+                                                <input type="file" accept="image/*" className="form-control" onChange={(e) => { const file = e.target.files[0]; if (file) { if (file.size <= 5 * 1024 * 1024) { setFotoArquivo(file); const reader = new FileReader(); reader.onloadend = () => setFotoPreview(reader.result); reader.readAsDataURL(file); } else { showErrorToast("Erro", "A foto não pode exceder 5MB"); } } }} />
                                             </div>
                                             {fotoPreview && (
                                                 <div className="col-md-12 mb-3 text-center">
@@ -1282,7 +1074,6 @@ function ProfessorEdit() {
                                             )}
                                         </div>
                                     )}
-                                    
                                     {abaAtiva === 'documentos' && (
                                         <div>
                                             <div className="mb-4">
@@ -1290,7 +1081,6 @@ function ProfessorEdit() {
                                                     <h6 className="mb-0">Documentos Atuais</h6>
                                                     <span className="badge bg-primary">{documentosExistentes.length}</span>
                                                 </div>
-                                                
                                                 {carregandoDocumentos ? (
                                                     <div className="text-center py-4">
                                                         <div className="spinner-border text-primary" role="status" />
@@ -1306,17 +1096,15 @@ function ProfessorEdit() {
                                                         {documentosExistentes.map((doc) => (
                                                             <div key={doc.id_ficheiro} className="list-group-item d-flex justify-content-between align-items-center">
                                                                 <div className="d-flex align-items-center">
-                                                                    <div className="me-3">
-                                                                        <MdAttachFile size={24} className="text-primary" />
-                                                                    </div>
+                                                                    <div className="me-3"><MdAttachFile size={24} className="text-primary" /></div>
                                                                     <div>
-                                                                        <strong>{doc.ficheiro || 'Documento'}</strong>
+                                                                        <strong>{doc.titulo || doc.ficheiro || 'Documento'}</strong>
                                                                         <br/>
                                                                         <small className="text-muted">
-                                                                            📅 {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                                                                            {doc.data_actualizacao ? new Date(doc.data_actualizacao).toLocaleDateString('pt-BR') : 'Data não disponível'}
                                                                             {doc.status !== undefined && (
-                                                                                <span className={`ms-2 badge ${doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
-                                                                                    {doc.status === 1 ? 'Ativo' : 'Inativo'}
+                                                                                <span className={`ms-2 badge ${doc.status === 'Ativo' || doc.status === 1 ? 'bg-success' : 'bg-secondary'}`}>
+                                                                                    {doc.status === 'Ativo' || doc.status === 1 ? 'Ativo' : 'Inativo'}
                                                                                 </span>
                                                                             )}
                                                                         </small>
@@ -1324,28 +1112,11 @@ function ProfessorEdit() {
                                                                 </div>
                                                                 <div>
                                                                     {doc.doc_url && (
-                                                                        <a 
-                                                                            href={doc.doc_url} 
-                                                                            target="_blank" 
-                                                                            rel="noopener noreferrer" 
-                                                                            className="btn btn-sm btn-outline-primary me-2"
-                                                                            title="Visualizar documento"
-                                                                        >
+                                                                        <a href={doc.doc_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary me-2" title="Visualizar documento">
                                                                             <MdVisibility />
                                                                         </a>
                                                                     )}
-                                                                    <button 
-                                                                        type="button" 
-                                                                        className="btn btn-sm btn-outline-danger"
-                                                                        onClick={() => {
-                                                                            if (doc.id_ficheiro) {
-                                                                                marcarDocumentoParaRemover(doc.id_ficheiro);
-                                                                            } else {
-                                                                                showErrorToast("Erro", "Não foi possível identificar o documento");
-                                                                            }
-                                                                        }}
-                                                                        title="Remover documento"
-                                                                    >
+                                                                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => { if (doc.id_ficheiro) { marcarDocumentoParaRemover(doc.id_ficheiro); } else { showErrorToast("Erro", "Não foi possível identificar o documento"); } }} title="Remover documento">
                                                                         <MdDeleteForever />
                                                                     </button>
                                                                 </div>
@@ -1354,52 +1125,23 @@ function ProfessorEdit() {
                                                     </div>
                                                 )}
                                             </div>
-                                            
                                             <hr />
-                                            
                                             <div>
                                                 <h6 className="mb-3">Adicionar Novos Documentos</h6>
                                                 <div className="border rounded p-3 bg-light">
                                                     <div className="mb-3">
-                                                        <input 
-                                                            type="file" 
-                                                            multiple 
-                                                            accept=".pdf,.jpg,.jpeg,.png" 
-                                                            className="form-control" 
-                                                            onChange={handleNovosDocumentosChange} 
-                                                            id="novosDocumentos"
-                                                        />
+                                                        <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="form-control" onChange={handleNovosDocumentosChange} id="novosDocumentos" />
                                                         <label htmlFor="novosDocumentos" className="form-label mt-2">
-                                                            <small className="text-muted">
-                                                                <MdFileUpload className="me-1" />
-                                                                Formatos: PDF, JPG, JPEG, PNG | Máximo 10MB por arquivo
-                                                            </small>
+                                                            <small className="text-muted"><MdFileUpload className="me-1" />Formatos: PDF, JPG, JPEG, PNG | Máximo 10MB por arquivo</small>
                                                         </label>
                                                     </div>
-                                                    
                                                     {novosDocumentosPreview.length > 0 && (
                                                         <div className="mt-3">
                                                             <h6 className="mb-2">Novos Documentos Selecionados ({novosDocumentosPreview.length})</h6>
                                                             {novosDocumentosPreview.map((doc, i) => (
                                                                 <div key={i} className="d-flex gap-2 mb-2">
-                                                                    <input 
-                                                                        type="text" 
-                                                                        placeholder="Título do documento *" 
-                                                                        className="form-control" 
-                                                                        value={novosDocumentosTitulos[i] || ''} 
-                                                                        onChange={(e) => { 
-                                                                            const novos = [...novosDocumentosTitulos]; 
-                                                                            novos[i] = e.target.value; 
-                                                                            setNovosDocumentosTitulos(novos); 
-                                                                        }} 
-                                                                        required 
-                                                                    />
-                                                                    <button 
-                                                                        type="button" 
-                                                                        className="btn btn-danger"
-                                                                        onClick={() => removerNovoDocumento(i)}
-                                                                        title="Remover este documento"
-                                                                    >
+                                                                    <input type="text" placeholder="Título do documento *" className="form-control" value={novosDocumentosTitulos[i] || ''} onChange={(e) => { const novos = [...novosDocumentosTitulos]; novos[i] = e.target.value; setNovosDocumentosTitulos(novos); }} required />
+                                                                    <button type="button" className="btn btn-danger" onClick={() => removerNovoDocumento(i)} title="Remover este documento">
                                                                         <MdClear />
                                                                     </button>
                                                                 </div>
@@ -1412,24 +1154,8 @@ function ProfessorEdit() {
                                     )}
                                 </div>
                                 <div className="modal-footer">
-                                    <button 
-                                        type="button" 
-                                        className={`btn ${Style.btnCancelar}`} 
-                                        onClick={() => {
-                                            console.log("Cancelando edição");
-                                            setModalEditarAberto(false);
-                                        }}
-                                        disabled={salvando}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button 
-                                        type="submit" 
-                                        className={`btn ${Style.btnSubmit}`} 
-                                        disabled={salvando}
-                                    >
-                                        {salvando ? "Salvando..." : "Salvar"}
-                                    </button>
+                                    <button type="button" className={`btn ${Style.btnCancelar}`} onClick={() => setModalEditarAberto(false)} disabled={salvando}>Cancelar</button>
+                                    <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</button>
                                 </div>
                             </form>
                         </div>
@@ -1437,22 +1163,13 @@ function ProfessorEdit() {
                 </div>
             )}
 
-            {/* ========== MODAL SENHA GERADA ========== */}
             {modalSenhaGeradaAberto && professorSenhaGerada && (
-                <div className="modal fade show d-block" tabIndex="-1" 
-                    style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
-                            <div className="modal-header" 
-                                style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5>
-                                    <MdLock className="me-2" />
-                                    Senha Gerada com Sucesso
-                                </h5>
-                                <button 
-                                    className="btn-close btn-close-white" 
-                                    onClick={() => setModalSenhaGeradaAberto(false)}
-                                />
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5><MdLock className="me-2" />Senha Gerada com Sucesso</h5>
+                                <button className="btn-close btn-close-white" onClick={() => setModalSenhaGeradaAberto(false)} />
                             </div>
                             <div className="modal-body text-center py-4">
                                 <div className="mb-3">
@@ -1460,51 +1177,22 @@ function ProfessorEdit() {
                                     <h5>Nova senha gerada para:</h5>
                                     <h4 className="text-primary">{professorSenhaGerada.nome}</h4>
                                 </div>
-                                
                                 <div className="alert alert-info">
-                                    <p className="mb-1">
-                                        <strong>Senha:</strong>
-                                    </p>
+                                    <p className="mb-1"><strong>Senha:</strong></p>
                                     <div className="bg-white p-3 rounded border">
-                                        <code style={{ 
-                                            fontSize: '24px', 
-                                            fontWeight: 'bold',
-                                            letterSpacing: '2px'
-                                        }}>
-                                            {senhaGerada}
-                                        </code>
+                                        <code style={{ fontSize: '24px', fontWeight: 'bold', letterSpacing: '2px' }}>{senhaGerada}</code>
                                     </div>
                                 </div>
-                                
-                                <p className="text-muted mt-3">
-                                    <MdEmail className="me-2" />
-                                    A senha foi enviada para o email do professor
-                                </p>
-                                
+                                <p className="text-muted mt-3"><MdEmail className="me-2" />A senha foi enviada para o email do professor</p>
                                 <div className="alert alert-warning small">
-                                    <strong>Atenção:</strong> Guarde esta senha em segurança. 
-                                    O professor poderá alterá-la após o primeiro login.
+                                    <strong>Atenção:</strong> Guarde esta senha em segurança. O professor poderá alterá-la após o primeiro login.
                                 </div>
                             </div>
                             <div className="modal-footer">
-                                <button 
-                                    type="button" 
-                                    className={`btn ${Style.btnSubmit}`}
-                                    onClick={() => {
-                                        setModalSenhaGeradaAberto(false);
-                                        navigator.clipboard?.writeText(senhaGerada);
-                                        showSuccessToast("Copiado!", "Senha copiada para a área de transferência");
-                                    }}
-                                >
+                                <button type="button" className={`btn ${Style.btnSubmit}`} onClick={() => { setModalSenhaGeradaAberto(false); navigator.clipboard?.writeText(senhaGerada); showSuccessToast("Copiado!", "Senha copiada para a área de transferência"); }}>
                                     Copiar Senha
                                 </button>
-                                <button 
-                                    type="button" 
-                                    className={`btn ${Style.btnCancelar}`}
-                                    onClick={() => setModalSenhaGeradaAberto(false)}
-                                >
-                                    Fechar
-                                </button>
+                                <button type="button" className={`btn ${Style.btnCancelar}`} onClick={() => setModalSenhaGeradaAberto(false)}>Fechar</button>
                             </div>
                         </div>
                     </div>

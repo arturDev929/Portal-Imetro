@@ -3,7 +3,7 @@ import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd } from "react-icons
 import { IoMdBusiness } from "react-icons/io";
 import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
-import Style from "./DepartamentosEdit.module.css"
+import Style from "./DepartamentosEdit.module.css";
 import Table from "../../components/global/Table";
 
 const API_TIMEOUT = 5000;
@@ -14,10 +14,7 @@ function Departamento() {
     const [termoPesquisa, setTermoPesquisa] = useState('');
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
-    const [dadosEdicao, setDadosEdicao] = useState({
-        idcategoriacurso: '',
-        categoriacurso: ''
-    });
+    const [dadosEdicao, setDadosEdicao] = useState({ idcategoriacurso: '', categoriacurso: '' });
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [novoDepartamento, setNovoDepartamento] = useState('');
@@ -71,11 +68,7 @@ function Departamento() {
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
 
             if (mostrarNotificacao && response.data && response.data.length > 0) {
-                showSuccessToast(
-                    "Sucesso",
-                    "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} departamento(s)` }
-                );
+                showSuccessToast("Sucesso", "Dados atualizados com sucesso", { "Quantidade": `${response.data.length} departamento(s)` });
             }
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
@@ -83,6 +76,10 @@ function Departamento() {
             setLoading(false);
         }
     }, [apiClient]);
+
+    useEffect(() => {
+        fetchData(false);
+    }, [fetchData]);
 
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
@@ -105,10 +102,6 @@ function Departamento() {
     }, [lista]);
 
     useEffect(() => {
-        fetchData(false);
-    }, [fetchData]);
-
-    useEffect(() => {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(lista);
         } else {
@@ -120,33 +113,18 @@ function Departamento() {
         }
     }, [lista, termoPesquisa]);
 
-    const adicionarItemLocal = useCallback((novoItem) => {
-        setLista(prev => [...prev, novoItem]);
-    }, []);
-
     const atualizarItemLocal = useCallback((id, novoNome) => {
-        setLista(prev => {
-            const updatedList = prev.map(item =>
-                item.idcategoriacurso === id
-                    ? { ...item, categoriacurso: novoNome }
-                    : item
-            );
-            return updatedList;
-        });
+        setLista(prev => prev.map(item =>
+            item.idcategoriacurso === id ? { ...item, categoriacurso: novoNome } : item
+        ));
     }, []);
 
     const removerItemLocal = useCallback((id) => {
-        setLista(prev => {
-            const updatedList = prev.filter(item => item.idcategoriacurso !== id);
-            return updatedList;
-        });
+        setLista(prev => prev.filter(item => item.idcategoriacurso !== id));
     }, []);
 
     const abrirModalEditar = useCallback((item) => {
-        setDadosEdicao({
-            idcategoriacurso: item.idcategoriacurso,
-            categoriacurso: item.categoriacurso || ''
-        });
+        setDadosEdicao({ idcategoriacurso: item.idcategoriacurso, categoriacurso: item.categoriacurso || '' });
     }, []);
 
     const fecharModal = useCallback(() => {
@@ -190,13 +168,8 @@ function Departamento() {
                 categoriacurso: nome
             });
 
-            showSuccessToast(
-                "Sucesso",
-                response.data.message || "Departamento atualizado",
-                { "Novo nome": response.data.categoriacurso || nome }
-            );
-
             atualizarItemLocal(dadosEdicao.idcategoriacurso, nome);
+            showSuccessToast("Sucesso", response.data.message || "Departamento atualizado", { "Novo nome": nome });
             fecharModal();
         } catch (error) {
             console.error("Erro ao editar:", error);
@@ -226,34 +199,16 @@ function Departamento() {
                 idAdm: user.id
             });
 
-            showSuccessToast(
-                "Sucesso",
-                response.data.message || "Departamento adicionado com sucesso",
-                { "Nome": response.data.categoriacurso || nome }
-            );
+            await fetchData(false);
 
-            if (response.data.departamento) {
-                adicionarItemLocal(response.data.departamento);
-            } else {
-                await fetchData(false);
-            }
-
+            showSuccessToast("Sucesso", response.data.message || "Departamento adicionado com sucesso", { "Nome": nome });
             fecharModalAdicionar();
         } catch (error) {
             console.error("Erro ao adicionar:", error);
         } finally {
             setSalvando(false);
         }
-    }, [novoDepartamento, apiClient, user, adicionarItemLocal, fetchData, fecharModalAdicionar]);
-
-    const handleInputChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setDadosEdicao(prev => ({ ...prev, [name]: value }));
-    }, []);
-
-    const handleNovoDepartamentoChange = useCallback((e) => {
-        setNovoDepartamento(e.target.value);
-    }, []);
+    }, [novoDepartamento, apiClient, user, fetchData, fecharModalAdicionar]);
 
     const deletarDepartamento = useCallback(async (id, nome) => {
         showConfirmToast(
@@ -261,14 +216,8 @@ function Departamento() {
             async () => {
                 try {
                     showInfoToast("Processando", "Excluindo departamento...");
-
                     const response = await apiClient.delete(`/categoriaCurso/${id}`);
-
-                    showSuccessToast(
-                        "Sucesso",
-                        response.data.message || "Departamento excluído"
-                    );
-
+                    showSuccessToast("Sucesso", response.data.message || "Departamento excluído");
                     removerItemLocal(id);
                 } catch (error) {
                     console.error("Erro ao deletar:", error);
@@ -279,11 +228,21 @@ function Departamento() {
         );
     }, [apiClient, removerItemLocal, showConfirmToast]);
 
+    const handleInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setDadosEdicao(prev => ({ ...prev, [name]: value }));
+    }, []);
+
+    const handleNovoDepartamentoChange = useCallback((e) => {
+        setNovoDepartamento(e.target.value);
+    }, []);
+
     const isEmpty = lista.length === 0 && !loading;
     const showModal = dadosEdicao.idcategoriacurso !== '';
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
     const headers = ['Nome', 'Editar', 'Apagar'];
+
     const renderRow = (item) => (
         <tr key={item.idcategoriacurso}>
             <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
@@ -312,14 +271,15 @@ function Departamento() {
             </td>
         </tr>
     );
+
     const renderConteudo = () => {
         if (loading) {
             return (
                 <div className="text-center py-5">
-                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{ width: '3rem', height: '3rem' }} role="status">
                         <span className="visually-hidden">Carregando...</span>
                     </div>
-                    <p className="text-muted mb-0">Carregando categorias...</p>
+                    <p className="text-muted mb-0">Carregando departamentos...</p>
                 </div>
             );
         }
@@ -328,11 +288,8 @@ function Departamento() {
             return (
                 <div className="text-center py-5">
                     <MdSearch size={48} className="text-muted mb-3" />
-                    <p className="text-muted mb-2">Nenhuma categoria encontrado para "{termoPesquisa}"</p>
-                    <button 
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={limparPesquisa}
-                    >
+                    <p className="text-muted mb-2">Nenhum departamento encontrado para "{termoPesquisa}"</p>
+                    <button className="btn btn-outline-primary btn-sm" onClick={limparPesquisa}>
                         Limpar pesquisa
                     </button>
                 </div>
@@ -343,10 +300,14 @@ function Departamento() {
             return (
                 <div className="text-center py-5">
                     <i className="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-                    <p className="text-muted mb-3">Nenhum professor encontrado</p>
-                    <button className="btn btn-outline-primary" onClick={() => fetchData(true)}>
-                        <MdRefresh className="me-1" />
-                        Carregar professores
+                    <p className="text-muted mb-3">Nenhum departamento cadastrado</p>
+                    <button
+                        className="btn btn-primary"
+                        onClick={abrirModalAdicionar}
+                        disabled={loading || salvando || isConfirming}
+                    >
+                        <MdAdd className="me-1" />
+                        Adicionar primeiro departamento
                     </button>
                 </div>
             );
@@ -354,7 +315,7 @@ function Departamento() {
 
         return (
             <div className="table-responsive">
-                <Table 
+                <Table
                     headers={headers}
                     data={listaFiltrada}
                     renderRow={renderRow}
@@ -415,12 +376,7 @@ function Departamento() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{
-                                                    borderLeft: 'none',
-                                                    boxShadow: 'none',
-                                                    backgroundColor: 'var(--cinza-claro)',
-                                                    padding: '10px'
-                                                }}
+                                                style={{ borderLeft: 'none', boxShadow: 'none', backgroundColor: 'var(--cinza-claro)', padding: '10px' }}
                                             />
                                             {termoPesquisa && (
                                                 <button
@@ -428,11 +384,7 @@ function Departamento() {
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{
-                                                        borderLeft: 'none',
-                                                        backgroundColor: 'var(--danger)',
-                                                        color: 'var(--branco)'
-                                                    }}
+                                                    style={{ borderLeft: 'none', backgroundColor: 'var(--danger)', color: 'var(--branco)' }}
                                                 >
                                                     ✕
                                                 </button>
@@ -452,6 +404,7 @@ function Departamento() {
                         </div>
                     </div>
                 </div>
+
                 {renderConteudo()}
             </div>
 
@@ -474,6 +427,7 @@ function Departamento() {
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body">
                                     <div className="mb-3">
+                                        <label className="form-label fw-semibold">Nome do Departamento</label>
                                         <input
                                             type="text"
                                             className="form-control form-control-lg shadow-sm"
@@ -486,6 +440,7 @@ function Departamento() {
                                             maxLength={100}
                                             required
                                         />
+                                        <small className="text-muted">Mínimo 2 caracteres, máximo 100</small>
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
@@ -503,13 +458,8 @@ function Departamento() {
                                         disabled={salvando || isConfirming || !dadosEdicao.categoriacurso.trim()}
                                     >
                                         {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Salvando...
-                                            </>
-                                        ) : (
-                                            'Salvar Alterações'
-                                        )}
+                                            <><span className="spinner-border spinner-border-sm me-2"></span>Salvando...</>
+                                        ) : 'Salvar Alterações'}
                                     </button>
                                 </div>
                             </form>
@@ -537,6 +487,7 @@ function Departamento() {
                             <form onSubmit={salvarNovoDepartamento}>
                                 <div className="modal-body">
                                     <div className="mb-3">
+                                        <label className="form-label fw-semibold">Nome do Departamento</label>
                                         <input
                                             type="text"
                                             className="form-control form-control-lg shadow-sm"
@@ -548,6 +499,7 @@ function Departamento() {
                                             maxLength={100}
                                             required
                                         />
+                                        <small className="text-muted">Mínimo 2 caracteres, máximo 100</small>
                                     </div>
                                 </div>
                                 <div className="modal-footer border-0">
@@ -565,13 +517,8 @@ function Departamento() {
                                         disabled={salvando || isConfirming || !novoDepartamento.trim()}
                                     >
                                         {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Adicionando...
-                                            </>
-                                        ) : (
-                                            'Adicionar Departamento'
-                                        )}
+                                            <><span className="spinner-border spinner-border-sm me-2"></span>Adicionando...</>
+                                        ) : 'Adicionar Departamento'}
                                     </button>
                                 </div>
                             </form>

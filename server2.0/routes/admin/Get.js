@@ -7,7 +7,6 @@ router.get("/cargosDisponiveis", verificarToken, (req, res) => {
     const sql = "SELECT id_cargo, cargo FROM cargo WHERE status = 'Ativo' ORDER BY cargo ASC";
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar cargos:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         res.status(200).json(result);
@@ -26,7 +25,6 @@ router.get("/funcionarios", (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar funcionarios:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -39,10 +37,15 @@ router.get("/funcionarios", (req, res) => {
 });
 
 router.get("/funcionariosDesativados", verificarToken, (req, res) => {
-    console.log("Buscando funcionários desativados...");
     const sql = `
         SELECT 
-            f.id_func, f.nome, f.contacto, f.bi, f.status, f.foto, f.email,
+            f.id_func AS id_funcionario,
+            f.nome AS nome_funcionario,
+            f.contacto AS contacto_funcionario,
+            f.bi AS bi_funcionario,
+            f.email,
+            f.foto,
+            f.status,
             c.cargo
         FROM funcionario f
         INNER JOIN cargo c ON c.id_cargo = f.id_cargo
@@ -51,22 +54,13 @@ router.get("/funcionariosDesativados", verificarToken, (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar funcionarios desativados:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const funcionarios = result.map(func => ({
-            id_funcionario: func.id_func,
-            nome_funcionario: func.nome,
-            contacto_funcionario: func.contacto,
-            bi_funcionario: func.bi,
-            status: func.status,
-            foto: func.foto,
-            email: func.email,
-            cargo: func.cargo,
+            ...func,
             foto_url: func.foto ? `${baseUrl}/api/img/funcionarios/${func.foto}` : null
         }));
-        console.log(`Encontrados ${funcionarios.length} funcionários desativados`);
         res.status(200).json(funcionarios);
     });
 });
@@ -76,7 +70,6 @@ router.get("/funcionario/:id/documentos", verificarToken, (req, res) => {
     const sql = "SELECT id_doc_func, titulo, doc, status, data_criacao FROM doc_funcionario WHERE id_func = ? AND status = 'Ativo'";
     conexao.query(sql, [id], (error, result) => {
         if (error) {
-            console.error("Erro ao buscar documentos:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -92,7 +85,6 @@ router.get("/estatisticasFuncionarios", verificarToken, (req, res) => {
     const sql = "SELECT COUNT(*) as totalFuncionarios FROM funcionario WHERE status = 'Ativo'";
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar estatisticas:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         res.status(200).json(result[0] || { totalFuncionarios: 0 });
@@ -103,7 +95,6 @@ router.get("/estatisticasFuncionariosDesativados", verificarToken, (req, res) =>
     const sql = "SELECT COUNT(*) as totalFuncionariosDesativados FROM funcionario WHERE status = 'Desativado'";
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar estatisticas:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         res.status(200).json(result[0] || { totalFuncionariosDesativados: 0 });
@@ -119,7 +110,6 @@ router.get("/dashboardFuncionarios", verificarToken, (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar dashboard:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const dados = result[0] || { ativos: 0, desativados: 0, total: 0 };
@@ -149,14 +139,12 @@ router.get("/cargosFuncionarios", verificarToken, (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar cargos:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         res.status(200).json(result);
     });
 });
 
-// Buscar todos funcionários ativos
 router.get("/funcionarios", verificarToken, (req, res) => {
     const sql = `
         SELECT f.id_func, f.nome, f.contacto, f.bi, f.status, f.foto, f.email, c.cargo
@@ -167,7 +155,6 @@ router.get("/funcionarios", verificarToken, (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar funcionarios:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -179,7 +166,6 @@ router.get("/funcionarios", verificarToken, (req, res) => {
     });
 });
 
-// Buscar funcionários desativados
 router.get("/funcionariosDesativados", verificarToken, (req, res) => {
     const sql = `
         SELECT f.id_func, f.nome, f.contacto, f.bi, f.status, f.foto, f.email, c.cargo
@@ -190,7 +176,6 @@ router.get("/funcionariosDesativados", verificarToken, (req, res) => {
     `;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar funcionarios desativados:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -209,7 +194,6 @@ router.get("/funcionariosDesativados", verificarToken, (req, res) => {
     });
 });
 
-// Buscar informações completas de um funcionário
 router.get("/funcionario/info/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
     try {
@@ -238,12 +222,10 @@ router.get("/funcionario/info/:id", verificarToken, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Erro ao buscar informações:", error);
         res.status(500).json({ success: false, error: "Erro interno do servidor" });
     }
 });
 
-// Buscar documentos do funcionário
 router.get("/funcionario/documentos/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
     try {
@@ -261,7 +243,6 @@ router.get("/funcionario/documentos/:id", verificarToken, async (req, res) => {
         }));
         res.status(200).json({ success: true, documentos: documentosComUrl });
     } catch (error) {
-        console.error("Erro ao buscar documentos:", error);
         res.status(500).json({ success: false, error: "Erro interno do servidor" });
     }
 });
@@ -269,21 +250,27 @@ router.get("/funcionario/documentos/:id", verificarToken, async (req, res) => {
 router.get("/professorDocumentos/:id", verificarToken, async (req, res) => {
     const { id } = req.params;
     try {
-        const sql = `SELECT id_ficheiro, ficheiro, status, data_actualizacao,nome  FROM ficheiro_prof WHERE id_professor = ? ORDER BY data_actualizacao DESC`;
+        const sql = `SELECT id_ficheiro, ficheiro, status, data_actualizacao, nome
+                     FROM ficheiro_prof 
+                     WHERE id_professor = ? 
+                     ORDER BY data_actualizacao DESC`;
+        
         const documentos = await new Promise((resolve, reject) => {
             conexao.query(sql, [id], (erro, resultados) => {
                 if (erro) reject(erro);
                 else resolve(resultados);
             });
         });
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        
+        const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
         const documentosComUrl = documentos.map(doc => ({
             ...doc,
-            doc_url: doc.doc ? `${baseUrl}/api/img/professores/documentos/${doc.nome}` : null
+            doc_url: doc.nome ? `${baseUrl}/api/img/professores/documentos/${doc.nome}` : null,
+            ficheiro_url: doc.ficheiro ? `${baseUrl}/api/img/professores/documentos/${doc.ficheiro}` : null
         }));
+        
         res.status(200).json({ success: true, documentos: documentosComUrl });
     } catch (error) {
-        console.error("Erro ao buscar documentos:", error);
         res.status(500).json({ success: false, error: "Erro interno do servidor" });
     }
 });
@@ -298,7 +285,6 @@ router.get('/estatisticasProfessores', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar estatísticas de professores:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -319,7 +305,6 @@ router.get('/estatisticasProfessoresDesativados', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar estatísticas de professores desativados:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -342,7 +327,6 @@ router.get('/distribuicaoTitulacao', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar distribuição por titulação:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -366,7 +350,6 @@ router.get('/distribuicaoTitulacaoDesativados', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar distribuição por titulação de desativados:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -381,7 +364,6 @@ router.get('/Professores', (req, res) => {
     const sql = "SELECT * FROM professor p INNER JOIN contrato c ON p.id_contrato = c.id_contrato WHERE p.status = 'Ativo' ORDER BY p.nome ASC";
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar professores:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -400,7 +382,6 @@ router.get('/Professores', (req, res) => {
 router.get('/professorInfo/:id_professor', (req, res) => {
     const { id_professor } = req.params;
     
-    // Primeiro, busca os dados do professor e contrato
     const sqlProfessor = `
         SELECT p.*, c.contrato 
         FROM professor p 
@@ -410,7 +391,6 @@ router.get('/professorInfo/:id_professor', (req, res) => {
     
     conexao.query(sqlProfessor, [id_professor], (error, professorResult) => {
         if (error) {
-            console.error("Erro ao buscar informações do professor:", error);
             return res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -426,13 +406,37 @@ router.get('/professorInfo/:id_professor', (req, res) => {
         const professor = professorResult[0];
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         
-        // Depois, busca os documentos do professor
+        const formatarData = (data) => {
+            if (!data) return null;
+            if (data instanceof Date) {
+                const ano = data.getFullYear();
+                const mes = String(data.getMonth() + 1).padStart(2, '0');
+                const dia = String(data.getDate()).padStart(2, '0');
+                return `${ano}-${mes}-${dia}`;
+            }
+            try {
+                const dataObj = new Date(data);
+                if (!isNaN(dataObj.getTime())) {
+                    const ano = dataObj.getFullYear();
+                    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+                    const dia = String(dataObj.getDate()).padStart(2, '0');
+                    return `${ano}-${mes}-${dia}`;
+                }
+            } catch (e) {}
+            return data;
+        };
+
+        const professorFormatado = {
+            ...professor,
+            data_nascimento: formatarData(professor.data_nascimento),
+            data_admissao: formatarData(professor.data_admissao),
+            fotoUrl: professor.foto ? `${baseUrl}/api/img/professores/${professor.foto}` : null
+        };
+
         const sqlDocumentos = "SELECT id_ficheiro, ficheiro, nome, data_actualizacao FROM ficheiro_prof WHERE id_professor = ? ORDER BY nome DESC";
         
         conexao.query(sqlDocumentos, [id_professor], (errorDocs, documentosResult) => {
             if (errorDocs) {
-                console.error("Erro ao buscar documentos:", errorDocs);
-                // Continua mesmo sem documentos
             }
             
             const documentos = (documentosResult || []).map(doc => ({
@@ -440,12 +444,11 @@ router.get('/professorInfo/:id_professor', (req, res) => {
                 titulo: doc.ficheiro,
                 nome_arquivo: doc.nome,
                 data_upload: doc.data_actualizacao,
-                url: `${baseUrl}/api/img/professores/documentos/${doc.nome}`
+                doc_url: `${baseUrl}/api/img/professores/documentos/${doc.nome}`
             }));
             
             const professorCompleto = {
-                ...professor,
-                fotoUrl: professor.foto ? `${baseUrl}/api/img/professores/${professor.foto}` : null,
+                ...professorFormatado,
                 documentos: documentos
             };
             
@@ -472,7 +475,6 @@ router.get('/disciplinasMaisMinistradas', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar disciplinas mais ministradas:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -497,7 +499,6 @@ router.get('/professoresSemDisciplinas', (req, res) => {
 
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar professores sem disciplinas:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -512,7 +513,6 @@ router.get('/ProfessoresDesativados', (req, res) => {
     const sql = "SELECT * FROM professor WHERE status = 'Desativado' ORDER BY nome ASC";
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar professores:", error);
             res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -571,7 +571,6 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
 
     conexao.query(sqlProfessor, [id], (error, professorResult) => {
         if (error) {
-            console.error("Erro ao buscar dados do professor:", error);
             return res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -586,7 +585,6 @@ router.get('/InformacoesProfessor/:id', async (req, res) => {
 
         conexao.query(sqlDisciplinas, [id], (error, disciplinasResult) => {
             if (error) {
-                console.error("Erro ao buscar disciplinas:", error);
                 return res.status(500).json({
                     error: "Erro interno do servidor",
                     details: error.message
@@ -635,7 +633,6 @@ router.get('/professorVinculadoDisciplinas/:id', async (req, res) => {
 
     conexao.query(sql, [id], (error, result) => {
         if (error) {
-            console.error("Erro ao buscar disciplinas vinculadas:", error);
             return res.status(500).json({
                 error: "Erro interno do servidor",
                 details: error.message
@@ -650,13 +647,249 @@ router.get('/contratos', (req, res) => {
     const sql = `SELECT id_contrato,contrato FROM contrato WHERE status = 'Ativo' ORDER BY contrato ASC`;
     conexao.query(sql, (error, result) => {
         if (error) {
-            console.error("Erro ao buscar contratos:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
         res.status(200).json(result);
     });
 });
 
+router.get('/ProfessoresDesativado', (req, res) => {
+    const sql = "SELECT * FROM professor p INNER JOIN contrato c ON p.id_contrato = c.id_contrato WHERE p.status = 'Eliminado' ORDER BY p.nome ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(professor => ({
+                ...professor,
+                fotoUrl: professor.foto ? `${baseUrl}/api/img/professores/${professor.foto}` : null
+            }))
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
 
+router.get('/totalcategoriacurso', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_categorias FROM categoria";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar categorias: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/totallicenciaturas', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_licenciaturas FROM curso";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar licenciaturas: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/totaldisciplina', (req, res) => {
+    const sql = "SELECT COUNT(*) as total_disciplinas FROM disciplina";
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar disciplinas: ", error);
+            res.status(500).json({
+                erroe: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results)
+        }
+    })
+});
+
+router.get('/dadosGraficosCategoria', (req, res) => {
+    const sql = "SELECT c.categoria, COUNT(cs.id_curso) as total_cursos FROM categoria c LEFT JOIN curso cs ON c.id_categoria = cs.id_categoria GROUP BY c.id_categoria, c.categoria ORDER BY total_cursos DESC";
+
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar dados para gráfico: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+router.get('/totalDisciplinasPorCurso', (req, res) => {
+    const sql = `
+        SELECT 
+            c.curso,
+            c.id_curso,
+            COUNT(s.id_semestre) as total_disciplinas
+        FROM curso c
+        INNER JOIN semestre s ON c.id_curso = s.id_curso
+        GROUP BY c.id_curso, c.curso
+        ORDER BY total_disciplinas DESC
+    `;
+
+    conexao.query(sql, (error, results) => {
+        if (error) {
+            console.log("Erro ao buscar total de disciplinas por curso: ", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+router.get('/categoriaCurso', (req, res) => {
+    const sql = "SELECT id_categoria as idcategoriacurso, categoria as categoriacurso FROM categoria ORDER BY categoria ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar categorias:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/Cursos', (req, res) => {
+    const sql = "SELECT *FROM curso c INNER JOIN categoria ct ON ct.id_categoria = c.id_categoria ORDER BY categoria ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cursos:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/anoCurricular/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = "SELECT id_anocurricular, ano, id_curso FROM anocurricular WHERE id_curso = ? ORDER BY ano DESC";
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar ano curricular:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                res.status(404).json({ error: "Ano curricular não encontrado" });
+            } else {
+                res.status(200).json(result[0]);
+            }
+        }
+    });
+});
+
+router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
+    const { idcurso } = req.params;
+
+    const sql = `
+        SELECT 
+            d.id_disciplina,
+            d.disciplina,
+            s.id_semestre,
+            s.semestre,
+            a.ano,
+            c.curso,
+            cc.categoria
+        FROM semestre s
+        INNER JOIN disciplina d ON s.id_disciplina = d.id_disciplina
+        INNER JOIN anocurricular a ON s.id_anocurricular = a.id_anocurricular
+        INNER JOIN curso c ON s.id_curso = c.id_curso
+        INNER JOIN categoria cc ON s.id_categoria = cc.id_categoria
+		WHERE s.id_curso = ?
+        ORDER BY a.ano ASC, s.semestre ASC, d.disciplina ASC
+    `;
+
+    conexao.query(sql, [idcurso], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas do curso:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            if (result.length === 0) {
+                const sqlCurso = "SELECT c.curso, cc.categoria FROM curso c INNER JOIN categoria cc ON c.id_categoria = cc.id_categoria WHERE c.id_curso = ?";
+                conexao.query(sqlCurso, [idcurso], (errorCurso, resultCurso) => {
+                    if (errorCurso) {
+                        res.status(200).json({
+                            curso: 'Curso não identificado',
+                            categoria: '',
+                            totalDisciplinas: 0,
+                            disciplinas: {}
+                        });
+                    } else {
+                        res.status(200).json({
+                            curso: resultCurso[0]?.curso || 'Curso não identificado',
+                            categoria: resultCurso[0]?.categoriacurso || '',
+                            totalDisciplinas: 0,
+                            disciplinas: {}
+                        });
+                    }
+                });
+                return;
+            }
+
+            const disciplinasAgrupadas = result.reduce((acc, disciplina) => {
+                const anoKey = `Ano ${disciplina.anocurricular}`;
+
+                if (!acc[anoKey]) {
+                    acc[anoKey] = {};
+                }
+
+                const semestreKey = `Semestre ${disciplina.semestre}`;
+
+                if (!acc[anoKey][semestreKey]) {
+                    acc[anoKey][semestreKey] = [];
+                }
+
+                acc[anoKey][semestreKey].push({
+                    id: disciplina.iddisciplina,
+                    idsemestre: disciplina.idsemestre,
+                    nome: disciplina.disciplina
+                });
+
+                return acc;
+            }, {});
+
+            res.status(200).json({
+                curso: result[0]?.curso || 'Curso não encontrado',
+                categoria: result[0]?.categoriacurso || '',
+                totalDisciplinas: result.length,
+                disciplinas: disciplinasAgrupadas
+            });
+        }
+    });
+});
 
 module.exports = router;

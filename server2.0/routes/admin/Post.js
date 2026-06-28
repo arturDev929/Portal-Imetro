@@ -6,7 +6,6 @@ const upload = require("../../utils/upload");
 const { enviarCredenciaisFuncionario } = require("../../utils/email");
 const { criptografarSenha, gerarId, gerarCodigo, gerarSenhaTemporaria } = require("../../utils/senhas");
 
-// Pega os middlewares já configurados
 const uploadCombinado = upload.uploadCombinado;
 const uploadCombinadoProfessor = upload.uploadCombinadoProfessor;
 
@@ -19,18 +18,11 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
     const documentos = req.files?.documentos || [];
     const documentosTitulos = req.body.documentos_titulo || [];
 
-    console.log("=== REGISTRANDO FUNCIONÁRIO ===");
-    console.log("Nome:", nome);
-    console.log("Email:", email);
-    console.log("Foto:", foto);
-    console.log("Documentos:", documentos.map(d => d.filename));
-
     const limparArquivos = () => {
         if (foto) upload.deletarFotoFuncionario(foto);
         documentos.forEach(doc => upload.deletarDocumentoFuncionario(doc.filename));
     };
 
-    // Validações
     if (!nome?.trim()) {
         limparArquivos();
         return res.status(400).json({ sucesso: false, mensagem: "Nome é obrigatorio" });
@@ -53,7 +45,6 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
     }
 
     try {
-        // Verificações de unicidade
         const verificarContacto = await new Promise((resolve, reject) => {
             conexao.query("SELECT id_func FROM funcionario WHERE contacto = ?", [contacto.trim()], (erro, resultados) => {
                 if (erro) reject(erro);
@@ -105,11 +96,6 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
         const senhaCriptografada = await criptografarSenha(senha_funcionario);
         const dataAtual = new Date().toISOString().split('T')[0];
 
-        console.log("ID Funcionário:", id_func);
-        console.log("Código gerado:", codigo);
-        console.log("Senha gerada:", senha_funcionario);
-
-        // Inserir funcionário
         await new Promise((resolve, reject) => {
             const sql = `INSERT INTO funcionario (id_func, nome, contacto, bi, status, id_user, id_cargo, data_criacao, data_atualizacao, senha, foto, email, codigo) VALUES (?, ?, ?, ?, 'Ativo', ?, ?, ?, ?, ?, ?, ?, ?)`;
             conexao.query(sql, [id_func, nome.trim(), contacto.trim(), bi.trim(), idAdm, id_cargo, dataAtual, dataAtual, senhaCriptografada, foto, email.trim(), codigo], (erro, resultado) => {
@@ -118,7 +104,6 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         });
 
-        // Inserir documentos
         for (let i = 0; i < documentos.length; i++) {
             const doc = documentos[i];
             const titulo = documentosTitulos[i] || doc.originalname;
@@ -132,9 +117,7 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
             });
         }
 
-        // CORRIGIDO: enviar apenas 4 parâmetros
         const emailEnviado = await enviarCredenciaisFuncionario(email, nome, senha_funcionario, codigo);
-        console.log("Email enviado:", emailEnviado);
 
         res.status(201).json({
             sucesso: true,
@@ -143,18 +126,12 @@ router.post("/registrarfuncionario", verificarToken, uploadCombinado.fields([
         });
 
     } catch (erro) {
-        console.error("Erro ao registrar funcionario:", erro);
         limparArquivos();
         res.status(500).json({ sucesso: false, mensagem: "Erro interno ao registrar funcionario: " + erro.message });
     }
 });
 
-// Rota para registrar professor - CORRIGIDA
 router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, async (req, res) => {
-    console.log("=== INICIANDO REGISTRO DE PROFESSOR ===");
-    console.log("Body recebido:", req.body);
-    console.log("Files recebidos:", req.files);
-    
     const { 
         nome, genero, nacionalidade, nomepai, nomemae, bi, contacto, 
         whatsapp, email, contactoemergencia, anoexperienca, titulacao, 
@@ -162,29 +139,20 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
         id_contrato, id_user 
     } = req.body;
     
-    // Pega o nome do arquivo gerado pelo multer
     const foto = req.files?.foto ? req.files.foto[0].filename : null;
     const documentos = req.files?.documentos || [];
     const documentosTitulos = req.body.documentos_titulo || [];
 
-    console.log("Nome da foto salva:", foto);
-    console.log("Documentos salvos:", documentos.map(d => ({ original: d.originalname, filename: d.filename })));
-
     const limparArquivos = () => {
-        console.log("Limpando arquivos enviados...");
         if (foto) {
-            console.log("Deletando foto:", foto);
             upload.deletarFotoProfessor(foto);
         }
         documentos.forEach(doc => {
-            console.log("Deletando documento:", doc.filename);
             upload.deletarDocumentoProfessor(doc.filename);
         });
     };
 
     try {
-        // Validações
-        console.log("Validando campos obrigatórios...");
         const camposObrigatorios = [
             { nome: "nome", valor: nome },
             { nome: "bi", valor: bi },
@@ -198,7 +166,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
 
         for (const campo of camposObrigatorios) {
             if (!campo.valor || campo.valor.toString().trim() === "") {
-                console.log(`Erro: Campo obrigatório ausente - ${campo.nome}`);
                 limparArquivos();
                 return res.status(400).json({ 
                     sucesso: false, 
@@ -206,9 +173,7 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
                 });
             }
         }
-        console.log("Campos obrigatórios validados com sucesso");
 
-        // Validar nome
         if (nome.length < 3 || nome.length > 100) {
             limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Nome deve ter entre 3 e 100 caracteres" });
@@ -219,14 +184,12 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Nome deve conter apenas letras e espaços" });
         }
 
-        // Validar gênero
         const generosPermitidos = ["Masculino", "Feminino", "Outro"];
         if (!generosPermitidos.includes(genero)) {
             limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Gênero inválido" });
         }
 
-        // Validar BI
         if (bi.length < 9 || bi.length > 14) {
             limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "BI deve ter entre 9 e 14 caracteres" });
@@ -237,19 +200,16 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "BI deve conter apenas letras e números" });
         }
 
-        // Validar contacto
         if (!/^[0-9]{9,12}$/.test(contacto)) {
             limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "Contacto deve conter apenas números e ter entre 9 e 12 dígitos" });
         }
 
-        // Validar WhatsApp
         if (whatsapp && !/^[0-9]{9,12}$/.test(whatsapp)) {
             limparArquivos();
             return res.status(400).json({ sucesso: false, mensagem: "WhatsApp deve conter apenas números e ter entre 9 e 12 dígitos" });
         }
 
-        // Validar email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             limparArquivos();
@@ -261,7 +221,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Email deve ter no máximo 100 caracteres" });
         }
 
-        // Validar datas
         const dataNascimento = new Date(data_nascimento);
         const dataAdmissao = new Date(data_admissao);
         const dataAtual = new Date();
@@ -287,7 +246,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Data de admissão não pode ser futura" });
         }
 
-        // Verificar se contacto já existe
         const verificarContacto = await new Promise((resolve, reject) => {
             conexao.query("SELECT id_professor FROM professor WHERE contacto = ?", [contacto.trim()], (erro, resultados) => {
                 if (erro) reject(erro);
@@ -300,7 +258,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Contacto já em uso" });
         }
 
-        // Verificar se BI já existe
         const verificarBI = await new Promise((resolve, reject) => {
             conexao.query("SELECT id_professor FROM professor WHERE bi = ?", [bi.trim()], (erro, resultados) => {
                 if (erro) reject(erro);
@@ -313,7 +270,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "BI já em uso" });
         }
 
-        // Verificar se email já existe
         const verificarEmail = await new Promise((resolve, reject) => {
             conexao.query("SELECT id_professor FROM professor WHERE email = ?", [email.trim()], (erro, resultados) => {
                 if (erro) reject(erro);
@@ -326,7 +282,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Email já em uso" });
         }
 
-        // Verificar se contrato existe
         const verificarContrato = await new Promise((resolve, reject) => {
             conexao.query("SELECT id_contrato FROM contrato WHERE id_contrato = ? AND status = 'Ativo'", [id_contrato], (erro, resultados) => {
                 if (erro) reject(erro);
@@ -339,17 +294,11 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             return res.status(400).json({ sucesso: false, mensagem: "Tipo de contrato inválido" });
         }
 
-        // Gerar dados
         const id_professor = gerarId();
         const codigo = gerarCodigo();
         const senha_funcionario = gerarSenhaTemporaria();
         const senhaCriptografada = await criptografarSenha(senha_funcionario);
 
-        console.log("ID Professor:", id_professor);
-        console.log("Código:", codigo);
-        console.log("Senha:", senha_funcionario);
-
-        // Inserir professor
         await new Promise((resolve, reject) => {
             const sql = `INSERT INTO professor (
                 id_professor, nome, genero, nacionalidade, nomepai, nomemae, 
@@ -369,7 +318,6 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             });
         });
 
-        // Inserir documentos
         for (let i = 0; i < documentos.length; i++) {
             const doc = documentos[i];
             const titulo = documentosTitulos[i] || doc.originalname;
@@ -384,11 +332,8 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
             });
         }
 
-        // Enviar email
         const emailEnviado = await enviarCredenciaisFuncionario(email, nome, senha_funcionario, codigo);
-        console.log("Email enviado:", emailEnviado);
 
-        console.log("=== REGISTRO CONCLUÍDO COM SUCESSO ===");
         res.status(201).json({
             sucesso: true,
             mensagem: `Professor registrado com sucesso! ${emailEnviado.sucesso ? 'Credenciais enviadas por email.' : 'Erro ao enviar email.'}`,
@@ -402,17 +347,194 @@ router.post("/registrarProfessor", verificarToken, uploadCombinadoProfessor, asy
         });
 
     } catch (erro) {
-        console.error("=== ERRO NO REGISTRO DO PROFESSOR ===");
-        console.error("Mensagem de erro:", erro.message);
-        console.error("Stack trace:", erro.stack);
-        
         limparArquivos();
-        
         res.status(500).json({ 
             sucesso: false, 
             mensagem: erro.message || "Erro interno ao registrar professor"
         });
     }
+});
+
+router.post('/registrercategoria', (req, res) => {
+    const { categoriacurso, idAdm } = req.body;
+    const id_categoria = gerarId();
+
+    console.log("Dados recebidos para criação:", { categoriacurso, idAdm });
+
+    if (!categoriacurso || categoriacurso.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria é obrigatório'
+        });
+    }
+
+    if (categoriacurso.trim().length < 2) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria deve ter pelo menos 2 caracteres'
+        });
+    }
+
+    if (categoriacurso.trim().length > 100) {
+        return res.status(400).json({
+            success: false,
+            error: 'O nome da categoria não pode exceder 100 caracteres'
+        });
+    }
+
+    if (!idAdm) {
+        return res.status(400).json({
+            success: false,
+            error: 'ID do administrador é obrigatório'
+        });
+    }
+
+    // Verifica se já existe categoria com mesmo nome
+    const checkSql = 'SELECT * FROM categoria WHERE categoria = ?';
+    conexao.query(checkSql, [categoriacurso.trim()], (checkError, checkResults) => {
+        if (checkError) {
+            console.error('Erro ao verificar duplicidade:', checkError);
+            return res.status(500).json({
+                success: false,
+                error: 'Erro ao verificar se categoria já existe'
+            });
+        }
+
+        if (checkResults.length > 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Já existe uma categoria com este nome'
+            });
+        }
+
+        const insertSql = 'INSERT INTO categoria (id_categoria,categoria, id_user) VALUES (?, ?, ?)';
+        conexao.query(insertSql, [id_categoria,categoriacurso.trim(), idAdm], (error, results) => {
+            if (error) {
+                console.error('Erro ao criar categoria:', error);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Erro ao criar categoria no banco de dados'
+                });
+            }
+
+            const newId = results.insertId;
+
+            // Busca a categoria criada
+            const selectSql = 'SELECT id_categoria as idcategoriacurso, categoria as categoriacurso FROM categoria WHERE id_categoria = ?';
+            conexao.query(selectSql, [newId], (selectError, selectResults) => {
+                if (selectError) {
+                    console.error('Erro ao buscar categoria criada:', selectError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Erro ao buscar categoria criada'
+                    });
+                }
+
+                res.status(201).json({
+                    success: true,
+                    message: 'Categoria criada com sucesso',
+                    categoriacurso: categoriacurso.trim(),
+                    departamento: selectResults[0] || null
+                });
+            });
+        });
+    });
+});
+
+router.post('/registrarcurso', async (req, res) => {
+    const { curso, idcategoriacurso,idAdm } = req.body;
+    const id_curso = gerarId();
+    
+    if (!curso || !idcategoriacurso) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Dados incompletos",
+            mensagem: "Por favor, preencha todos os campos obrigatórios"
+        });
+    }
+
+    const verificarCursoSQL = "SELECT id_curso FROM curso WHERE curso = ?";
+    
+    conexao.query(verificarCursoSQL, [curso], async (erro, resultados) => {
+        if (erro) {
+            console.error("Erro ao verificar Curso:", erro);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno do servidor"
+            });
+        }
+
+        if (resultados.length > 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Curso Existente",
+                mensagem: "Este curso já está registrado!"
+            });
+        }
+
+        const verificarCategoriaSQL = "SELECT id_categoria FROM categoria WHERE id_categoria = ?";
+        
+        conexao.query(verificarCategoriaSQL, [idcategoriacurso], (erroCategoria, resultadosCategoria) => {
+            if (erroCategoria) {
+                console.error("Erro ao verificar categoria:", erroCategoria);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro ao verificar categoria"
+                });
+            }
+
+            if (resultadosCategoria.length === 0) {
+                return res.status(404).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Categoria não encontrada",
+                    mensagem: "A categoria selecionada não existe"
+                });
+            }
+
+            const inserirCursoSQL = "INSERT INTO curso (id_curso, curso, id_categoria, id_user) VALUES (?, ?, ?, ?)";
+            
+            conexao.query(inserirCursoSQL, [id_curso,curso, idcategoriacurso,idAdm], (erro, resultados) => {
+                if (erro) {
+                    console.error("Erro ao inserir Curso:", erro);
+                    
+                    if (erro.code === 'ER_NO_REFERENCED_ROW_2') {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Categoria inválida",
+                            mensagem: "A categoria selecionada não existe"
+                        });
+                    }
+                    
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: "Erro ao registrar curso"
+                    });
+                }
+
+                return res.status(201).json({
+                    sucesso: true,
+                    tipo: "sucesso",
+                    titulo: "Curso Registrado",
+                    mensagem: "Curso registrado com sucesso!",
+                    dados: {
+                        id: resultados.insertId,
+                        curso: curso,
+                        idcategoriacurso: idcategoriacurso
+                    }
+                });
+            });
+        });
+    });
 });
 
 module.exports = router;

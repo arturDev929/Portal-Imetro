@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const os = require('os');
 const path = require("path");
+const fs = require("fs")
 const login = require('./routes/home/login');
 const getAdmin = require('./routes/admin/Get');
 const postAdmin = require('./routes/admin/Post');
@@ -72,6 +73,7 @@ app.get('/', (req, res) => {
         local_ip: LOCAL_IP
     });
 });
+
 
 app.use('/api/img', express.static(path.join(__dirname, '../client/src/img')));
 
