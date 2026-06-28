@@ -725,4 +725,74 @@ router.put('/Curso/:id', (req, res) => {
     });
 });
 
+router.put('/disciplina/:id', (req, res) => {
+    const { id } = req.params;
+    const { disciplina } = req.body;
+    
+    if (!disciplina || !disciplina.trim()) {
+        return res.status(400).json({ error: "Nome da disciplina é obrigatório" });
+    }
+
+    const checkSql = "SELECT * FROM disciplina WHERE id_disciplina = ?";
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if(checkError){
+            console.error("Erro ao verificar disciplina:", checkError);
+            return res.status(500).json({ 
+                error: "Erro interno do servidor", 
+                details: checkError.message 
+            });
+        }
+        
+        if(checkResults.length === 0){
+            return res.status(404).json({ error: "Disciplina não encontrada" });
+        }
+        
+        const disciplinaAtual = checkResults[0];
+
+        const checkNomeSql = "SELECT * FROM disciplina WHERE LOWER(disciplina) = LOWER(?) AND id_disciplina != ?";
+        conexao.query(checkNomeSql, [disciplina.trim(), id], (nomeError, nomeResults) => {
+            if(nomeError){
+                console.error("Erro ao verificar nome da disciplina:", nomeError);
+                return res.status(500).json({ 
+                    error: "Erro interno do servidor", 
+                    details: nomeError.message 
+                });
+            }
+            
+            if(nomeResults.length > 0){
+                return res.status(400).json({ 
+                    error: `A disciplina "${disciplina}" já existe no sistema` 
+                });
+            }
+
+            const updateSql = "UPDATE disciplina SET disciplina = ? WHERE id_disciplina = ?";
+            const values = [disciplina.trim(), id];
+            
+            conexao.query(updateSql, values, (updateError, updateResults) => {
+                if(updateError){
+                    console.error("Erro ao atualizar disciplina:", updateError);
+                    res.status(500).json({ 
+                        error: "Erro interno do servidor", 
+                        details: updateError.message 
+                    });
+                } else {
+                    if(updateResults.affectedRows === 0){
+                        res.status(404).json({ error: "Disciplina não encontrada para atualização" });
+                    } else {
+                        res.status(200).json({ 
+                            success: true,
+                            message: `Disciplina "${disciplinaAtual.disciplina}" atualizada para "${disciplina}"`,
+                            iddisciplina: id,
+                            disciplina: disciplina.trim(),
+                            alteracoes: {
+                                nome: disciplinaAtual.disciplina !== disciplina
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+});
+
 module.exports = router;

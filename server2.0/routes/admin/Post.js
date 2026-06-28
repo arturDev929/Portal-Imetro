@@ -537,4 +537,149 @@ router.post('/registrarcurso', async (req, res) => {
     });
 });
 
+router.post('/vincularProfessor', async (req, res) => {
+    const { idprofessor, iddisciplina,idAdm } = req.body;
+    const id_dp = gerarId()
+    if (!idprofessor || !iddisciplina) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Dados incompletos",
+            mensagem: "Por favor, selecione um professor e uma disciplina"
+        });
+    }
+
+    try {
+        const verificaSql = "SELECT * FROM disc_professor WHERE id_professor = ? AND id_disciplina = ?";
+        
+        conexao.query(verificaSql, [idprofessor, iddisciplina], (verificaError, verificaResult) => {
+            if (verificaError) {
+                console.error("Erro ao verificar vínculo existente:", verificaError);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro interno",
+                    mensagem: "Erro ao verificar vínculo existente"
+                });
+            }
+            
+            if (verificaResult.length > 0) {
+                return res.status(409).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Vínculo existente",
+                    mensagem: "Este professor já está vinculado a esta disciplina"
+                });
+            }
+            
+            const insertSql = "INSERT INTO disc_professor (id_dp, id_professor, id_disciplina,id_user) VALUES (?, ?, ?, ?)";
+            
+            conexao.query(insertSql, [id_dp,idprofessor, iddisciplina, idAdm], (insertError, result) => {
+                if (insertError) {
+                    console.error("Erro ao vincular professor:", insertError);
+                    
+                    if (insertError.code === 'ER_NO_REFERENCED_ROW_2') {
+                        return res.status(400).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Dados inválidos",
+                            mensagem: "Professor ou disciplina não encontrado no sistema"
+                        });
+                    }
+                    
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro interno",
+                        mensagem: "Não foi possível vincular o professor à disciplina"
+                    });
+                }
+                
+                return res.status(201).json({
+                    sucesso: true,
+                    tipo: "sucesso",
+                    titulo: "Vinculação realizada",
+                    mensagem: "Professor vinculado à disciplina com sucesso",
+                    dados: {
+                        idVinculo: result.insertId,
+                        idprofessor,
+                        iddisciplina
+                    }
+                });
+            });
+        });
+        
+    } catch (error) {
+        console.error("Erro inesperado:", error);
+        return res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro interno",
+            mensagem: "Ocorreu um erro inesperado no servidor"
+        });
+    }
+});
+
+router.post('/registrardisciplina', async (req, res) => {
+    const { disciplina, idAdm } = req.body;
+    const id_disciplina = gerarId();
+    if (!disciplina || !idAdm) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Dados incompletos",
+            mensagem: "Por favor, preencha todos os campos obrigatórios"
+        });
+    }
+
+    const verificarDisciplinaSQL = "SELECT id_disciplina FROM disciplina WHERE disciplina = ?";
+    
+    conexao.query(verificarDisciplinaSQL, [disciplina], async (erro, resultados) => {
+        if (erro) {
+            console.error("Erro ao verificar Disciplina:", erro);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno do servidor"
+            });
+        }
+
+        if (resultados.length > 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Disciplina Existe",
+                mensagem: "Esta Disciplina já está registrada!"
+            });
+        }
+
+        const inserirDisciplinaSQL = "INSERT INTO disciplina (id_disciplina,disciplina, id_user) VALUES (?, ?, ?)";
+        
+        conexao.query(inserirDisciplinaSQL, [id_disciplina,disciplina, idAdm], (erro, resultados) => {
+            if (erro) {
+                console.error("Erro ao inserir Disciplina:", erro);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro ao registrar disciplina"
+                });
+            }
+
+            return res.status(201).json({
+                sucesso: true,
+                tipo: "sucesso",
+                titulo: "Disciplina Registrada",
+                mensagem: "Disciplina registrada com sucesso!",
+                dados: {
+                    id: resultados.insertId,
+                    disciplina: disciplina,
+                    idAdm: idAdm
+                }
+            });
+        });
+    });
+});
+
 module.exports = router;

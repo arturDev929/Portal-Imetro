@@ -8,7 +8,6 @@ import { CiCircleMinus, CiCirclePlus } from "react-icons/ci";
 import Style from "./DepartamentosEdit.module.css";
 import Table from "../../components/global/Table";
 
-
 function DisciplinasEdit() {
     const [listaDisciplina, setListaDisciplina] = useState([]);
     const [listaFiltrada, setListaFiltrada] = useState([]);
@@ -17,19 +16,17 @@ function DisciplinasEdit() {
     const [isModalOpenProfessor, setIsModalOpenProfessor] = useState(false);
     const [disciplinaSelecionada, setDisciplinaSelecionada] = useState(null);
     const [professor, setProfessor] = useState(null);
-    const [Editar, setEditar] = useState({
-        iddisciplina: '',
-        disciplina: ''
-    });
+    const [Editar, setEditar] = useState({ iddisciplina: '', disciplina: '' });
     const [professoresVinculados, setProfessoresVinculados] = useState([]);
     const [professoresDisponiveis, setProfessoresDisponiveis] = useState([]);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
+    const [loadingProfessores, setLoadingProfessores] = useState(false);
+    const [vinculando, setVinculando] = useState(null);
+    const [desvinculando, setDesvinculando] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
-    const [dadosNovaDisciplina, setDadosNovaDisciplina] = useState({
-        disciplina: ''
-    });
+    const [dadosNovaDisciplina, setDadosNovaDisciplina] = useState({ disciplina: '' });
     const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
@@ -49,16 +46,18 @@ function DisciplinasEdit() {
         try {
             setLoading(true);
             const response = await api.get(`/Disciplinas`);
-            setListaDisciplina(response.data);
-            setListaFiltrada(response.data);
+
+            const dadosMapeados = response.data.map(item => ({
+                iddisciplina: item.id_disciplina,
+                disciplina: item.disciplina
+            }));
+
+            setListaDisciplina(dadosMapeados);
+            setListaFiltrada(dadosMapeados);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
 
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
-                showSuccessToast(
-                    "Sucesso",
-                    "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} disciplina(s)` }
-                );
+            if (mostrarNotificacao && dadosMapeados.length > 0) {
+                showSuccessToast("Sucesso", "Dados atualizados com sucesso", { "Quantidade": `${dadosMapeados.length} disciplina(s)` });
             }
         } catch (error) {
             console.error("Erro ao buscar disciplinas:", error);
@@ -75,14 +74,12 @@ function DisciplinasEdit() {
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
-
         if (termo.trim() === '') {
             setListaFiltrada(listaDisciplina);
         } else {
-            const filtrados = listaDisciplina.filter(item =>
+            setListaFiltrada(listaDisciplina.filter(item =>
                 item.disciplina.toLowerCase().includes(termo.toLowerCase())
-            );
-            setListaFiltrada(filtrados);
+            ));
         }
     }, [listaDisciplina]);
 
@@ -95,191 +92,179 @@ function DisciplinasEdit() {
         if (termoPesquisa.trim() === '') {
             setListaFiltrada(listaDisciplina);
         } else {
-            const filtrados = listaDisciplina.filter(item =>
+            setListaFiltrada(listaDisciplina.filter(item =>
                 item.disciplina.toLowerCase().includes(termoPesquisa.toLowerCase())
-            );
-            setListaFiltrada(filtrados);
+            ));
         }
     }, [listaDisciplina, termoPesquisa]);
 
+    // ✅ Função centralizada para recarregar professores do servidor
+    const recarregarProfessores = useCallback(async (iddisciplina) => {
+        setLoadingProfessores(true);
+        try {
+            const [vinculadosRes, disponiveisRes] = await Promise.all([
+                api.get(`/professorVinculado/${iddisciplina}`),
+                api.get(`/professorDisponivel/${iddisciplina}`)
+            ]);
+
+            setProfessoresVinculados(vinculadosRes.data.map(item => ({
+                idprofessor: item.id_professor,
+                nomeprofessor: item.nome,
+                titulacaoprofessor: item.titulacao,
+                fotoprofessor: item.foto,
+                fotoUrl: item.fotoUrl,
+                disciplina: item.disciplina,
+                iddisciplina: item.id_disciplina
+            })));
+
+            setProfessoresDisponiveis(disponiveisRes.data.map(item => ({
+                idprofessor: item.id_professor,
+                nomeprofessor: item.nome,
+                titulacaoprofessor: item.titulacao,
+                fotoprofessor: item.foto,
+                fotoUrl: item.fotoUrl
+            })));
+        } catch (error) {
+            console.error("Erro ao recarregar professores:", error);
+            showErrorToast("Erro", "Não foi possível atualizar a lista de professores");
+        } finally {
+            setLoadingProfessores(false);
+        }
+    }, []);
+
     const openModal = (disciplina) => {
         setDisciplinaSelecionada(disciplina);
-        setEditar({
-            disciplina: disciplina.disciplina,
-            iddisciplina: disciplina.iddisciplina
-        });
+        setEditar({ disciplina: disciplina.disciplina, iddisciplina: disciplina.iddisciplina });
         setModalOpen(true);
     };
 
     const closeModal = () => {
         setModalOpen(false);
-        setEditar({
-            disciplina: '',
-            iddisciplina: ''
-        });
+        setEditar({ disciplina: '', iddisciplina: '' });
         setDisciplinaSelecionada(null);
     };
 
     const EditarDisciplina = (valores) => {
-        setEditar((prevValue) => ({
-            ...prevValue,
-            [valores.target.name]: valores.target.value
-        }));
+        setEditar(prev => ({ ...prev, [valores.target.name]: valores.target.value }));
     };
 
     const AtualizarDisciplina = () => {
         setSalvando(true);
-        api.put(`/disciplina/${Editar.iddisciplina}`, {
-            disciplina: Editar.disciplina,
-            iddisciplina: Editar.iddisciplina
-        }).then(() => {
-            showSuccessToast(
-                "Sucesso",
-                `${Editar.disciplina} foi atualizado com sucesso!`
-            );
-            const updateList = listaDisciplina.map((item) =>
-                item.iddisciplina === Editar.iddisciplina ? { ...item, disciplina: Editar.disciplina } : item
-            );
-            setListaDisciplina(updateList);
-            closeModal();
-        }).catch(() => {
-            showErrorToast("Erro", "Erro ao atualizar a disciplina");
-        }).finally(() => {
-            setSalvando(false);
-        });
-    }
+        api.put(`/disciplina/${Editar.iddisciplina}`, { disciplina: Editar.disciplina })
+            .then((response) => {
+                showSuccessToast("Sucesso", response.data.message || `${Editar.disciplina} foi atualizado com sucesso!`);
+                const updateList = listaDisciplina.map(item =>
+                    item.iddisciplina === Editar.iddisciplina ? { ...item, disciplina: Editar.disciplina } : item
+                );
+                setListaDisciplina(updateList);
+                setListaFiltrada(updateList);
+                closeModal();
+            })
+            .catch((error) => {
+                console.error("Erro ao atualizar disciplina:", error);
+                showErrorToast("Erro", error.response?.data?.error || "Erro ao atualizar a disciplina");
+            })
+            .finally(() => setSalvando(false));
+    };
 
     const DeletarDisciplina = (disciplina) => {
         showConfirmToast(
             `Ao deletar esta disciplina irá desvincular a todos os cursos. Tem a certeza que pretendes deletar "${disciplina.disciplina}"?`,
             async () => {
                 try {
-                    await api.delete(`/disciplina/${disciplina.iddisciplina}`);
-                    const updatedList = listaDisciplina.filter(
-                        item => item.iddisciplina !== disciplina.iddisciplina
-                    );
+                    const response = await api.delete(`/disciplina/${disciplina.iddisciplina}`);
+                    const updatedList = listaDisciplina.filter(item => item.iddisciplina !== disciplina.iddisciplina);
                     setListaDisciplina(updatedList);
-                    showSuccessToast(
-                        "Sucesso",
-                        `Disciplina ${disciplina.disciplina} foi deletada com sucesso.`
-                    )
+                    setListaFiltrada(updatedList);
+                    showSuccessToast("Sucesso", response.data.message || `Disciplina ${disciplina.disciplina} foi deletada com sucesso.`);
                 } catch (error) {
-                    showErrorToast(
-                        "Erro!",
-                        `Erro ao excluir a disciplina ${disciplina.disciplina}`
-                    )
+                    console.error("Erro ao excluir disciplina:", error);
+                    showErrorToast("Erro!", error.response?.data?.error || `Erro ao excluir a disciplina ${disciplina.disciplina}`);
                 }
             },
             null,
             "Confirmar a Exclusão"
-        )
-    }
-
-    useEffect(() => {
-        if (isModalOpenProfessor) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'auto';
-        }
-        return () => {
-            document.body.style.overflow = 'auto';
-        }
-    }, [isModalOpenProfessor]);
-
-    const openModalProfessor = (disciplina) => {
-        setProfessor(disciplina);
-        setIsModalOpenProfessor(true);
-
-        api.get(`/professorVinculado/${disciplina.iddisciplina}`)
-            .then((response) => {
-                setProfessoresVinculados(response.data)
-            })
-            .catch((error) => {
-                console.error("Erro ao buscar professores vinculados:", error);
-                showErrorToast("Erro", "Não foi possível carregar os professores vinculados");
-            })
-
-        api.get(`/professorDisponivel/${disciplina.iddisciplina}`)
-            .then((response) => {
-                setProfessoresDisponiveis(response.data)
-            })
-            .catch((error) => {
-                console.error("Erro ao buscar professores disponíveis:", error);
-                showErrorToast("Erro", "Não foi possível carregar os professores disponíveis");
-            })
-    }
-
-    const vincularProfessor = (professorId) => {
-        api.post(`/vincularProfessor`, {
-            iddisciplina: professor.iddisciplina,
-            idprofessor: professorId
-        })
-            .then(() => {
-                showSuccessToast("Sucesso", "Professor vinculado com sucesso!");
-
-                const professorParaVincular = professoresDisponiveis.find(p => p.idprofessor === professorId);
-
-                setProfessoresDisponiveis(prev => prev.filter(p => p.idprofessor !== professorId));
-
-                setProfessoresVinculados(prev => [...prev, {
-                    ...professorParaVincular,
-                    iddisciplina: professor.iddisciplina,
-                    disciplina: professor.disciplina
-                }]);
-            })
-            .catch(() => {
-                showErrorToast("Erro", "Não foi possível vincular o professor");
-            });
+        );
     };
 
-    const getProfessorImagem = (professor) => {
-        if (professor.fotoUrl) {
-            return professor.fotoUrl
-        }
-        if (professor.fotoprofessor) {
-            return `${baseURL}/api/img/professores/${professor.fotoprofessor}`;
-        }
-        return '/default-avatar.png';
-    }
+    useEffect(() => {
+        document.body.style.overflow = isModalOpenProfessor ? 'hidden' : 'auto';
+        return () => { document.body.style.overflow = 'auto'; };
+    }, [isModalOpenProfessor]);
 
+    const openModalProfessor = async (disciplina) => {
+        setProfessor(disciplina);
+        setIsModalOpenProfessor(true);
+        await recarregarProfessores(disciplina.iddisciplina);
+    };
+
+    // ✅ Vincular: chama API e recarrega do servidor
+    const vincularProfessor = async (professorId) => {
+        if (!user || !user.id) {
+            showErrorToast("Erro", "Usuário não autenticado");
+            return;
+        }
+
+        setVinculando(professorId);
+        try {
+            const response = await api.post(`/vincularProfessor`, {
+                idprofessor: professorId,
+                iddisciplina: professor.iddisciplina,
+                idAdm: user.id
+            });
+
+            showSuccessToast("Sucesso", response.data.mensagem || "Professor vinculado com sucesso!");
+            await recarregarProfessores(professor.iddisciplina);
+        } catch (error) {
+            console.error("Erro ao vincular professor:", error);
+            showErrorToast("Erro", error.response?.data?.mensagem || "Não foi possível vincular o professor");
+        } finally {
+            setVinculando(null);
+        }
+    };
+
+    // ✅ Desvincular: chama API e recarrega do servidor
     const desvincularProfessor = (prof) => {
         showConfirmToast(
             `Tens a certeza que pretendes desvincular o professor ${prof.nomeprofessor} da disciplina de ${prof.disciplina}?`,
             async () => {
+                setDesvinculando(prof.idprofessor);
                 try {
                     await api.delete(`/desvincularProfessor/${prof.iddisciplina}/${prof.idprofessor}`);
-                    const updateLista = professoresVinculados.filter(item => item.idprofessor !== prof.idprofessor);
-                    setProfessoresVinculados(updateLista);
-                    showSuccessToast(
-                        "Sucesso!",
-                        `Professor ${prof.nomeprofessor} foi desvinculado da disciplina de ${prof.disciplina}`
-                    )
+                    showSuccessToast("Sucesso!", `Professor ${prof.nomeprofessor} foi desvinculado da disciplina de ${prof.disciplina}`);
+                    await recarregarProfessores(professor.iddisciplina);
                 } catch (error) {
                     console.error("Erro ao desvincular professor:", error);
                     showErrorToast("Erro", "Não foi possível desvincular o professor");
+                } finally {
+                    setDesvinculando(null);
                 }
             }
-        )
+        );
+    };
+
+    const getProfessorImagem = (prof) => {
+        if (prof.fotoUrl) return prof.fotoUrl;
+        if (prof.fotoprofessor) return `${baseURL}/api/img/professores/${prof.fotoprofessor}`;
+        return '/default-avatar.png';
     };
 
     const closeModalProfessor = () => {
         setIsModalOpenProfessor(false);
         setProfessor(null);
-    }
+        setProfessoresVinculados([]);
+        setProfessoresDisponiveis([]);
+    };
 
     const abrirModalAdicionar = useCallback(() => {
-        setDadosNovaDisciplina({
-            disciplina: ''
-        });
+        setDadosNovaDisciplina({ disciplina: '' });
         setModalAdicionarAberto(true);
     }, []);
 
     const fecharModalAdicionar = useCallback(() => {
         if (!salvando) {
             setModalAdicionarAberto(false);
-            setDadosNovaDisciplina({
-                disciplina: ''
-            });
+            setDadosNovaDisciplina({ disciplina: '' });
         }
     }, [salvando]);
 
@@ -287,9 +272,6 @@ function DisciplinasEdit() {
         const { name, value } = e.target;
         setDadosNovaDisciplina(prev => ({ ...prev, [name]: value }));
     }, []);
-
-    const semResultados = listaFiltrada.length === 0 && termoPesquisa !== '';
-    const isEmpty = listaDisciplina.length === 0 && !loading;
 
     const adicionarDisciplina = async (e) => {
         e.preventDefault();
@@ -300,45 +282,34 @@ function DisciplinasEdit() {
         }
 
         const nome = dadosNovaDisciplina.disciplina?.trim();
-
         if (!nome) {
             showErrorToast("Validação", "Preencha o nome da disciplina");
             return;
         }
 
         setSalvando(true);
-
         try {
-            await api.post(`/registrardisciplina`, {
+            const response = await api.post(`/registrardisciplina`, {
                 disciplina: nome,
                 idAdm: user.id
             });
 
-            showSuccessToast(
-                "Sucesso",
-                `Disciplina "${nome}" foi adicionada com sucesso!`
-            );
-
+            showSuccessToast("Sucesso", response.data.mensagem || `Disciplina "${nome}" foi adicionada com sucesso!`);
             fecharModalAdicionar();
-
             await fetchDisciplinas(false);
-
         } catch (error) {
             console.error("Erro ao adicionar disciplina:", error);
-
-            if (error.response?.data?.error) {
-                showErrorToast("Erro", error.response.data.error);
-            } else if (error.response?.data?.message) {
-                showErrorToast("Erro", error.response.data.message);
-            } else {
-                showErrorToast("Erro", "Não foi possível adicionar a disciplina");
-            }
+            showErrorToast("Erro", error.response?.data?.mensagem || error.response?.data?.error || "Não foi possível adicionar a disciplina");
         } finally {
             setSalvando(false);
         }
     };
 
+    const semResultados = listaFiltrada.length === 0 && termoPesquisa !== '';
+    const isEmpty = listaDisciplina.length === 0 && !loading;
+
     const headers = ['Nome da Disciplina', 'Professores', 'Editar', 'Apagar'];
+
     const renderRow = useCallback((disciplina) => (
         <tr key={disciplina.iddisciplina}>
             <td className="align-middle fw-semibold" style={{ color: 'var(--azul-escuro)' }}>
@@ -376,13 +347,13 @@ function DisciplinasEdit() {
                 </button>
             </td>
         </tr>
-    ), [openModal, DeletarDisciplina, openModalProfessor]);
+    ), [loading, salvando, isConfirming]);
 
     const renderConteudo = () => {
         if (loading) {
             return (
                 <div className="text-center py-5">
-                    <div className="spinner-border text-primary mx-auto mb-2" style={{width: '3rem', height: '3rem'}} role="status">
+                    <div className="spinner-border text-primary mx-auto mb-2" style={{ width: '3rem', height: '3rem' }} role="status">
                         <span className="visually-hidden">Carregando...</span>
                     </div>
                     <p className="text-muted mb-0">Carregando disciplinas...</p>
@@ -395,10 +366,7 @@ function DisciplinasEdit() {
                 <div className="text-center py-5">
                     <MdSearch size={48} className="text-muted mb-3" />
                     <p className="text-muted mb-2">Nenhuma disciplina encontrada para "{termoPesquisa}"</p>
-                    <button 
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={limparPesquisa}
-                    >
+                    <button className="btn btn-outline-primary btn-sm" onClick={limparPesquisa}>
                         Limpar pesquisa
                     </button>
                 </div>
@@ -420,7 +388,7 @@ function DisciplinasEdit() {
 
         return (
             <div className="table-responsive">
-                <Table 
+                <Table
                     headers={headers}
                     data={listaFiltrada}
                     renderRow={renderRow}
@@ -481,12 +449,7 @@ function DisciplinasEdit() {
                                                 value={termoPesquisa}
                                                 onChange={handlePesquisa}
                                                 disabled={loading}
-                                                style={{
-                                                    borderLeft: 'none',
-                                                    boxShadow: 'none',
-                                                    backgroundColor: 'var(--cinza-claro)',
-                                                    padding: '10px'
-                                                }}
+                                                style={{ borderLeft: 'none', boxShadow: 'none', backgroundColor: 'var(--cinza-claro)', padding: '10px' }}
                                             />
                                             {termoPesquisa && (
                                                 <button
@@ -494,11 +457,7 @@ function DisciplinasEdit() {
                                                     type="button"
                                                     onClick={limparPesquisa}
                                                     disabled={loading}
-                                                    style={{
-                                                        borderLeft: 'none',
-                                                        backgroundColor: 'var(--danger)',
-                                                        color: 'var(--branco)'
-                                                    }}
+                                                    style={{ borderLeft: 'none', backgroundColor: 'var(--danger)', color: 'var(--branco)' }}
                                                 >
                                                     ✕
                                                 </button>
@@ -530,55 +489,31 @@ function DisciplinasEdit() {
                                         <MdAdd className="me-2 mb-1" />
                                         Adicionar Nova Disciplina
                                     </h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close btn-close-white"
-                                        onClick={fecharModalAdicionar}
-                                        disabled={salvando || isConfirming}
-                                    />
+                                    <button type="button" className="btn-close btn-close-white" onClick={fecharModalAdicionar} disabled={salvando || isConfirming} />
                                 </div>
                                 <form onSubmit={adicionarDisciplina}>
                                     <div className="modal-body">
-                                        <div className="row">
-                                            <div className="col-12 mb-3">
-                                                <input
-                                                    type="text"
-                                                    className="form-control form-control-lg shadow-sm"
-                                                    id="novaDisciplina"
-                                                    name="disciplina"
-                                                    value={dadosNovaDisciplina.disciplina}
-                                                    onChange={handleNovaDisciplinaInputChange}
-                                                    placeholder="Digite o nome da disciplina"
-                                                    autoFocus
-                                                    disabled={salvando || isConfirming}
-                                                    maxLength={100}
-                                                    required
-                                                />
-                                            </div>
+                                        <div className="col-12 mb-3">
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-lg shadow-sm"
+                                                name="disciplina"
+                                                value={dadosNovaDisciplina.disciplina}
+                                                onChange={handleNovaDisciplinaInputChange}
+                                                placeholder="Digite o nome da disciplina"
+                                                autoFocus
+                                                disabled={salvando || isConfirming}
+                                                maxLength={100}
+                                                required
+                                            />
                                         </div>
                                     </div>
                                     <div className="modal-footer border-0">
-                                        <button
-                                            type="button"
-                                            className={`btn ${Style.btnCancelar}`}
-                                            onClick={fecharModalAdicionar}
-                                            disabled={salvando || isConfirming}
-                                        >
+                                        <button type="button" className={`btn ${Style.btnCancelar}`} onClick={fecharModalAdicionar} disabled={salvando || isConfirming}>
                                             Cancelar
                                         </button>
-                                        <button
-                                            type="submit"
-                                            className={`btn ${Style.btnSubmit}`}
-                                            disabled={salvando || isConfirming || !dadosNovaDisciplina.disciplina.trim()}
-                                        >
-                                            {salvando ? (
-                                                <>
-                                                    <span className="spinner-border spinner-border-sm me-2"></span>
-                                                    Adicionando...
-                                                </>
-                                            ) : (
-                                                'Adicionar Disciplina'
-                                            )}
+                                        <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando || isConfirming || !dadosNovaDisciplina.disciplina.trim()}>
+                                            {salvando ? <><span className="spinner-border spinner-border-sm me-2"></span>Adicionando...</> : 'Adicionar Disciplina'}
                                         </button>
                                     </div>
                                 </form>
@@ -596,21 +531,14 @@ function DisciplinasEdit() {
                                         <FaBook className="me-2 mb-1" />
                                         {disciplinaSelecionada?.disciplina}
                                     </h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close btn-close-white"
-                                        onClick={closeModal}
-                                        disabled={salvando || isConfirming}
-                                    />
+                                    <button type="button" className="btn-close btn-close-white" onClick={closeModal} disabled={salvando || isConfirming} />
                                 </div>
-
                                 <div className="modal-body">
                                     <form>
                                         <div className="mb-3">
                                             <input
                                                 type="text"
                                                 className="form-control form-control-lg"
-                                                id="nomeDisciplina"
                                                 name="disciplina"
                                                 value={Editar.disciplina}
                                                 placeholder="Digite o nome da disciplina"
@@ -618,38 +546,14 @@ function DisciplinasEdit() {
                                                 disabled={salvando || isConfirming}
                                             />
                                         </div>
-                                        <input
-                                            type="hidden"
-                                            name="iddisciplina"
-                                            value={Editar.iddisciplina}
-                                            onChange={EditarDisciplina}
-                                        />
                                     </form>
                                 </div>
-
                                 <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={closeModal}
-                                        disabled={salvando || isConfirming}
-                                    >
+                                    <button type="button" className={`btn ${Style.btnCancelar}`} onClick={closeModal} disabled={salvando || isConfirming}>
                                         Cancelar
                                     </button>
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnSubmit}`}
-                                        onClick={AtualizarDisciplina}
-                                        disabled={salvando || isConfirming || !Editar.disciplina.trim()}
-                                    >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Salvando...
-                                            </>
-                                        ) : (
-                                            'Salvar'
-                                        )}
+                                    <button type="button" className={`btn ${Style.btnSubmit}`} onClick={AtualizarDisciplina} disabled={salvando || isConfirming || !Editar.disciplina.trim()}>
+                                        {salvando ? <><span className="spinner-border spinner-border-sm me-2"></span>Salvando...</> : 'Salvar'}
                                     </button>
                                 </div>
                             </div>
@@ -666,105 +570,98 @@ function DisciplinasEdit() {
                                         <FaChalkboardTeacher className="me-2 mb-1" />
                                         Professores Vinculados a disciplina de {professor?.disciplina}
                                     </h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close btn-close-white"
-                                        onClick={closeModalProfessor}
-                                        disabled={isConfirming}
-                                    />
+                                    <button type="button" className="btn-close btn-close-white" onClick={closeModalProfessor} disabled={isConfirming || loadingProfessores} />
                                 </div>
 
                                 <div className="modal-body">
-                                    <div className="row">
-                                        <div className="col-12 col-md-6 border-end">
-                                            <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Vinculados</h4>
-                                            <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                                {professoresVinculados && professoresVinculados.length > 0 ? (
-                                                    professoresVinculados.map((prof) => (
-                                                        <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">
-                                                            <div className="d-flex align-items-center">
-                                                                <img
-                                                                    src={getProfessorImagem(prof)}
-                                                                    alt={prof.nomeprofessor}
-                                                                    className="rounded-circle me-3"
-                                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
-                                                                    onError={(e) => {
-                                                                        e.target.onerror = null;
-                                                                        e.target.src = '/default-avatar.png';
-                                                                    }}
-                                                                />
-                                                                <div>
-                                                                    <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
-                                                                    <small className="text-muted">{prof.titulacaoprofessor}</small>
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                className={`btn btn-sm ${Style.btnDeletar}`}
-                                                                onClick={() => desvincularProfessor(prof)}
-                                                                disabled={isConfirming}
-                                                                title="Remover vinculação"
-                                                            >
-                                                                <CiCircleMinus size={24} />
-                                                            </button>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center text-muted p-3">
-                                                        Nenhum professor vinculado
-                                                    </div>
-                                                )}
+                                    {loadingProfessores ? (
+                                        <div className="text-center py-5">
+                                            <div className="spinner-border text-primary mb-3" style={{ width: '2.5rem', height: '2.5rem' }} role="status">
+                                                <span className="visually-hidden">Carregando...</span>
                                             </div>
+                                            <p className="text-muted mb-0">A actualizar professores...</p>
                                         </div>
+                                    ) : (
+                                        <div className="row">
+                                            <div className="col-12 col-md-6 border-end">
+                                                <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Vinculados</h4>
+                                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                                    {professoresVinculados.length > 0 ? (
+                                                        professoresVinculados.map((prof) => (
+                                                            <div key={prof.idprofessor} className="d-flex align-items-center justify-content-between p-3 border-bottom">
+                                                                <div className="d-flex align-items-center">
+                                                                    <img
+                                                                        src={getProfessorImagem(prof)}
+                                                                        alt={prof.nomeprofessor}
+                                                                        className="rounded-circle me-3"
+                                                                        style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
+                                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                                                                    />
+                                                                    <div>
+                                                                        <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
+                                                                        <small className="text-muted">{prof.titulacaoprofessor}</small>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    className={`btn btn-sm ${Style.btnDeletar}`}
+                                                                    onClick={() => desvincularProfessor(prof)}
+                                                                    disabled={isConfirming || desvinculando === prof.idprofessor}
+                                                                    title="Remover vinculação"
+                                                                >
+                                                                    {desvinculando === prof.idprofessor
+                                                                        ? <span className="spinner-border spinner-border-sm"></span>
+                                                                        : <CiCircleMinus size={24} />}
+                                                                </button>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center text-muted p-3">Nenhum professor vinculado</div>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                        <div className="col-12 col-md-6">
-                                            <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Disponíveis</h4>
-                                            <div className="professores-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                                {professoresDisponiveis && professoresDisponiveis.length > 0 ? (
-                                                    professoresDisponiveis.map((prof) => (
-                                                        <div key={prof.idprofessor} className="professor-item d-flex align-items-center justify-content-between p-3 border-bottom">
-                                                            <div className="d-flex align-items-center">
-                                                                <img
-                                                                    src={getProfessorImagem(prof)}
-                                                                    alt={prof.nomeprofessor}
-                                                                    className="rounded-circle me-3"
-                                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
-                                                                    onError={(e) => {
-                                                                        e.target.onerror = null;
-                                                                        e.target.src = '/default-avatar.png';
-                                                                    }}
-                                                                />
-                                                                <div>
-                                                                    <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
-                                                                    <small className="text-muted">{prof.titulacaoprofessor}</small>
+                                            <div className="col-12 col-md-6">
+                                                <h4 className="text-center mb-4" style={{ color: 'var(--azul-escuro)' }}>Professores Disponíveis</h4>
+                                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                                    {professoresDisponiveis.length > 0 ? (
+                                                        professoresDisponiveis.map((prof) => (
+                                                            <div key={prof.idprofessor} className="d-flex align-items-center justify-content-between p-3 border-bottom">
+                                                                <div className="d-flex align-items-center">
+                                                                    <img
+                                                                        src={getProfessorImagem(prof)}
+                                                                        alt={prof.nomeprofessor}
+                                                                        className="rounded-circle me-3"
+                                                                        style={{ width: '60px', height: '60px', objectFit: 'cover', border: '2px solid var(--azul-escuro)' }}
+                                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
+                                                                    />
+                                                                    <div>
+                                                                        <h6 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>{prof.nomeprofessor}</h6>
+                                                                        <small className="text-muted">{prof.titulacaoprofessor}</small>
+                                                                    </div>
                                                                 </div>
+                                                                <button
+                                                                    className={`btn btn-sm ${Style.btnAdd}`}
+                                                                    onClick={() => vincularProfessor(prof.idprofessor)}
+                                                                    disabled={isConfirming || vinculando === prof.idprofessor}
+                                                                    title="Vincular professor"
+                                                                >
+                                                                    {vinculando === prof.idprofessor
+                                                                        ? <span className="spinner-border spinner-border-sm"></span>
+                                                                        : <CiCirclePlus size={24} />}
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                className={`btn btn-sm ${Style.btnAdd}`}
-                                                                onClick={() => vincularProfessor(prof.idprofessor)}
-                                                                disabled={isConfirming}
-                                                                title="Vincular professor"
-                                                            >
-                                                                <CiCirclePlus size={24} />
-                                                            </button>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center text-muted p-3">
-                                                        Nenhum professor disponível
-                                                    </div>
-                                                )}
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center text-muted p-3">Nenhum professor disponível</div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={closeModalProfessor}
-                                        disabled={isConfirming}
-                                    >
+                                    <button type="button" className={`btn ${Style.btnCancelar}`} onClick={closeModalProfessor} disabled={isConfirming || loadingProfessores}>
                                         Fechar
                                     </button>
                                 </div>

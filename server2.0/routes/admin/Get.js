@@ -892,4 +892,90 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
     });
 });
 
+router.get('/Disciplinas', (req, res) => {
+    const sql = "SELECT id_disciplina, disciplina FROM disciplina ORDER BY disciplina ASC";
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/professorVinculado/:id', async (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT 
+            dp.id_dp,
+            p.nome,
+            p.foto,
+            p.id_professor,
+            p.titulacao,
+            d.disciplina,
+            d.id_disciplina
+        FROM disc_professor dp
+        INNER JOIN disciplina d ON dp.id_disciplina = d.id_disciplina 
+        INNER JOIN professor p ON p.id_professor = dp.id_professor 
+        WHERE d.id_disciplina = ? AND p.status = 'Ativo'
+        ORDER BY p.nome ASC
+    `;
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores vinculados:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(a => ({
+                ...a,
+                fotoUrl: a.foto ? `${baseUrl}/api/img/professores/${a.foto}` : null
+            }));
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
+router.get('/professorDisponivel/:id', async (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT 
+            p.id_professor,
+            p.nome,
+            p.titulacao,
+            p.foto
+        FROM professor p
+        WHERE p.status = 'Ativo' AND p.id_professor NOT IN (
+            SELECT dp.id_professor 
+            FROM disc_professor dp
+            WHERE dp.id_disciplina = ?
+        )
+        ORDER BY p.nome ASC
+    `;
+
+    conexao.query(sql, [id], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores disponíveis:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const professoresComFoto = result.map(a => ({
+                ...a,
+                fotoUrl: a.foto ? `${baseUrl}/api/img/professores/${a.foto}` : null
+            }));
+            res.status(200).json(professoresComFoto);
+        }
+    });
+});
+
 module.exports = router;

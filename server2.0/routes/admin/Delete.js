@@ -335,4 +335,127 @@ router.delete('/anocurricular/:id', (req, res) => {
     });
 });
 
+router.delete('/disciplina/:id', (req, res) => {
+    const { id } = req.params;
+
+    const checkSql = "SELECT disciplina FROM disciplina WHERE id_disciplina = ?";
+    
+    conexao.query(checkSql, [id], (checkError, checkResults) => {
+        if (checkError) {
+            console.error("Erro ao verificar disciplina:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                error: "Disciplina não encontrada"
+            });
+        }
+
+        const nomeDisciplina = checkResults[0].disciplina;
+
+        const checkVinculosSql = `
+            SELECT 
+                COUNT(*) as total,
+                GROUP_CONCAT(p.nome SEPARATOR ', ') as professores
+            FROM disc_professor dp
+            INNER JOIN professor p ON dp.id_professor = p.id_professor
+            WHERE dp.id_disciplina = ?
+        `;
+
+        conexao.query(checkVinculosSql, [id], (vinculoError, vinculoResults) => {
+            if (vinculoError) {
+                console.error("Erro ao verificar vínculos:", vinculoError);
+                return res.status(500).json({
+                    error: "Erro interno do servidor",
+                    details: vinculoError.message
+                });
+            }
+
+            const totalVinculos = vinculoResults[0]?.total || 0;
+
+            if (totalVinculos > 0) {
+                const professores = vinculoResults[0]?.professores || '';
+                
+                return res.status(400).json({
+                    success: false,
+                    error: "Não é possível excluir esta disciplina",
+                    mensagem: `A disciplina "${nomeDisciplina}" está vinculada a ${totalVinculos} professor(es): ${professores}. Remova os vínculos primeiro.`,
+                    professoresVinculados: professores,
+                    totalProfessores: totalVinculos
+                });
+            }
+
+            const checkSemestresSql = "SELECT COUNT(*) as total FROM semestre WHERE id_disciplina = ?";
+
+            conexao.query(checkSemestresSql, [id], (semestreError, semestreResults) => {
+                if (semestreError) {
+                    console.error("Erro ao verificar semestres:", semestreError);
+                    return res.status(500).json({
+                        error: "Erro interno do servidor",
+                        details: semestreError.message
+                    });
+                }
+
+                const totalSemestres = semestreResults[0]?.total || 0;
+
+                if (totalSemestres > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: "Não é possível excluir esta disciplina",
+                        mensagem: `A disciplina "${nomeDisciplina}" está vinculada a ${totalSemestres} semestre(s). Remova os semestres primeiro.`,
+                        totalSemestres: totalSemestres
+                    });
+                }
+
+                const sqlDisciplina = "DELETE FROM disciplina WHERE id_disciplina = ?";
+
+                conexao.query(sqlDisciplina, [id], (errorDisciplina, resultDisciplina) => {
+                    if (errorDisciplina) {
+                        console.error("Erro ao excluir disciplina:", errorDisciplina);
+                        return res.status(500).json({
+                            error: "Erro interno do servidor",
+                            details: errorDisciplina.message
+                        });
+                    }
+
+                    if (resultDisciplina.affectedRows === 0) {
+                        return res.status(404).json({
+                            error: "Disciplina não encontrada"
+                        });
+                    }
+
+                    res.status(200).json({
+                        success: true,
+                        message: `Disciplina "${nomeDisciplina}" excluída com sucesso`,
+                        nomeExcluido: nomeDisciplina
+                    });
+                });
+            });
+        });
+    });
+});
+
+router.delete('/desvincularProfessor/:iddisciplina/:idprofessor', (req, res) => {
+    const { iddisciplina, idprofessor } = req.params;
+    const sql = "DELETE FROM disc_professor WHERE id_professor = ? AND id_disciplina = ?";
+    conexao.query(sql, [idprofessor, iddisciplina], (error, result) => {
+        if (error) {
+            console.error("Erro ao desvincular professor:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json({
+                message: "Professor desvinculado com sucesso",
+                professoresAfetados: result.affectedRows
+            });
+        }
+    });
+});
+
 module.exports = router;
