@@ -1,27 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TeacherLayout from "../layouts/TeacherLayout";
 import { 
   FaSave, 
-  FaEdit, 
-  FaTrash, 
-  FaPlus, 
   FaChartLine, 
-  FaDownload,
-  FaEye,
   FaCheckCircle,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaGraduationCap,
+  FaUserGraduate,
+  FaSchool,
+  FaClipboardList,
+  FaClipboardCheck,
+  FaExchangeAlt
 } from "react-icons/fa";
 import { 
   MdAssessment, 
-  MdCalculate, 
   MdWarning,
   MdInfo,
-  MdSchool
+  MdSchool,
+  MdBarChart,
+  MdCalculate
 } from "react-icons/md";
 import { 
-  LineChart, 
-  Line, 
   BarChart, 
   Bar, 
   XAxis, 
@@ -32,19 +32,20 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from 'recharts';
 import styles from "./AvaliacoesNotas.module.css";
 
-// Funções de toast personalizadas
-const showSuccessToast = (title, message, details = null) => {
+// Funções de toast
+const showSuccessToast = (title, message) => {
   const toast = document.createElement('div');
   toast.className = 'toast-notification toast-success';
   toast.innerHTML = `
     <div class="toast-content">
       <strong>${title}</strong>
       <p>${message}</p>
-      ${details ? `<small>${Object.entries(details).map(([k,v]) => `${k}: ${v}`).join(' • ')}</small>` : ''}
     </div>
   `;
   document.body.appendChild(toast);
@@ -84,32 +85,30 @@ function AvaliacoesNotas() {
   const [turmaSelecionada, setTurmaSelecionada] = useState(null);
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState(null);
   const [alunos, setAlunos] = useState([]);
-  const [avaliacoes, setAvaliacoes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editando, setEditando] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState('avaliacoes');
 
-  // Configuração das avaliações
+  // Configuração das avaliações regulares (0 a 5)
   const tiposAvaliacao = [
-    { id: 1, nome: "Avaliação 1", peso: 1, descricao: "Primeira avaliação (0-5)" },
-    { id: 2, nome: "Avaliação 2", peso: 1, descricao: "Segunda avaliação (0-5)" },
-    { id: 3, nome: "Avaliação 3", peso: 1, descricao: "Terceira avaliação (0-5)" },
-    { id: 4, nome: "Avaliação 4", peso: 1, descricao: "Quarta avaliação (0-5)" },
-    { id: 5, nome: "Avaliação 5", peso: 1, descricao: "Quinta avaliação (0-5)" }
+    { id: 1, nome: "Avaliação 1", peso: 1, maxNota: 5 },
+    { id: 2, nome: "Avaliação 2", peso: 1, maxNota: 5 },
+    { id: 3, nome: "Avaliação 3", peso: 1, maxNota: 5 },
+    { id: 4, nome: "Avaliação 4", peso: 1, maxNota: 5 },
+    { id: 5, nome: "Avaliação 5", peso: 1, maxNota: 5 }
   ];
 
-  // Função para converter nota de 0-5 para 0-20
-  const converterParaVinte = (nota) => {
-    if (nota === null || nota === undefined || isNaN(nota)) return null;
-    return nota * 4; // 5 -> 20, 2.5 -> 10, etc
-  };
+  // Configuração do sistema MACs (0 a 20)
+  const tiposMACs = [
+    { id: 'macs', nome: 'MACs (PP1)', descricao: 'Convertido das avaliações', maxNota: 20 },
+    { id: 'cpf', nome: 'CPF (PP2)', descricao: 'Segunda Prova', maxNota: 20 },
+    { id: 'cae', nome: 'CAE (M.C)', descricao: 'Média das Cadeiras', maxNota: 20 },
+    { id: 'exa', nome: 'EXA', descricao: 'Exame', maxNota: 20 },
+    { id: 'cfe', nome: 'CFE (M.E)', descricao: 'Média do Exame', maxNota: 20 },
+    { id: 'recurso', nome: 'RECURSO', descricao: 'Recurso', maxNota: 20 },
+    { id: 'esp', nome: 'ESP.', descricao: 'Especialidade', maxNota: 20 }
+  ];
 
-  // Função para converter nota de 0-20 para 0-5
-  const converterParaCinco = (nota) => {
-    if (nota === null || nota === undefined || isNaN(nota)) return null;
-    return nota / 4;
-  };
-
-  // Dados de exemplo (simulando API)
+  // Dados de exemplo
   const turmasExemplo = [
     { id: 1, nome: "Turma A - 3º Ano", periodo: "Manhã", ano: "2024" },
     { id: 2, nome: "Turma B - 2º Ano", periodo: "Tarde", ano: "2024" },
@@ -217,13 +216,6 @@ function AvaliacoesNotas() {
         font-size: 13px;
         opacity: 0.9;
       }
-      
-      .toast-content small {
-        display: block;
-        margin-top: 4px;
-        font-size: 11px;
-        opacity: 0.8;
-      }
     `;
     document.head.appendChild(style);
     
@@ -239,13 +231,14 @@ function AvaliacoesNotas() {
   const carregarDisciplinas = (turmaId) => {
     setDisciplinaSelecionada(null);
     setTurmaSelecionada(turmas.find(t => t.id === turmaId));
+    setAlunos([]);
   };
 
   const carregarAlunos = (disciplinaId) => {
     setDisciplinaSelecionada(disciplinaId);
     const alunosList = alunosExemplo[turmaSelecionada?.id] || [];
     
-    const notasSalvas = localStorage.getItem(`notas_${disciplinaId}`);
+    const notasSalvas = localStorage.getItem(`notas_completas_${disciplinaId}`);
     let notasData = {};
     if (notasSalvas) {
       const parsed = JSON.parse(notasSalvas);
@@ -258,46 +251,195 @@ function AvaliacoesNotas() {
     setAlunos(alunosList.map(aluno => ({
       ...aluno,
       notas: notasData[aluno.id] || {
-        1: null, 2: null, 3: null, 4: null, 5: null
+        // Avaliações regulares (0-5)
+        av1: null, av2: null, av3: null, av4: null, av5: null,
+        // Sistema MACs (0-20)
+        macs: null, cpf: null, cae: null, exa: null, cfe: null, recurso: null, esp: null
       },
-      total: null,
-      totalVinte: null,
-      situacao: "Pendente"
+      // Resultados das avaliações regulares
+      mediaAvaliacoes: null,
+      mediaConvertida: null,
+      situacaoAvaliacoes: "Pendente",
+      // Resultados do sistema MACs
+      situacaoMACs: "Pendente",
+      mensagemMACs: "Aguardando notas"
     })));
     
+    // Calcular situações
     setAlunos(prev => prev.map(aluno => {
-      const total = calcularTotal(aluno.notas);
-      const totalVinte = total !== null ? total * 4 : null;
-      const situacao = total >= 2.5 ? "Aprovado" : total >= 1.75 ? "Recuperação" : total === null ? "Pendente" : "Reprovado";
-      return { ...aluno, total, totalVinte, situacao };
+      const resultadoAvaliacoes = calcularMediaAvaliacoes(aluno.notas);
+      const resultadoMACs = calcularSituacaoMACs(aluno.notas);
+      return { 
+        ...aluno, 
+        ...resultadoAvaliacoes,
+        ...resultadoMACs
+      };
     }));
+  };
+
+  // Função para converter nota de 0-5 para 0-20
+  const converterParaVinte = (nota) => {
+    if (nota === null || nota === undefined || isNaN(nota)) return null;
+    return Math.round((nota * 4) * 10) / 10; // 5 * 4 = 20
+  };
+
+  // Função para calcular média das avaliações regulares (0-5)
+  const calcularMediaAvaliacoes = (notas) => {
+    const avs = [notas.av1, notas.av2, notas.av3, notas.av4, notas.av5];
+    const notasValidas = avs.filter(n => n !== null && n !== undefined && !isNaN(n));
     
-    carregarAvaliacoes(disciplinaId);
-  };
-
-  const carregarAvaliacoes = (disciplinaId) => {
-    const avaliacoesSalvas = localStorage.getItem(`avaliacoes_${disciplinaId}`);
-    if (avaliacoesSalvas) {
-      setAvaliacoes(JSON.parse(avaliacoesSalvas));
-    } else {
-      setAvaliacoes([]);
+    if (notasValidas.length === 0) {
+      return {
+        mediaAvaliacoes: null,
+        mediaConvertida: null,
+        situacaoAvaliacoes: "Pendente"
+      };
     }
+    
+    const soma = notasValidas.reduce((a, b) => a + b, 0);
+    const media = Math.round((soma / notasValidas.length) * 10) / 10;
+    const mediaConvertida = converterParaVinte(media);
+    
+    // Regra: se média >= 3.75 (equivale a 15 em 20), aprovado
+    let situacao = "Reprovado";
+    if (media >= 3.75) {
+      situacao = "Aprovado (Dispensa)";
+    } else if (media >= 2.5) {
+      situacao = "Recuperação";
+    }
+    
+    return {
+      mediaAvaliacoes: media,
+      mediaConvertida: mediaConvertida,
+      situacaoAvaliacoes: situacao
+    };
   };
 
-  const handleNotaChange = (alunoId, avaliacaoId, valor) => {
+  // Função para calcular situação do sistema MACs
+  const calcularSituacaoMACs = (notas) => {
+    // PP1 (MACs) é convertido automaticamente das avaliações
+    const macs = notas.macs !== null ? notas.macs : null;
+    const cpf = notas.cpf !== null ? notas.cpf : null;
+    const cae = notas.cae !== null ? notas.cae : null;
+    const exa = notas.exa !== null ? notas.exa : null;
+    const recurso = notas.recurso !== null ? notas.recurso : null;
+    const esp = notas.esp !== null ? notas.esp : null;
+
+    // 1. Verificar dispensa por CAE >= 15
+    if (cae !== null && cae >= 15) {
+      return {
+        situacaoMACs: "Dispensado (CAE ≥ 15)",
+        mensagemMACs: `CAE = ${cae} - Dispensado`
+      };
+    }
+
+    // 2. Verificar PP1 + PP2 (MACs + CPF)
+    if (macs !== null && cpf !== null) {
+      const somaPP = macs + cpf;
+      const mediaPP = somaPP / 2;
+      
+      if (mediaPP >= 15) {
+        return {
+          situacaoMACs: "Aprovado (PP)",
+          mensagemMACs: `(${macs} + ${cpf}) / 2 = ${mediaPP} ≥ 15`
+        };
+      }
+    }
+
+    // 3. Verificar EXA (CAE + EXA >= 20)
+    if (cae !== null && exa !== null) {
+      if (cae + exa >= 20) {
+        return {
+          situacaoMACs: "Aprovado (EXA)",
+          mensagemMACs: `CAE(${cae}) + EXA(${exa}) = ${cae + exa} ≥ 20`
+        };
+      }
+    }
+
+    // 4. Verificar RECURSO (>= 10)
+    if (recurso !== null && recurso >= 10) {
+      return {
+        situacaoMACs: "Aprovado (RECURSO)",
+        mensagemMACs: `RECURSO = ${recurso} ≥ 10`
+      };
+    }
+
+    // 5. Verificar ESP (>= 10)
+    if (esp !== null && esp >= 10) {
+      return {
+        situacaoMACs: "Aprovado (ESP)",
+        mensagemMACs: `ESP = ${esp} ≥ 10`
+      };
+    }
+
+    // 6. Em recuperação ou reprovado
+    if (cae !== null && exa !== null && cae + exa < 20) {
+      if (recurso !== null && recurso < 10) {
+        if (esp !== null && esp < 10) {
+          return {
+            situacaoMACs: "Reprovado",
+            mensagemMACs: "Não atingiu os critérios de aprovação"
+          };
+        }
+        return {
+          situacaoMACs: "Em Recuperação (ESP)",
+          mensagemMACs: "Aguardando ESP"
+        };
+      }
+      if (recurso !== null && recurso < 10) {
+        return {
+          situacaoMACs: "Em Recuperação (RECURSO)",
+          mensagemMACs: "Aguardando RECURSO"
+        };
+      }
+      return {
+        situacaoMACs: "Em Recuperação (EXA)",
+        mensagemMACs: "Aguardando EXA"
+      };
+    }
+
+    // 7. Pendente
+    return {
+      situacaoMACs: "Pendente",
+      mensagemMACs: "Aguardando notas"
+    };
+  };
+
+  // Atualizar automaticamente o MACs (PP1) quando as avaliações mudarem
+  const atualizarMACs = (notas) => {
+    const avs = [notas.av1, notas.av2, notas.av3, notas.av4, notas.av5];
+    const notasValidas = avs.filter(n => n !== null && n !== undefined && !isNaN(n));
+    
+    if (notasValidas.length === 0) {
+      return null;
+    }
+    
+    const soma = notasValidas.reduce((a, b) => a + b, 0);
+    const media = soma / notasValidas.length;
+    return converterParaVinte(media);
+  };
+
+  const handleNotaChange = (alunoId, campo, valor) => {
     if (valor === '') {
       setAlunos(prev => prev.map(aluno => {
         if (aluno.id === alunoId) {
-          const novasNotas = { ...aluno.notas, [avaliacaoId]: null };
-          const total = calcularTotal(novasNotas);
-          const totalVinte = total !== null ? total * 4 : null;
-          const situacao = total >= 2.5 ? "Aprovado" : total >= 1.75 ? "Recuperação" : total === null ? "Pendente" : "Reprovado";
-          return {
-            ...aluno,
+          const novasNotas = { ...aluno.notas, [campo]: null };
+          
+          // Se for uma avaliação regular, atualiza automaticamente o MACs
+          if (campo.startsWith('av')) {
+            const macsConvertido = atualizarMACs(novasNotas);
+            if (macsConvertido !== null) {
+              novasNotas.macs = macsConvertido;
+            }
+          }
+          
+          const resultadoAvaliacoes = calcularMediaAvaliacoes(novasNotas);
+          const resultadoMACs = calcularSituacaoMACs(novasNotas);
+          return { 
+            ...aluno, 
             notas: novasNotas,
-            total,
-            totalVinte,
-            situacao
+            ...resultadoAvaliacoes,
+            ...resultadoMACs
           };
         }
         return aluno;
@@ -308,9 +450,12 @@ function AvaliacoesNotas() {
     let nota = parseFloat(valor);
     if (isNaN(nota)) return;
     
-    // Validar nota entre 0 e 5
-    if (nota < 0 || nota > 5) {
-      showWarningToast("Atenção", "A nota deve estar entre 0 e 5");
+    // Validação diferente para avaliações regulares (0-5) e MACs (0-20)
+    const isAvaliacao = campo.startsWith('av');
+    const maxNota = isAvaliacao ? 5 : 20;
+    
+    if (nota < 0 || nota > maxNota) {
+      showWarningToast("Atenção", `A nota deve estar entre 0 e ${maxNota}`);
       return;
     }
     
@@ -319,34 +464,27 @@ function AvaliacoesNotas() {
 
     setAlunos(prev => prev.map(aluno => {
       if (aluno.id === alunoId) {
-        const novasNotas = { ...aluno.notas, [avaliacaoId]: nota };
-        const total = calcularTotal(novasNotas);
-        const totalVinte = total !== null ? total * 4 : null;
-        const situacao = total >= 2.5 ? "Aprovado" : total >= 1.75 ? "Recuperação" : "Reprovado";
-        return {
-          ...aluno,
+        const novasNotas = { ...aluno.notas, [campo]: nota };
+        
+        // Se for uma avaliação regular, atualiza automaticamente o MACs
+        if (campo.startsWith('av')) {
+          const macsConvertido = atualizarMACs(novasNotas);
+          if (macsConvertido !== null) {
+            novasNotas.macs = macsConvertido;
+          }
+        }
+        
+        const resultadoAvaliacoes = calcularMediaAvaliacoes(novasNotas);
+        const resultadoMACs = calcularSituacaoMACs(novasNotas);
+        return { 
+          ...aluno, 
           notas: novasNotas,
-          total,
-          totalVinte,
-          situacao
+          ...resultadoAvaliacoes,
+          ...resultadoMACs
         };
       }
       return aluno;
     }));
-  };
-
-  const calcularTotal = (notas) => {
-    let soma = 0;
-    let count = 0;
-    for (let i = 1; i <= 5; i++) {
-      if (notas[i] !== null && notas[i] !== undefined && !isNaN(notas[i])) {
-        soma += notas[i];
-        count++;
-      }
-    }
-    if (count === 0) return null;
-    const media = soma / count;
-    return Math.round(media * 10) / 10;
   };
 
   const salvarNotas = async () => {
@@ -361,17 +499,7 @@ function AvaliacoesNotas() {
         data: new Date().toISOString()
       };
       
-      localStorage.setItem(`notas_${disciplinaSelecionada}`, JSON.stringify(dados));
-      
-      const novasAvaliacoes = tiposAvaliacao.map(av => ({
-        ...av,
-        media: calcularMediaTurma(av.id),
-        mediaVinte: calcularMediaTurma(av.id) * 4,
-        maiorNota: calcularMaiorNota(av.id),
-        menorNota: calcularMenorNota(av.id)
-      }));
-      setAvaliacoes(novasAvaliacoes);
-      localStorage.setItem(`avaliacoes_${disciplinaSelecionada}`, JSON.stringify(novasAvaliacoes));
+      localStorage.setItem(`notas_completas_${disciplinaSelecionada}`, JSON.stringify(dados));
       
       showSuccessToast("Sucesso", "Notas salvas com sucesso!");
     } catch (error) {
@@ -381,76 +509,46 @@ function AvaliacoesNotas() {
     }
   };
 
-  const calcularMediaTurma = (avaliacaoId) => {
-    let soma = 0;
-    let count = 0;
-    alunos.forEach(aluno => {
-      if (aluno.notas[avaliacaoId] !== null && !isNaN(aluno.notas[avaliacaoId])) {
-        soma += aluno.notas[avaliacaoId];
-        count++;
-      }
-    });
-    return count > 0 ? Math.round((soma / count) * 10) / 10 : 0;
-  };
-
-  const calcularMaiorNota = (avaliacaoId) => {
-    let maior = 0;
-    alunos.forEach(aluno => {
-      const nota = aluno.notas[avaliacaoId];
-      if (nota !== null && !isNaN(nota) && nota > maior) {
-        maior = nota;
-      }
-    });
-    return maior;
-  };
-
-  const calcularMenorNota = (avaliacaoId) => {
-    let menor = 5;
-    alunos.forEach(aluno => {
-      const nota = aluno.notas[avaliacaoId];
-      if (nota !== null && !isNaN(nota) && nota < menor) {
-        menor = nota;
-      }
-    });
-    return menor === 5 ? 0 : menor;
-  };
-
-  const estatisticasTurma = {
-    mediaGeral: alunos.length > 0 
-      ? Math.round((alunos.reduce((sum, a) => sum + (a.total || 0), 0) / alunos.filter(a => a.total !== null).length) * 10) / 10 
-      : 0,
-    mediaGeralVinte: alunos.length > 0 
-      ? Math.round((alunos.reduce((sum, a) => sum + (a.totalVinte || 0), 0) / alunos.filter(a => a.totalVinte !== null).length) * 10) / 10 
-      : 0,
-    aprovados: alunos.filter(a => a.situacao === "Aprovado").length,
-    recuperacao: alunos.filter(a => a.situacao === "Recuperação").length,
-    reprovados: alunos.filter(a => a.situacao === "Reprovado").length,
-    pendentes: alunos.filter(a => a.situacao === "Pendente").length,
-    taxaAprovacao: alunos.filter(a => a.situacao !== "Pendente").length > 0 
-      ? Math.round((alunos.filter(a => a.situacao === "Aprovado").length / alunos.filter(a => a.situacao !== "Pendente").length) * 100) 
+  // Estatísticas das avaliações regulares
+  const estatisticasAvaliacoes = {
+    totalAlunos: alunos.length,
+    aprovados: alunos.filter(a => a.situacaoAvaliacoes === "Aprovado (Dispensa)").length,
+    recuperacao: alunos.filter(a => a.situacaoAvaliacoes === "Recuperação").length,
+    reprovados: alunos.filter(a => a.situacaoAvaliacoes === "Reprovado").length,
+    pendentes: alunos.filter(a => a.situacaoAvaliacoes === "Pendente").length,
+    mediaGeral: alunos.filter(a => a.mediaAvaliacoes !== null).reduce((sum, a) => sum + a.mediaAvaliacoes, 0) / alunos.filter(a => a.mediaAvaliacoes !== null).length || 0,
+    mediaGeralConvertida: alunos.filter(a => a.mediaConvertida !== null).reduce((sum, a) => sum + a.mediaConvertida, 0) / alunos.filter(a => a.mediaConvertida !== null).length || 0,
+    taxaAprovacao: alunos.filter(a => a.situacaoAvaliacoes !== "Pendente").length > 0 
+      ? Math.round((alunos.filter(a => a.situacaoAvaliacoes === "Aprovado (Dispensa)").length / alunos.filter(a => a.situacaoAvaliacoes !== "Pendente").length) * 100) 
       : 0
   };
 
-  const dadosDesempenho = alunos.map(aluno => ({
-    nome: aluno.nome.split(' ')[0],
-    total: aluno.total || 0,
-    totalVinte: aluno.totalVinte || 0,
-    situacao: aluno.situacao
-  }));
+  // Estatísticas do sistema MACs
+  const estatisticasMACs = {
+    totalAlunos: alunos.length,
+    aprovados: alunos.filter(a => a.situacaoMACs && a.situacaoMACs.includes("Aprovado")).length,
+    dispensados: alunos.filter(a => a.situacaoMACs === "Dispensado (CAE ≥ 15)").length,
+    recuperacao: alunos.filter(a => a.situacaoMACs && a.situacaoMACs.includes("Recuperação")).length,
+    reprovados: alunos.filter(a => a.situacaoMACs === "Reprovado").length,
+    pendentes: alunos.filter(a => a.situacaoMACs === "Pendente").length,
+    taxaAprovacao: alunos.filter(a => a.situacaoMACs !== "Pendente").length > 0 
+      ? Math.round((alunos.filter(a => a.situacaoMACs && a.situacaoMACs.includes("Aprovado")).length / alunos.filter(a => a.situacaoMACs !== "Pendente").length) * 100) 
+      : 0
+  };
 
-  const dadosDistribuicao = [
-    { name: "Aprovados (≥ 2.5)", value: estatisticasTurma.aprovados, color: "#28a745" },
-    { name: "Recuperação (1.75-2.49)", value: estatisticasTurma.recuperacao, color: "#ffc107" },
-    { name: "Reprovados (< 1.75)", value: estatisticasTurma.reprovados, color: "#dc3545" },
-    { name: "Pendentes", value: estatisticasTurma.pendentes, color: "#6c757d" }
+  // Dados para gráficos
+  const dadosDistribuicaoAvaliacoes = [
+    { name: "Aprovados", value: estatisticasAvaliacoes.aprovados, color: "#28a745" },
+    { name: "Recuperação", value: estatisticasAvaliacoes.recuperacao, color: "#ffc107" },
+    { name: "Reprovados", value: estatisticasAvaliacoes.reprovados, color: "#dc3545" },
+    { name: "Pendentes", value: estatisticasAvaliacoes.pendentes, color: "#6c757d" }
   ].filter(item => item.value > 0);
 
-  const dadosAvaliacoes = avaliacoes.map((av, index) => ({
-    nome: `Av${index + 1}`,
-    media: av.media || 0,
-    mediaVinte: av.mediaVinte || 0,
-    maior: av.maiorNota || 0,
-    menor: av.menorNota || 0
+  const dadosDesempenhoAvaliacoes = alunos.map(aluno => ({
+    nome: aluno.nome.split(' ')[0],
+    media: aluno.mediaAvaliacoes || 0,
+    mediaConvertida: aluno.mediaConvertida || 0,
+    situacao: aluno.situacaoAvaliacoes
   }));
 
   return (
@@ -460,11 +558,11 @@ function AvaliacoesNotas() {
         <div className={styles.header}>
           <div>
             <h1 className={styles.title}>
-              <MdAssessment className={styles.titleIcon} />
-              Avaliações e Notas
+              <FaGraduationCap className={styles.titleIcon} />
+              Sistema de Avaliações
             </h1>
             <p className={styles.subtitle}>
-              Gerencie as 5 avaliações (notas de 0 a 5) - Equivalência: 5 = 20 valores
+              Avaliações (0-5) com conversão automática para MACs (PP1) • Sistema MACs (0-20)
             </p>
           </div>
         </div>
@@ -515,214 +613,368 @@ function AvaliacoesNotas() {
 
         {disciplinaSelecionada && (
           <>
-            {/* Estatísticas da Turma */}
-            <div className={styles.statsSection}>
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                  <div className={styles.statIcon} style={{ background: "#e3f2fd", color: "#1976d2" }}>
-                    <FaChartLine />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <span className={styles.statLabel}>Média Geral (0-5)</span>
-                    <strong className={styles.statValue}>{estatisticasTurma.mediaGeral || 0}</strong>
-                    <small className={styles.statDetail}>
-                      Equivalente: {(estatisticasTurma.mediaGeral * 4).toFixed(1)} valores
-                    </small>
-                  </div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statIcon} style={{ background: "#e8f5e9", color: "#388e3c" }}>
-                    <FaCheckCircle />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <span className={styles.statLabel}>Aprovados</span>
-                    <strong className={styles.statValue}>{estatisticasTurma.aprovados}</strong>
-                    <small className={styles.statDetail}>Nota ≥ 2.5 (≥ 10 valores)</small>
-                  </div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statIcon} style={{ background: "#fff3e0", color: "#f57c00" }}>
-                    <MdWarning />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <span className={styles.statLabel}>Recuperação</span>
-                    <strong className={styles.statValue}>{estatisticasTurma.recuperacao}</strong>
-                    <small className={styles.statDetail}>Nota 1.75 - 2.49 (7-9.9 valores)</small>
-                  </div>
-                </div>
-                <div className={styles.statCard}>
-                  <div className={styles.statIcon} style={{ background: "#ffebee", color: "#d32f2f" }}>
-                    <FaExclamationTriangle />
-                  </div>
-                  <div className={styles.statInfo}>
-                    <span className={styles.statLabel}>Reprovados</span>
-                    <strong className={styles.statValue}>{estatisticasTurma.reprovados}</strong>
-                    <small className={styles.statDetail}>Nota &lt; 1.75 (&lt; 7 valores)</small>
-                  </div>
-                </div>
-              </div>
+            {/* Abas de navegação */}
+            <div className={styles.tabsContainer}>
+              <button 
+                className={`${styles.tabButton} ${abaAtiva === 'avaliacoes' ? styles.tabActive : ''}`}
+                onClick={() => setAbaAtiva('avaliacoes')}
+              >
+                <FaClipboardList />
+                Avaliações (0-5)
+                <span className={styles.tabBadge}>
+                  {alunos.filter(a => a.situacaoAvaliacoes === "Aprovado (Dispensa)").length}/{alunos.length}
+                </span>
+              </button>
+              <button 
+                className={`${styles.tabButton} ${abaAtiva === 'macs' ? styles.tabActive : ''}`}
+                onClick={() => setAbaAtiva('macs')}
+              >
+                <FaClipboardCheck />
+                Sistema MACs (0-20)
+                <span className={styles.tabBadge}>
+                  {alunos.filter(a => a.situacaoMACs && a.situacaoMACs.includes("Aprovado")).length}/{alunos.length}
+                </span>
+              </button>
+            </div>
 
-              {/* Gráficos */}
-              <div className={styles.chartsSection}>
-                <div className={styles.chartCard}>
-                  <h4 className={styles.chartTitle}>Desempenho por Aluno (Nota Final)</h4>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={dadosDesempenho}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="nome" />
-                      <YAxis domain={[0, 5]} label={{ value: 'Nota (0-5)', position: 'insideLeft', angle: -90 }} />
-                      <Tooltip formatter={(value) => [`${value} (equiv. ${value * 4} valores)`, 'Nota Final']} />
-                      <Legend />
-                      <Bar dataKey="total" fill="var(--dourado)" name="Nota Final (0-5)" />
-                    </BarChart>
-                  </ResponsiveContainer>
+            {/* Conteúdo da Aba de Avaliações Regulares */}
+            {abaAtiva === 'avaliacoes' && (
+              <div className={styles.tabContent}>
+                {/* Regras das Avaliações */}
+                <div className={styles.infoCard}>
+                  <div className={styles.infoContent}>
+                    <MdInfo className={styles.infoIcon} />
+                    <div>
+                      <strong>Regras das Avaliações Regulares (0-5):</strong>
+                      <ul className={styles.infoList}>
+                        <li><strong>Média:</strong> Soma das 5 avaliações ÷ 5 (0-5)</li>
+                        <li><strong>Conversão:</strong> Média × 4 = Nota em 20 valores</li>
+                        <li><strong>Dispensa:</strong> Média ≥ 3.75 (15 em 20) → Aprovado</li>
+                        <li><strong>Recuperação:</strong> Média entre 2.5 e 3.74 (10-14.9 em 20)</li>
+                        <li><strong>Reprovação:</strong> Média &lt; 2.5 (10 em 20)</li>
+                        <li><strong>MACs (PP1):</strong> Atualizado automaticamente com a média convertida</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
-                {dadosDistribuicao.length > 0 && (
-                  <div className={styles.chartCard}>
-                    <h4 className={styles.chartTitle}>Distribuição de Resultados</h4>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={dadosDistribuicao}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                        >
-                          {dadosDistribuicao.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                {/* Estatísticas das Avaliações */}
+                <div className={styles.statsSection}>
+                  <div className={styles.statsGrid}>
+                    <div className={styles.statCard}>
+                      <div className={styles.statIcon} style={{ background: "#e3f2fd", color: "#1976d2" }}>
+                        <FaUserGraduate />
+                      </div>
+                      <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Total de Alunos</span>
+                        <strong className={styles.statValue}>{estatisticasAvaliacoes.totalAlunos}</strong>
+                      </div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statIcon} style={{ background: "#e8f5e9", color: "#388e3c" }}>
+                        <FaCheckCircle />
+                      </div>
+                      <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Aprovados (Dispensa)</span>
+                        <strong className={styles.statValue}>{estatisticasAvaliacoes.aprovados}</strong>
+                        <small className={styles.statDetail}>Média ≥ 3.75 (15/20)</small>
+                      </div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statIcon} style={{ background: "#fff3e0", color: "#f57c00" }}>
+                        <MdWarning />
+                      </div>
+                      <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Recuperação</span>
+                        <strong className={styles.statValue}>{estatisticasAvaliacoes.recuperacao}</strong>
+                        <small className={styles.statDetail}>Média 2.5 - 3.74</small>
+                      </div>
+                    </div>
+                    <div className={styles.statCard}>
+                      <div className={styles.statIcon} style={{ background: "#ffebee", color: "#d32f2f" }}>
+                        <FaExclamationTriangle />
+                      </div>
+                      <div className={styles.statInfo}>
+                        <span className={styles.statLabel}>Reprovados</span>
+                        <strong className={styles.statValue}>{estatisticasAvaliacoes.reprovados}</strong>
+                        <small className={styles.statDetail}>Média &lt; 2.5</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gráficos das Avaliações */}
+                  <div className={styles.chartsSection}>
+                    {dadosDistribuicaoAvaliacoes.length > 0 && (
+                      <div className={styles.chartCard}>
+                        <h4 className={styles.chartTitle}>Distribuição - Avaliações</h4>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={dadosDistribuicaoAvaliacoes}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            >
+                              {dadosDistribuicaoAvaliacoes.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    <div className={styles.chartCard}>
+                      <h4 className={styles.chartTitle}>Médias por Aluno (0-5 e Convertida)</h4>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={dadosDesempenhoAvaliacoes}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="nome" />
+                          <YAxis domain={[0, 20]} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="media" fill="#1976d2" name="Média (0-5)" />
+                          <Bar dataKey="mediaConvertida" fill="#ff9800" name="Convertida (0-20)" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabela de Avaliações Regulares */}
+                <div className={styles.tableSection}>
+                  <div className={styles.tableHeader}>
+                    <h3 className={styles.tableTitle}>
+                      <MdAssessment />
+                      Lançamento de Notas (0 a 5)
+                    </h3>
+                    <div className={styles.tableActions}>
+                      <button 
+                        className={styles.btnSave}
+                        onClick={salvarNotas}
+                        disabled={loading}
+                      >
+                        <FaSave />
+                        {loading ? "Salvando..." : "Salvar Notas"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.thAluno}>Aluno</th>
+                          <th className={styles.thMatricula}>Matrícula</th>
+                          {tiposAvaliacao.map(av => (
+                            <th key={av.id} className={styles.thNota}>
+                              {av.nome}
+                              <small>0-5</small>
+                            </th>
                           ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+                          <th className={styles.thTotal}>Média</th>
+                          <th className={styles.thTotal}>Convertida</th>
+                          <th className={styles.thSituacao}>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {alunos.map(aluno => {
+                          const media = aluno.mediaAvaliacoes;
+                          const mediaConv = aluno.mediaConvertida;
+                          const isDispensado = media !== null && media >= 3.75;
 
-                {dadosAvaliacoes.length > 0 && (
-                  <div className={styles.chartCard}>
-                    <h4 className={styles.chartTitle}>Média das Avaliações</h4>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={dadosAvaliacoes}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="nome" />
-                        <YAxis domain={[0, 5]} label={{ value: 'Nota (0-5)', position: 'insideLeft', angle: -90 }} />
-                        <Tooltip formatter={(value) => [`${value} (equiv. ${value * 4} valores)`, '']} />
-                        <Legend />
-                        <Line type="monotone" dataKey="media" stroke="var(--azul-escuro)" name="Média" strokeWidth={2} />
-                        <Line type="monotone" dataKey="maior" stroke="#28a745" name="Maior Nota" strokeWidth={2} />
-                        <Line type="monotone" dataKey="menor" stroke="#dc3545" name="Menor Nota" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                          return (
+                            <tr key={aluno.id}>
+                              <td className={styles.tdAluno}>
+                                <strong>{aluno.nome}</strong>
+                              </td>
+                              <td className={styles.tdMatricula}>{aluno.matricula}</td>
+                              {tiposAvaliacao.map(av => (
+                                <td key={av.id} className={styles.tdNota}>
+                                  <input
+                                    type="number"
+                                    className={`${styles.notaInput} ${isDispensado ? styles.notaDispensado : ''}`}
+                                    value={aluno.notas[`av${av.id}`] || ""}
+                                    onChange={(e) => handleNotaChange(aluno.id, `av${av.id}`, e.target.value)}
+                                    step="0.1"
+                                    min="0"
+                                    max="5"
+                                    placeholder="0-5"
+                                  />
+                                </td>
+                              ))}
+                              <td className={styles.tdTotal}>
+                                <span className={`${styles.totalNota} ${isDispensado ? styles.totalDispensado : ''}`}>
+                                  {media !== null ? media.toFixed(1) : "-"}
+                                </span>
+                              </td>
+                              <td className={styles.tdTotal}>
+                                <span className={styles.totalEquivalente}>
+                                  {mediaConv !== null ? mediaConv.toFixed(1) : "-"}
+                                </span>
+                              </td>
+                              <td className={styles.tdSituacao}>
+                                <span className={`${styles.situacaoBadge} ${
+                                  aluno.situacaoAvaliacoes === "Aprovado (Dispensa)" 
+                                    ? styles.situacaoAprovado 
+                                    : aluno.situacaoAvaliacoes === "Recuperação" 
+                                    ? styles.situacaoRecuperacao 
+                                    : aluno.situacaoAvaliacoes === "Reprovado" 
+                                    ? styles.situacaoReprovado 
+                                    : styles.situacaoPendente
+                                }`}>
+                                  {aluno.situacaoAvaliacoes}
+                                  {isDispensado && <small style={{ display: 'block', fontSize: '9px' }}>✓ Dispensado</small>}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Informações da Escala */}
-            <div className={styles.infoCard}>
-              <div className={styles.infoContent}>
-                <MdInfo className={styles.infoIcon} />
-                <div>
-                  <strong>Escala de Avaliação:</strong>
-                  <ul className={styles.infoList}>
-                    <li>Nota 5.0 = 20 valores (Excelente)</li>
-                    <li>Nota 4.0 = 16 valores (Muito Bom)</li>
-                    <li>Nota 3.0 = 12 valores (Bom)</li>
-                    <li>Nota 2.5 = 10 valores (Aprovação mínima)</li>
-                    <li>Nota 1.75 = 7 valores (Recuperação)</li>
-                    <li>Nota 0.0 = 0 valores (Reprovado)</li>
-                  </ul>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Tabela de Notas */}
-            <div className={styles.tableSection}>
-              <div className={styles.tableHeader}>
-                <h3 className={styles.tableTitle}>
-                  Lançamento de Notas (0 a 5)
-                </h3>
-                <div className={styles.tableActions}>
-                  <button 
-                    className={styles.btnSave}
-                    onClick={salvarNotas}
-                    disabled={loading}
-                  >
-                    <FaSave className="me-2" />
-                    {loading ? "Salvando..." : "Salvar Notas"}
-                  </button>
+            {/* Conteúdo da Aba Sistema MACs */}
+            {abaAtiva === 'macs' && (
+              <div className={styles.tabContent}>
+                {/* Regras do Sistema MACs */}
+                <div className={styles.infoCard}>
+                  <div className={styles.infoContent}>
+                    <MdInfo className={styles.infoIcon} />
+                    <div>
+                      <strong>Regras do Sistema MACs (0-20):</strong>
+                      <ul className={styles.infoList}>
+                        <li><strong>MACs (PP1):</strong> Convertido automaticamente das avaliações (média × 4)</li>
+                        <li><strong>CPF (PP2):</strong> Segunda Prova (0-20)</li>
+                        <li><strong>CAE (M.C):</strong> Média das Cadeiras</li>
+                        <li><strong>EXA:</strong> Exame (CAE + EXA ≥ 20 → Aprovado)</li>
+                        <li><strong>CFE (M.E):</strong> Média do Exame</li>
+                        <li><strong>RECURSO:</strong> ≥ 10 → Aprovado</li>
+                        <li><strong>ESP:</strong> ≥ 10 → Aprovado</li>
+                        <li><strong>Dispensa:</strong> CAE ≥ 15 → Aprovado</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabela do Sistema MACs */}
+                <div className={styles.tableSection}>
+                  <div className={styles.tableHeader}>
+                    <h3 className={styles.tableTitle}>
+                      <MdAssessment />
+                      Lançamento de Notas - Sistema MACs (0 a 20)
+                    </h3>
+                    <div className={styles.tableActions}>
+                      <button 
+                        className={styles.btnSave}
+                        onClick={salvarNotas}
+                        disabled={loading}
+                      >
+                        <FaSave />
+                        {loading ? "Salvando..." : "Salvar Notas"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.thAluno}>Aluno</th>
+                          <th className={styles.thMatricula}>Matrícula</th>
+                          {tiposMACs.map(av => (
+                            <th key={av.id} className={styles.thNota}>
+                              {av.nome}
+                              <small>{av.descricao}</small>
+                            </th>
+                          ))}
+                          <th className={styles.thSituacao}>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {alunos.map(aluno => {
+                          const isDispensado = aluno.situacaoMACs === "Dispensado (CAE ≥ 15)";
+                          const isMACsAuto = true; // MACs é preenchido automaticamente
+                          
+                          return (
+                            <tr key={aluno.id}>
+                              <td className={styles.tdAluno}>
+                                <strong>{aluno.nome}</strong>
+                                <small style={{ display: 'block', fontSize: '10px', color: '#28a745' }}>
+                                  {aluno.notas.macs !== null && `PP1 Convertido: ${aluno.notas.macs}`}
+                                </small>
+                              </td>
+                              <td className={styles.tdMatricula}>{aluno.matricula}</td>
+                              {tiposMACs.map(av => {
+                                let disabled = false;
+                                if (av.id === 'macs') disabled = true; // MACs é automático
+                                if (av.id === 'exa' && isDispensado) disabled = true;
+                                if (av.id === 'cfe' && !aluno.notas.cae) disabled = true;
+                                if (av.id === 'recurso' && !aluno.notas.exa) disabled = true;
+                                if (av.id === 'esp' && !aluno.notas.recurso) disabled = true;
+
+                                return (
+                                  <td key={av.id} className={styles.tdNota}>
+                                    <input
+                                      type="number"
+                                      className={`${styles.notaInput} ${av.id === 'macs' ? styles.notaAuto : ''} ${av.id === 'cae' && aluno.notas.cae >= 15 ? styles.notaDispensado : ''}`}
+                                      value={aluno.notas[av.id] || ""}
+                                      onChange={(e) => handleNotaChange(aluno.id, av.id, e.target.value)}
+                                      step="0.1"
+                                      min="0"
+                                      max="20"
+                                      placeholder="0-20"
+                                      disabled={disabled}
+                                    />
+                                    {av.id === 'macs' && aluno.notas.macs !== null && (
+                                      <span style={{ fontSize: '10px', color: '#1976d2', display: 'block' }}>
+                                        ← Auto
+                                      </span>
+                                    )}
+                                    {av.id === 'cae' && aluno.notas.cae >= 15 && (
+                                      <span style={{ fontSize: '10px', color: '#28a745', display: 'block' }}>✓ Dispensa</span>
+                                    )}
+                                    {av.id === 'exa' && isDispensado && (
+                                      <span style={{ fontSize: '10px', color: '#999', display: 'block' }}>Dispensado</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td className={styles.tdSituacao}>
+                                <span className={`${styles.situacaoBadge} ${
+                                  aluno.situacaoMACs && aluno.situacaoMACs.includes("Aprovado") 
+                                    ? styles.situacaoAprovado 
+                                    : aluno.situacaoMACs && aluno.situacaoMACs.includes("Dispensado")
+                                    ? styles.situacaoDispensado
+                                    : aluno.situacaoMACs && aluno.situacaoMACs.includes("Recuperação")
+                                    ? styles.situacaoRecuperacao 
+                                    : aluno.situacaoMACs === "Reprovado"
+                                    ? styles.situacaoReprovado 
+                                    : styles.situacaoPendente
+                                }`}>
+                                  {aluno.situacaoMACs || "Pendente"}
+                                  <small style={{ display: 'block', fontSize: '9px', marginTop: '2px' }}>
+                                    {aluno.mensagemMACs}
+                                  </small>
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th className={styles.thAluno}>Aluno</th>
-                      <th className={styles.thMatricula}>Matrícula</th>
-                      {tiposAvaliacao.map(av => (
-                        <th key={av.id} className={styles.thNota}>
-                          {av.nome}
-                          <small>{av.descricao}</small>
-                        </th>
-                      ))}
-                      <th className={styles.thTotal}>Média Final</th>
-                      <th className={styles.thTotal}>Equivalente</th>
-                      <th className={styles.thSituacao}>Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {alunos.map(aluno => (
-                      <tr key={aluno.id}>
-                        <td className={styles.tdAluno}>
-                          <strong>{aluno.nome}</strong>
-                        </td>
-                        <td className={styles.tdMatricula}>{aluno.matricula}</td>
-                        {tiposAvaliacao.map(av => (
-                          <td key={av.id} className={styles.tdNota}>
-                            <input
-                              type="number"
-                              className={styles.notaInput}
-                              value={aluno.notas[av.id] || ""}
-                              onChange={(e) => handleNotaChange(aluno.id, av.id, e.target.value)}
-                              step="0.1"
-                              min="0"
-                              max="5"
-                              placeholder="0-5"
-                            />
-                          </td>
-                        ))}
-                        <td className={styles.tdTotal}>
-                          <span className={styles.totalNota}>
-                            {aluno.total !== null ? aluno.total.toFixed(1) : "-"}
-                          </span>
-                        </td>
-                        <td className={styles.tdTotal}>
-                          <span className={styles.totalEquivalente}>
-                            {aluno.totalVinte !== null ? aluno.totalVinte.toFixed(1) : "-"}
-                          </span>
-                        </td>
-                        <td className={styles.tdSituacao}>
-                          <span className={`${styles.situacaoBadge} ${
-                            aluno.situacao === "Aprovado" ? styles.situacaoAprovado :
-                            aluno.situacao === "Recuperação" ? styles.situacaoRecuperacao :
-                            aluno.situacao === "Reprovado" ? styles.situacaoReprovado :
-                            styles.situacaoPendente
-                          }`}>
-                            {aluno.situacao}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            )}
           </>
         )}
       </div>
