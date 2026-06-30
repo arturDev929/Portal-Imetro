@@ -13,7 +13,13 @@ function SelectDisciplina({ value, onChange, disabled }) {
             try {
                 setLoading(true);
                 const response = await api.get(`/Disciplinas`);
-                setDisciplinas(response.data);
+                
+                // O endpoint retorna dados com sucesso e dados
+                if (response.data.sucesso && response.data.dados) {
+                    setDisciplinas(response.data.dados);
+                } else {
+                    setDisciplinas([]);
+                }
                 setError(null);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
@@ -37,8 +43,8 @@ function SelectDisciplina({ value, onChange, disabled }) {
             <span className={`${Style.span} input-group-text`}><IoMdBook /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="iddisciplina" 
-                name="iddisciplina"
+                id="id_disciplina" 
+                name="id_disciplina"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
@@ -56,7 +62,7 @@ function SelectDisciplina({ value, onChange, disabled }) {
                 
                 {!loading && !error && disciplinas.length > 0 && 
                     disciplinas.map((disciplina) => (
-                        <option key={disciplina.iddisciplina} value={disciplina.iddisciplina}>
+                        <option key={disciplina.id_disciplina} value={disciplina.id_disciplina}>
                             {disciplina.disciplina}
                         </option>
                     ))

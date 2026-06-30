@@ -82,10 +82,12 @@ function TurmasAdm() {
         client.interceptors.response.use(
             (response) => response,
             (error) => {
-                if (error.response?.data?.error) {
-                    showErrorToast("Erro", error.response.data.error);
+                if (error.response?.data?.mensagem) {
+                    showErrorToast("Erro", error.response.data.mensagem);
                 } else if (error.response?.data?.message) {
                     showErrorToast("Erro", error.response.data.message);
+                } else if (error.response?.data?.error) {
+                    showErrorToast("Erro", error.response.data.error);
                 } else if (error.response?.status === 404) {
                     showErrorToast("Erro de Conexão", "Endpoint não encontrado");
                 } else if (error.code === 'ECONNABORTED') {
@@ -204,7 +206,7 @@ function TurmasAdm() {
 
     const removerItemLocal = useCallback((id) => {
         setLista(prev => {
-            const updatedList = prev.filter(item => item.idperiodo !== id);
+            const updatedList = prev.filter(item => item.id_periodo !== id);
             return updatedList;
         });
     }, []);
@@ -224,13 +226,13 @@ function TurmasAdm() {
 
     const abrirModalEditar = useCallback((item) => {
         setDadosEdicao({
-            idperiodo: item.idperiodo,
+            idperiodo: item.id_periodo,
             turma: item.turma || '',
             periodo: item.periodo || '',
             anoletivo: item.anoletivo || '',
-            idcurso: item.idcurso || '',
-            idanocurricular: item.idanocurricular || '',
-            idcategoriacurso: item.idcategoriacurso || '',
+            idcurso: item.id_curso || '',
+            idanocurricular: item.id_anocurricular || '',
+            idcategoriacurso: item.id_categoria || '',
             nomeCurso: item.curso || '',
             nomeCategoria: item.categoriacurso || '',
             anoCurricular: item.anocurricular || ''
@@ -261,7 +263,7 @@ function TurmasAdm() {
         setProfessorSelecionado("");
         setDisciplinaSelecionada("");
         setProfessoresDisciplina([]);
-        await fetchDisciplinasTurma(item.idperiodo, item.anocurricular);
+        await fetchDisciplinasTurma(item.id_periodo, item.anocurricular);
         setModalProfessorAberto(true);
     }, [fetchDisciplinasTurma]);
 
@@ -332,13 +334,13 @@ function TurmasAdm() {
 
         setSalvando(true);
         try {
-            const response = await apiClient.put(`/turma/${dadosEdicao.idperiodo}`, {
+            const response = await apiClient.put(`/periodo/${dadosEdicao.idperiodo}`, {
+                id_anocurricular: dadosEdicao.idanocurricular,
+                id_curso: dadosEdicao.idcurso,
+                id_categoria: dadosEdicao.idcategoriacurso,
                 turma: dadosEdicao.turma,
                 periodo: dadosEdicao.periodo,
-                anoletivo: dadosEdicao.anoletivo,
-                idcurso: dadosEdicao.idcurso,
-                idanocurricular: dadosEdicao.idanocurricular,
-                idcategoriacurso: dadosEdicao.idcategoriacurso
+                id_anoletivo: dadosEdicao.anoletivo || null
             });
 
             showSuccessToast(
@@ -384,12 +386,19 @@ function TurmasAdm() {
             return;
         }
 
+        if (!user || !user.id) {
+            showErrorToast("Erro", "Usuário não autenticado");
+            return;
+        }
+
         setSalvando(true);
         try {
             const response = await apiClient.post('/atribuirProfessorTurma', {
-                idperiodo: turmaSelecionada.idperiodo,
-                iddisciplina: disciplinaSelecionada,
-                idprofessor: professorSelecionado
+                id_periodo: turmaSelecionada.id_periodo,
+                id_disciplina: disciplinaSelecionada,
+                id_professor: professorSelecionado,
+                id_anoletivo: turmaSelecionada.id_anoletivo || null,
+                idAdm: user.id
             });
 
             showSuccessToast(
@@ -415,7 +424,7 @@ function TurmasAdm() {
         } finally {
             setSalvando(false);
         }
-    }, [turmaSelecionada, disciplinaSelecionada, professorSelecionado, apiClient, fecharModalProfessor, fetchData]);
+    }, [turmaSelecionada, disciplinaSelecionada, professorSelecionado, user, apiClient, fecharModalProfessor, fetchData]);
 
     const salvarNovaTurma = useCallback(async (e) => {
         e?.preventDefault();
@@ -438,23 +447,24 @@ function TurmasAdm() {
         setSalvando(true);
         try {
             const response = await apiClient.post('/registrarPeriodo', {
+                id_anocurricular: categoriaCursoAnoData.idanocurricular,
+                id_curso: categoriaCursoAnoData.idcurso,
+                id_categoria: categoriaCursoAnoData.idcategoriacurso,
                 turma: novaTurma.turma,
                 periodo: novaTurma.periodo,
                 anoletivo: novaTurma.anoletivo,
-                idcurso: categoriaCursoAnoData.idcurso,
-                idanocurricular: categoriaCursoAnoData.idanocurricular,
-                idcategoriacurso: categoriaCursoAnoData.idcategoriacurso,
                 idAdm: user.id
             });
 
             showSuccessToast(
                 "Sucesso",
-                response.data.message || "Turma adicionada com sucesso"
+                response.data.mensagem || "Turma adicionada com sucesso"
             );
 
             await fetchData(false);
             fecharModalAdicionar();
         } catch (error) {
+            console.error("Erro ao adicionar turma:", error);
             if (error.response?.data?.mensagem) {
                 showErrorToast("Erro", error.response.data.mensagem);
             } else {
@@ -482,11 +492,11 @@ function TurmasAdm() {
                 try {
                     showInfoToast("Processando", "Excluindo turma...");
 
-                    const response = await apiClient.delete(`/turma/${id}`);
+                    const response = await apiClient.delete(`/periodo/${id}`);
 
                     showSuccessToast(
                         "Sucesso",
-                        response.data?.message || "Turma excluída com sucesso"
+                        response.data?.mensagem || "Turma excluída com sucesso"
                     );
 
                     removerItemLocal(id);
@@ -498,7 +508,9 @@ function TurmasAdm() {
                         config: error.config
                     });
 
-                    if (error.response?.status === 404) {
+                    if (error.response?.data?.mensagem) {
+                        showErrorToast("Erro", error.response.data.mensagem);
+                    } else if (error.response?.status === 404) {
                         showErrorToast("Erro 404", "Rota não encontrada. Verifique o endpoint");
                     } else if (error.response?.status === 500) {
                         showErrorToast("Erro no servidor", error.response?.data?.error || "Erro interno do servidor");
@@ -521,7 +533,7 @@ function TurmasAdm() {
     const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Professor', 'Editar', 'Excluir'];
 
     const renderRow = (item) => (
-        <tr key={item.idperiodo}>
+        <tr key={item.id_periodo}>
             <td className="align-middle">{item.categoriacurso}</td>
             <td className="align-middle">{item.curso}</td>
             <td className="text-center align-middle">{item.anocurricular}º</td>
@@ -551,7 +563,7 @@ function TurmasAdm() {
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnDeletar}`}
-                    onClick={() => deletarTurma(item.idperiodo, item.turma)}
+                    onClick={() => deletarTurma(item.id_periodo, item.turma)}
                     disabled={loading || salvando || isConfirming}
                     title={`Excluir ${item.turma}`}
                 >
@@ -795,7 +807,6 @@ function TurmasAdm() {
                                                 pattern="\d{4}-\d{4}"
                                                 title="Formato: YYYY-YYYY (ex: 2024-2025)"
                                                 disabled={salvando || isConfirming}
-                                                required
                                             />
                                         </div>
                                     </div>
@@ -885,7 +896,7 @@ function TurmasAdm() {
                                                 <option value="" disabled>Carregando disciplinas...</option>
                                             )}
                                             {disciplinasTurma.length > 0 && disciplinasTurma.map((disc) => (
-                                                <option key={disc.iddisciplina} value={disc.iddisciplina}>
+                                                <option key={disc.id_disciplina} value={disc.id_disciplina}>
                                                     {disc.disciplina} - {disc.semestre}º Semestre
                                                 </option>
                                             ))}
@@ -911,7 +922,7 @@ function TurmasAdm() {
                                                 <option value="" disabled>Carregando professores...</option>
                                             )}
                                             {professoresDisciplina.length > 0 && professoresDisciplina.map((prof) => (
-                                                <option key={prof.idprofessor} value={prof.idprofessor}>
+                                                <option key={prof.id_professor} value={prof.id_professor}>
                                                     {prof.nome} - {prof.especialidade || 'Sem especialidade'}
                                                 </option>
                                             ))}

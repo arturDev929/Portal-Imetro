@@ -978,4 +978,181 @@ router.get('/professorDisponivel/:id', async (req, res) => {
     });
 });
 
+router.get('/turmas', async (req, res) => {
+    const sql = `SELECT 
+                    p.id_periodo,
+                    p.periodo,
+                    t.turma,
+                    al.ano AS anoletivo,
+                    cat.categoria AS categoriacurso,
+                    c.curso,
+                    ac.ano AS anocurricular
+                FROM periodo p
+                INNER JOIN turma t ON p.id_turma = t.id_turma
+                INNER JOIN curso c ON t.id_curso = c.id_curso
+                INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
+                LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
+                LEFT JOIN anocurricular ac ON c.id_curso = ac.id_curso
+                ORDER BY 
+                    (al.ano IS NOT NULL AND ac.ano IS NOT NULL) DESC,
+                    al.ano ASC,
+                    ac.ano ASC,
+                    t.turma ASC`;
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar professores sem disciplinas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/disciplinasPorTurma/:idperiodo/:anocurricular', (req, res) => {
+    const { idperiodo, anocurricular } = req.params;
+    const query = `
+        SELECT DISTINCT
+            d.id_disciplina,
+            d.disciplina,
+            a.ano AS anocurricular,
+            s.semestre
+        FROM curso c
+        INNER JOIN turma t ON t.id_curso = c.id_curso
+        INNER JOIN periodo p ON p.id_turma = t.id_turma
+        INNER JOIN semestre s ON s.id_curso = c.id_curso
+        INNER JOIN disciplina d ON d.id_disciplina = s.id_disciplina
+        INNER JOIN anocurricular a ON a.id_anocurricular = s.id_anocurricular
+        WHERE p.id_periodo = ? 
+        AND a.ano = ?
+        ORDER BY s.semestre ASC, d.disciplina ASC
+    `;
+
+    conexao.query(query, [idperiodo, anocurricular], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas da turma:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json(results);
+    });
+});
+
+router.get('/professoresPorDisciplina/:iddisciplina', (req, res) => {
+    const { iddisciplina } = req.params;
+
+    if (!iddisciplina) {
+        return res.status(400).json({
+            error: 'ID da disciplina não informado'
+        });
+    }
+
+    const query = `
+        SELECT 
+            p.id_professor,
+            p.nome AS nome,
+            p.email AS email,
+            p.titulacao AS especialidade
+        FROM disc_professor dp
+        INNER JOIN professor p ON p.id_professor = dp.id_professor
+        WHERE dp.id_disciplina = ? AND p.status = 'Ativo'
+        ORDER BY p.nome ASC
+    `;
+
+    conexao.query(query, [iddisciplina], (error, results) => {
+        if (error) {
+            console.error("Erro ao buscar professores da disciplina:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json(results);
+    });
+});
+
+router.get('/CategoriaCursosAno', (req, res) => {
+    const sql = `
+        SELECT 
+            cat.id_categoria,
+            cat.categoria,
+            c.id_curso,
+            c.curso,
+            ac.id_anocurricular,
+            ac.ano AS anocurricular
+        FROM categoria cat
+        INNER JOIN curso c ON cat.id_categoria = c.id_categoria
+        INNER JOIN anocurricular ac ON c.id_curso = ac.id_curso
+        WHERE cat.status = 'Ativo' 
+          AND c.status = 'Ativo' 
+          AND ac.status = 'Ativo'
+        ORDER BY ac.ano ASC, c.curso ASC
+        LIMIT 500
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar dados combinados:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao buscar dados",
+                detalhes: error.message
+            });
+        }
+
+        return res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Dados carregados com sucesso",
+            total: result.length,
+            dados: result
+        });
+    });
+});
+
+router.get('/Disciplinas', (req, res) => {
+    const sql = "SELECT id_disciplina, disciplina FROM disciplina WHERE status = 'Ativo' ORDER BY disciplina ASC";
+    
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar disciplinas:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao buscar disciplinas",
+                detalhes: error.message
+            });
+        }
+        
+        if (result.length === 0) {
+            return res.status(200).json({
+                sucesso: true,
+                tipo: "info",
+                titulo: "Nenhuma disciplina encontrada",
+                mensagem: "Não há disciplinas cadastradas no sistema",
+                dados: [],
+                total: 0
+            });
+        }
+        
+        return res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Disciplinas carregadas",
+            mensagem: `${result.length} disciplina(s) encontrada(s)`,
+            dados: result,
+            total: result.length
+        });
+    });
+});
+
 module.exports = router;

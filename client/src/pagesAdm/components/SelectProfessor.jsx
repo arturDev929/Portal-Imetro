@@ -13,7 +13,13 @@ function SelectProfessor({ value, onChange, disabled }) {
             try {
                 setLoading(true);
                 const response = await api.get(`/Professores`);
-                setProfessores(response.data);
+                
+                // O endpoint deve retornar dados com sucesso e dados
+                if (response.data.sucesso && response.data.dados) {
+                    setProfessores(response.data.dados);
+                } else {
+                    setProfessores([]);
+                }
                 setError(null);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
@@ -37,8 +43,8 @@ function SelectProfessor({ value, onChange, disabled }) {
             <span className={`${Style.span} input-group-text`}><IoMdPerson /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="idprofessor" 
-                name="idprofessor"
+                id="id_professor" 
+                name="id_professor"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
@@ -56,8 +62,8 @@ function SelectProfessor({ value, onChange, disabled }) {
                 
                 {!loading && !error && professores.length > 0 && 
                     professores.map((professor) => (
-                        <option key={professor.idprofessor} value={professor.idprofessor}>
-                            {professor.nomeprofessor}
+                        <option key={professor.id_professor} value={professor.id_professor}>
+                            {professor.nome}
                         </option>
                     ))
                 }

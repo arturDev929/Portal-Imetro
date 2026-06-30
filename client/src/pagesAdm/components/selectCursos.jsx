@@ -3,7 +3,7 @@ import api from "../../service/api";
 import Style from "../../pages/Cadastro.module.css";
 import { IoMdFolder } from "react-icons/io";
 
-function SelectCategoriaCurso({ value, onChange, disabled }) {  
+function SelectCurso({ value, onChange, disabled }) {  
     const [categorias, setCategorias] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -70,4 +70,4 @@ function SelectCategoriaCurso({ value, onChange, disabled }) {
     );
 }
 
-export default SelectCategoriaCurso;
+export default SelectCurso;

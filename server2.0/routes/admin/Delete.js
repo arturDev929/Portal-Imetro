@@ -458,4 +458,192 @@ router.delete('/desvincularProfessor/:iddisciplina/:idprofessor', (req, res) => 
     });
 });
 
+router.delete('/periodo/:id', (req, res) => {
+    const { id } = req.params;
+    console.log("ID do período a excluir:", id);
+    
+    // 1. Verificar se o período existe
+    const verificarExistenciaSQL = "SELECT id_periodo, id_turma, periodo, status FROM periodo WHERE id_periodo = ?";
+    
+    conexao.query(verificarExistenciaSQL, [id], (erroExistencia, resultados) => {
+        if (erroExistencia) {
+            console.error("Erro ao verificar existência do período:", erroExistencia);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao verificar período",
+                detalhes: erroExistencia.message
+            });
+        }
+        
+        if (resultados.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Período não encontrado",
+                mensagem: "O período que você está tentando excluir não existe"
+            });
+        }
+        
+        const periodoInfo = resultados[0];
+        
+        // 2. Verificar se existem registros dependentes em anoletivo
+        const verificarAnoLetivoSQL = "SELECT id_anoletivo, ano FROM anoletivo WHERE id_periodo = ? AND status = 'Ativo'";
+        
+        conexao.query(verificarAnoLetivoSQL, [id], (erroAnoLetivo, resultadosAnoLetivo) => {
+            if (erroAnoLetivo) {
+                console.error("Erro ao verificar ano letivo:", erroAnoLetivo);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro interno ao verificar dependências",
+                    detalhes: erroAnoLetivo.message
+                });
+            }
+            
+            // 3. Verificar se existem registros dependentes em prof_turma_disc
+            const verificarProfTurmaDiscSQL = "SELECT id_ptd FROM prof_turma_disc WHERE id_periodo = ? AND status = 'Ativo'";
+            
+            conexao.query(verificarProfTurmaDiscSQL, [id], (erroProfTurma, resultadosProfTurma) => {
+                if (erroProfTurma) {
+                    console.error("Erro ao verificar prof_turma_disc:", erroProfTurma);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: "Erro interno ao verificar dependências",
+                        detalhes: erroProfTurma.message
+                    });
+                }
+                
+                // 4. Se existem dependências, oferecer opções
+                if (resultadosAnoLetivo.length > 0 || resultadosProfTurma.length > 0) {
+                    const dependencias = [];
+                    
+                    if (resultadosAnoLetivo.length > 0) {
+                        dependencias.push({
+                            tabela: "anoletivo",
+                            registros: resultadosAnoLetivo.map(a => ({
+                                id: a.id_anoletivo,
+                                ano: a.ano
+                            }))
+                        });
+                    }
+                    
+                    if (resultadosProfTurma.length > 0) {
+                        dependencias.push({
+                            tabela: "prof_turma_disc",
+                            quantidade: resultadosProfTurma.length
+                        });
+                    }
+                    
+                    return res.status(400).json({
+                        sucesso: false,
+                        tipo: "aviso",
+                        titulo: "Período possui dependências",
+                        mensagem: "Este período possui registros associados que precisam ser removidos ou desativados primeiro",
+                        dependencias: dependencias,
+                        sugestoes: [
+                            "Desative o período em vez de excluí-lo",
+                            "Remova ou desative os registros dependentes primeiro"
+                        ]
+                    });
+                }
+                
+                // 5. Desativar registros relacionados (soft delete)
+                // 5a. Desativar anoletivo relacionado (se houver)
+                if (resultadosAnoLetivo.length > 0) {
+                    const desativarAnoLetivoSQL = "UPDATE anoletivo SET status = 'Desativado', data_atualizacao = CURDATE() WHERE id_periodo = ?";
+                    
+                    conexao.query(desativarAnoLetivoSQL, [id], (erroDesativarAno) => {
+                        if (erroDesativarAno) {
+                            console.error("Erro ao desativar ano letivo:", erroDesativarAno);
+                            // Continua mesmo com erro
+                        }
+                    });
+                }
+                
+                // 5b. Desativar prof_turma_disc relacionado (se houver)
+                if (resultadosProfTurma.length > 0) {
+                    const desativarProfTurmaSQL = "UPDATE prof_turma_disc SET status = 'Eliminado', data_actualizacao = CURDATE() WHERE id_periodo = ?";
+                    
+                    conexao.query(desativarProfTurmaSQL, [id], (erroDesativarProf) => {
+                        if (erroDesativarProf) {
+                            console.error("Erro ao desativar prof_turma_disc:", erroDesativarProf);
+                            // Continua mesmo com erro
+                        }
+                    });
+                }
+                
+                // 6. Excluir o período (hard delete) ou desativar (soft delete)
+                // Opção 1: Hard Delete (exclusão física)
+                const deleteSQL = "DELETE FROM periodo WHERE id_periodo = ?";
+                
+                conexao.query(deleteSQL, [id], (erroDelete, resultado) => {
+                    if (erroDelete) {
+                        console.error("Erro ao excluir período:", erroDelete);
+                        
+                        // Verificar se é erro de chave estrangeira
+                        if (erroDelete.code === 'ER_ROW_IS_REFERENCED_2') {
+                            return res.status(400).json({
+                                sucesso: false,
+                                tipo: "erro",
+                                titulo: "Não é possível excluir",
+                                mensagem: "Este período possui registros dependentes. Por favor, remova-os primeiro ou desative o período.",
+                                detalhes: erroDelete.message
+                            });
+                        }
+                        
+                        return res.status(500).json({
+                            sucesso: false,
+                            tipo: "erro",
+                            titulo: "Erro no servidor",
+                            mensagem: "Erro interno ao excluir período",
+                            detalhes: erroDelete.message
+                        });
+                    }
+                    
+                    // 7. Verificar se a turma ficou sem períodos e desativar se necessário
+                    if (periodoInfo.id_turma) {
+                        const verificarOutrosPeriodosSQL = "SELECT id_periodo FROM periodo WHERE id_turma = ? AND status = 'Ativo'";
+                        
+                        conexao.query(verificarOutrosPeriodosSQL, [periodoInfo.id_turma], (erroOutros, resultadosOutros) => {
+                            if (erroOutros) {
+                                console.error("Erro ao verificar outros períodos:", erroOutros);
+                            } else if (resultadosOutros.length === 0) {
+                                // Desativar a turma se não tiver mais períodos ativos
+                                const desativarTurmaSQL = "UPDATE turma SET status = 'Desativado', data_atualizacao = CURDATE() WHERE id_turma = ?";
+                                
+                                conexao.query(desativarTurmaSQL, [periodoInfo.id_turma], (erroDesativarTurma) => {
+                                    if (erroDesativarTurma) {
+                                        console.error("Erro ao desativar turma:", erroDesativarTurma);
+                                    } else {
+                                        console.log(`Turma ${periodoInfo.id_turma} desativada por não ter mais períodos`);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // 8. Resposta de sucesso
+                    return res.status(200).json({
+                        sucesso: true,
+                        tipo: "sucesso",
+                        titulo: "Período Excluído",
+                        mensagem: `Período "${periodoInfo.periodo}" excluído com sucesso!`,
+                        dados: {
+                            id_periodo: id,
+                            periodo: periodoInfo.periodo,
+                            id_turma: periodoInfo.id_turma,
+                            affectedRows: resultado.affectedRows
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
 module.exports = router;

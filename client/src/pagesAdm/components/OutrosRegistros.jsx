@@ -18,10 +18,10 @@ function OutrosRegistros() {
     
     // Estados para Disciplina ao Curso
     const [formDataDisciplinaCurso, setFormDataDisciplinaCurso] = useState({
-        idcategoriacurso: "",
-        idcurso: "",
-        idanocurricular: "",
-        iddisciplina: ""
+        id_categoria: "",
+        id_curso: "",
+        id_anocurricular: "",
+        id_disciplina: ""
     });
     const [semestre, setSemestre] = useState("");
     
@@ -32,6 +32,20 @@ function OutrosRegistros() {
     
     // Estado global de loading
     const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState(null);
+
+    // Buscar usuário logado
+    useEffect(() => {
+        const usuarioSalvo = localStorage.getItem("usuarioLogado");
+        if (usuarioSalvo) {
+            try {
+                setUser(JSON.parse(usuarioSalvo));
+            } catch (error) {
+                console.error("Erro ao parsear usuário:", error);
+                setUser(null);
+            }
+        }
+    }, []);
 
     // ==================== HANDLERS ====================
     
@@ -49,12 +63,17 @@ function OutrosRegistros() {
             return;
         }
 
+        if (!user || !user.id) {
+            showErrorToast('Usuário não autenticado', 'Faça login novamente');
+            return;
+        }
+
         setLoading(true);
 
         try {
             const response = await api.post(`/registrarAnoCurricular`, {
-                anocurricular: anoCurricular,
-                idcurso: idCurso
+                ano: anoCurricular,
+                id_curso: idCurso
             }, {
                 headers: {
                     'Content-Type': 'application/json'
@@ -67,6 +86,11 @@ function OutrosRegistros() {
                     response.data.mensagem || "Ano curricular registrado com sucesso"
                 );
                 setAnoCurricular("");
+                // Resetar seleção de ano no componente CategoriaCursoAno
+                setFormDataDisciplinaCurso(prev => ({
+                    ...prev,
+                    id_anocurricular: ""
+                }));
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
@@ -94,13 +118,23 @@ function OutrosRegistros() {
     const handleSubmitDisciplinaCurso = async (e) => {
         e.preventDefault();
         
-        if (!formDataDisciplinaCurso.iddisciplina) {
+        if (!formDataDisciplinaCurso.id_disciplina) {
             showErrorToast('Disciplina não selecionada', 'Selecione uma disciplina primeiro');
             return;
         }
 
-        if (!formDataDisciplinaCurso.idanocurricular) {
+        if (!formDataDisciplinaCurso.id_anocurricular) {
             showErrorToast('Ano Curricular não selecionado', 'Selecione um ano curricular primeiro');
+            return;
+        }
+
+        if (!formDataDisciplinaCurso.id_curso) {
+            showErrorToast('Curso não selecionado', 'Selecione um curso primeiro');
+            return;
+        }
+
+        if (!formDataDisciplinaCurso.id_categoria) {
+            showErrorToast('Categoria não selecionada', 'Selecione uma categoria primeiro');
             return;
         }
 
@@ -109,15 +143,20 @@ function OutrosRegistros() {
             return;
         }
 
+        if (!user || !user.id) {
+            showErrorToast('Usuário não autenticado', 'Faça login novamente');
+            return;
+        }
+
         setLoading(true);
 
         try {
             const response = await api.post(`/registrarDisciplinaCurso`, {
-                iddisciplina: formDataDisciplinaCurso.iddisciplina,
-                idanocurricular: formDataDisciplinaCurso.idanocurricular,
-                idcurso: formDataDisciplinaCurso.idcurso,
-                idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,
-                semestre: semestre
+                id_disciplina: formDataDisciplinaCurso.id_disciplina,
+                id_anocurricular: formDataDisciplinaCurso.id_anocurricular,
+                id_curso: formDataDisciplinaCurso.id_curso,
+                id_categoria: formDataDisciplinaCurso.id_categoria,
+                semestre: parseInt(semestre)
             }, {
                 headers: {
                     'Content-Type': 'application/json'
@@ -133,7 +172,7 @@ function OutrosRegistros() {
                 // Resetar disciplina selecionada
                 setFormDataDisciplinaCurso(prev => ({
                     ...prev,
-                    iddisciplina: ""
+                    id_disciplina: ""
                 }));
             } else {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
@@ -165,17 +204,17 @@ function OutrosRegistros() {
             return;
         }
 
-        if (!formDataDisciplinaCurso.idanocurricular) {
+        if (!formDataDisciplinaCurso.id_anocurricular) {
             showErrorToast('Ano Curricular não selecionado', 'Selecione um ano curricular primeiro');
             return;
         }
 
-        if (!formDataDisciplinaCurso.idcurso) {
+        if (!formDataDisciplinaCurso.id_curso) {
             showErrorToast('Curso não selecionado', 'Selecione um curso primeiro');
             return;
         }
 
-        if (!formDataDisciplinaCurso.idcategoriacurso) {
+        if (!formDataDisciplinaCurso.id_categoria) {
             showErrorToast('Categoria não selecionada', 'Selecione uma categoria primeiro');
             return;
         }
@@ -185,13 +224,18 @@ function OutrosRegistros() {
             return;
         }
 
+        if (!user || !user.id) {
+            showErrorToast('Usuário não autenticado', 'Faça login novamente');
+            return;
+        }
+
         setLoading(true);
 
         try {
             const response = await api.post(`/registrarPeriodo`, {
-                idanocurricular: formDataDisciplinaCurso.idanocurricular,
-                idcurso: formDataDisciplinaCurso.idcurso,
-                idcategoriacurso: formDataDisciplinaCurso.idcategoriacurso,
+                id_anocurricular: formDataDisciplinaCurso.id_anocurricular,
+                id_curso: formDataDisciplinaCurso.id_curso,
+                id_categoria: formDataDisciplinaCurso.id_categoria,
                 turma: turma.trim(),
                 anoletivo: anoletivo.trim(),
                 periodo: periodo
@@ -204,7 +248,7 @@ function OutrosRegistros() {
             if (response.data.sucesso) {
                 showSuccessToast(
                     response.data.titulo || "Sucesso",
-                    response.data.mensagem || "Turma registrada com sucesso"
+                    response.data.mensagem || "Período registrado com sucesso"
                 );
                 setTurma("");
                 setAnoLetivo("");
@@ -213,7 +257,7 @@ function OutrosRegistros() {
                 showErrorToast(response.data.titulo || "Erro", response.data.mensagem);
             }
         } catch (error) {
-            console.error('Erro ao registrar turma/período:', error);
+            console.error('Erro ao registrar período:', error);
             
             if (error.response && error.response.data) {
                 showErrorToast(error.response.data.titulo || "Erro", error.response.data.mensagem);
@@ -290,14 +334,17 @@ function OutrosRegistros() {
                                 Adicionar Disciplina ao Curso
                             </h5>
                             <form onSubmit={handleSubmitDisciplinaCurso}>
-                                <CategoriaCursoAno onChange={handleFormDataChange} />
+                                <CategoriaCursoAno 
+                                    onChange={handleFormDataChange}
+                                    disabled={loading}
+                                />
                                 
                                 <SelectDisciplina 
                                     onChange={(value) => setFormDataDisciplinaCurso(prev => ({
                                         ...prev,
-                                        iddisciplina: value
+                                        id_disciplina: value
                                     }))}
-                                    value={formDataDisciplinaCurso.iddisciplina}
+                                    value={formDataDisciplinaCurso.id_disciplina}
                                     disabled={loading}
                                 />
                                 
@@ -314,6 +361,12 @@ function OutrosRegistros() {
                                         <option value="">Selecione o semestre</option>
                                         <option value="1">1º Semestre</option>
                                         <option value="2">2º Semestre</option>
+                                        <option value="3">3º Semestre</option>
+                                        <option value="4">4º Semestre</option>
+                                        <option value="5">5º Semestre</option>
+                                        <option value="6">6º Semestre</option>
+                                        <option value="7">7º Semestre</option>
+                                        <option value="8">8º Semestre</option>
                                     </select>
                                 </div>
                                 
@@ -343,7 +396,10 @@ function OutrosRegistros() {
                                 Adicionar Novas Turmas
                             </h5>
                             <form onSubmit={handleSubmitPeriodo}>
-                                <CategoriaCursoAno onChange={handleFormDataChange} />
+                                <CategoriaCursoAno 
+                                    onChange={handleFormDataChange}
+                                    disabled={loading}
+                                />
                                 
                                 <div className="d-flex mb-3">
                                     <span className={`${style.span} input-group-text`}><Fa0 /></span>
@@ -366,7 +422,7 @@ function OutrosRegistros() {
                                         name="anoletivo" 
                                         className={`${style.inputHome} form-control`}
                                         value={anoletivo} 
-                                        placeholder="Ano Lectivo (ex: 2025-2026)" 
+                                        placeholder="Ano Lectivo (ex: 2025/2026)" 
                                         onChange={(e)=>setAnoLetivo(e.target.value)}
                                         disabled={loading}
                                         required
@@ -387,6 +443,7 @@ function OutrosRegistros() {
                                         <option value="Manhã">Manhã</option>
                                         <option value="Tarde">Tarde</option>
                                         <option value="Noite">Noite</option>
+                                        <option value="Diurno">Diurno</option>
                                     </select>
                                 </div>
                                 
