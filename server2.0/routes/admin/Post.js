@@ -682,220 +682,6 @@ router.post('/registrardisciplina', async (req, res) => {
     });
 });
 
-router.post('/registrarPeriodo', (req, res) => {
-    const { id_anocurricular, id_curso, id_categoria, turma, periodo, anoletivo, idAdm } = req.body;
-    
-    if (!id_anocurricular || !id_curso || !id_categoria || !turma || !periodo || !anoletivo) {
-        return res.status(400).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Dados incompletos",
-            mensagem: "Por favor, preencha todos os campos obrigatórios"
-        });
-    }
-
-    // 1. Verificar Ano Curricular
-    const verificarAnoSQL = "SELECT id_anocurricular, ano FROM anocurricular WHERE id_anocurricular = ?";
-
-    conexao.query(verificarAnoSQL, [id_anocurricular], (erroAno, resultadosAno) => {
-        if (erroAno) {
-            console.error("Erro ao verificar Ano Curricular:", erroAno);
-            return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no servidor",
-                mensagem: "Erro interno do servidor"
-            });
-        }
-
-        if (resultadosAno.length === 0) {
-            return res.status(400).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Ano Curricular inválido",
-                mensagem: "O ano curricular selecionado não existe"
-            });
-        }
-
-        // 2. Verificar Curso
-        const verificarCursoSQL = "SELECT id_curso, curso, id_categoria FROM curso WHERE id_curso = ?";
-
-        conexao.query(verificarCursoSQL, [id_curso], (erroCurso, resultadosCurso) => {
-            if (erroCurso) {
-                console.error("Erro ao verificar Curso:", erroCurso);
-                return res.status(500).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Erro no servidor",
-                    mensagem: "Erro interno do servidor"
-                });
-            }
-
-            if (resultadosCurso.length === 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Curso inválido",
-                    mensagem: "O curso selecionado não existe"
-                });
-            }
-
-            // 3. Verificar Categoria
-            const verificarCategoriaSQL = "SELECT id_categoria, categoria FROM categoria WHERE id_categoria = ?";
-
-            conexao.query(verificarCategoriaSQL, [id_categoria], (erroCategoria, resultadosCategoria) => {
-                if (erroCategoria) {
-                    console.error("Erro ao verificar Categoria:", erroCategoria);
-                    return res.status(500).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Erro no servidor",
-                        mensagem: "Erro interno do servidor"
-                    });
-                }
-
-                if (resultadosCategoria.length === 0) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Categoria inválida",
-                        mensagem: "A categoria selecionada não existe"
-                    });
-                }
-
-                // 4. Verificar se o curso pertence à categoria
-                if (resultadosCurso[0].id_categoria !== id_categoria) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Inconsistência de dados",
-                        mensagem: "O curso selecionado não pertence à categoria informada"
-                    });
-                }
-
-                // 5. Verificar se a turma já existe
-                const verificarTurmaSQL = "SELECT id_turma FROM turma WHERE turma = ? AND id_curso = ?";
-
-                conexao.query(verificarTurmaSQL, [turma, id_curso], (erroTurma, resultadosTurma) => {
-                    if (erroTurma) {
-                        console.error("Erro ao verificar Turma:", erroTurma);
-                        return res.status(500).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Erro no servidor",
-                            mensagem: "Erro interno do servidor"
-                        });
-                    }
-
-                    let id_turma;
-
-                    if (resultadosTurma.length === 0) {
-                        // 5a. Criar nova turma
-                        const id_turma_nova = gerarId();
-                        const criarTurmaSQL = "INSERT INTO turma (id_turma, turma, status, id_user, id_curso) VALUES (?, ?, 'Ativo', ?, ?)";
-                        
-                        conexao.query(criarTurmaSQL, [id_turma_nova, turma, idAdm, id_curso], (erroCriarTurma) => {
-                            if (erroCriarTurma) {
-                                console.error("Erro ao criar turma:", erroCriarTurma);
-                                return res.status(500).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Erro no servidor",
-                                    mensagem: "Erro ao criar turma"
-                                });
-                            }
-                            id_turma = id_turma_nova;
-                            criarPeriodo();
-                        });
-                    } else {
-                        id_turma = resultadosTurma[0].id_turma;
-                        criarPeriodo();
-                    }
-
-                    function criarPeriodo() {
-                        // 6. Verificar duplicidade de período
-                        const verificarDuplicadoSQL = `
-                            SELECT id_periodo 
-                            FROM periodo 
-                            WHERE id_turma = ? AND periodo = ?
-                        `;
-
-                        conexao.query(verificarDuplicadoSQL, [id_turma, periodo], (erroDuplicado, resultadosDuplicado) => {
-                            if (erroDuplicado) {
-                                console.error("Erro ao verificar duplicidade:", erroDuplicado);
-                                return res.status(500).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Erro no servidor",
-                                    mensagem: "Erro interno do servidor"
-                                });
-                            }
-
-                            if (resultadosDuplicado.length > 0) {
-                                return res.status(400).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Período Duplicado",
-                                    mensagem: `O período "${periodo}" já existe para esta turma`
-                                });
-                            }
-
-                            // 7. Inserir Período
-                            const id_periodo = gerarId();
-                            const inserirPeriodoSQL = `
-                                INSERT INTO periodo (id_periodo, periodo, status, id_user, id_turma) 
-                                VALUES (?, ?, 'Ativo', ?, ?)
-                            `;
-
-                            conexao.query(inserirPeriodoSQL, [id_periodo, periodo, idAdm, id_turma], (erroInsercao) => {
-                                if (erroInsercao) {
-                                    console.error("Erro ao inserir período:", erroInsercao);
-                                    return res.status(500).json({
-                                        sucesso: false,
-                                        tipo: "erro",
-                                        titulo: "Erro no servidor",
-                                        mensagem: "Erro interno ao registrar período"
-                                    });
-                                }
-
-                                // 8. Inserir Ano Letivo (opcional, se fornecida)
-                                if (anoletivo) {
-                                    const id_anoletivo = gerarId();
-                                    const inserirAnoLetivoSQL = `
-                                        INSERT INTO anoletivo (id_anoletivo, ano, status, id_user, id_periodo) 
-                                        VALUES (?, ?, 'Ativo', ?, ?)
-                                    `;
-
-                                    conexao.query(inserirAnoLetivoSQL, [id_anoletivo, anoletivo, idAdm, id_periodo], (erroAnoLetivo) => {
-                                        if (erroAnoLetivo) {
-                                            console.error("Erro ao inserir ano letivo:", erroAnoLetivo);
-                                            // Não falha o registro, apenas loga o erro
-                                        }
-                                    });
-                                }
-
-                                res.status(201).json({
-                                    sucesso: true,
-                                    tipo: "sucesso",
-                                    titulo: "Período Registrado",
-                                    mensagem: `Período "${periodo}" registrado com sucesso!`,
-                                    dados: {
-                                        id_periodo: id_periodo,
-                                        id_turma: id_turma,
-                                        turma: turma,
-                                        periodo: periodo,
-                                        anoletivo: anoletivo || null
-                                    }
-                                });
-                            });
-                        });
-                    }
-                });
-            });
-        });
-    });
-});
-
 router.post('/atribuirProfessorTurma', (req, res) => {
     const { id_periodo, id_disciplina, id_professor, id_anoletivo, idAdm } = req.body;
     
@@ -1567,11 +1353,12 @@ router.post('/registrarDisciplinaCurso', (req, res) => {
     });
 });
 
-router.post('/registrarPeriodo', (req, res) => {
-    const { id_anocurricular, id_curso, id_categoria, turma, periodo, anoletivo, idAdm } = req.body;
+router.post('/registrarPeriodo', async (req, res) => {
+    console.log('BODY RECEBIDO EM /registrarPeriodo:', req.body); 
+    const { id_anocurricular, id_curso, id_categoria, turma, periodo, idAdm } = req.body;
 
     // 1. Validação dos campos obrigatórios
-    if (!id_anocurricular || !id_curso || !id_categoria || !turma || !periodo || !anoletivo) {
+    if (!id_anocurricular || !id_curso || !id_categoria || !turma || !periodo) {
         return res.status(400).json({
             sucesso: false,
             tipo: "erro",
@@ -1580,7 +1367,16 @@ router.post('/registrarPeriodo', (req, res) => {
         });
     }
 
-    // 2. Validar período (deve ser um dos valores permitidos)
+    if (!idAdm) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Usuário não identificado",
+            mensagem: "ID do administrador não fornecido"
+        });
+    }
+
+    // 2. Validar período
     const periodosPermitidos = ['Manhã', 'Tarde', 'Noite', 'Diurno'];
     if (!periodosPermitidos.includes(periodo)) {
         return res.status(400).json({
@@ -1591,17 +1387,7 @@ router.post('/registrarPeriodo', (req, res) => {
         });
     }
 
-    // 3. Verificar se o usuário está autenticado
-    if (!req.user || !req.user.id_user) {
-        return res.status(401).json({
-            sucesso: false,
-            tipo: "erro",
-            titulo: "Não autorizado",
-            mensagem: "Usuário não autenticado"
-        });
-    }
-
-    // 4. Verificar Ano Curricular
+    // 3. Verificar Ano Curricular
     const verificarAnoSQL = "SELECT id_anocurricular, ano FROM anocurricular WHERE id_anocurricular = ? AND status = 'Ativo'";
 
     conexao.query(verificarAnoSQL, [id_anocurricular], (erroAno, resultadosAno) => {
@@ -1611,8 +1397,7 @@ router.post('/registrarPeriodo', (req, res) => {
                 sucesso: false,
                 tipo: "erro",
                 titulo: "Erro no servidor",
-                mensagem: "Erro interno ao verificar ano curricular",
-                detalhes: erroAno.message
+                mensagem: "Erro interno ao verificar ano curricular"
             });
         }
 
@@ -1627,7 +1412,7 @@ router.post('/registrarPeriodo', (req, res) => {
 
         const anoCurricular = resultadosAno[0].ano;
 
-        // 5. Verificar Curso
+        // 4. Verificar Curso
         const verificarCursoSQL = "SELECT id_curso, curso, id_categoria FROM curso WHERE id_curso = ? AND status = 'Ativo'";
 
         conexao.query(verificarCursoSQL, [id_curso], (erroCurso, resultadosCurso) => {
@@ -1637,8 +1422,7 @@ router.post('/registrarPeriodo', (req, res) => {
                     sucesso: false,
                     tipo: "erro",
                     titulo: "Erro no servidor",
-                    mensagem: "Erro interno ao verificar curso",
-                    detalhes: erroCurso.message
+                    mensagem: "Erro interno ao verificar curso"
                 });
             }
 
@@ -1653,41 +1437,40 @@ router.post('/registrarPeriodo', (req, res) => {
 
             const nomeCurso = resultadosCurso[0].curso;
 
-            // 6. Verificar Categoria
-            const verificarCategoriaSQL = "SELECT id_categoria, categoria FROM categoria WHERE id_categoria = ? AND status = 'Ativo'";
+            // 5. Verificar se o curso pertence à categoria
+            if (resultadosCurso[0].id_categoria !== id_categoria) {
+                return res.status(400).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Inconsistência de dados",
+                    mensagem: "O curso selecionado não pertence à categoria informada"
+                });
+            }
 
-            conexao.query(verificarCategoriaSQL, [id_categoria], (erroCategoria, resultadosCategoria) => {
-                if (erroCategoria) {
-                    console.error("Erro ao verificar Categoria:", erroCategoria);
+            // 6. Verificar se o Ano Curricular pertence ao Curso
+            const verificarAnoCursoSQL = "SELECT id_anocurricular FROM anocurricular WHERE id_anocurricular = ? AND id_curso = ? AND status = 'Ativo'";
+            
+            conexao.query(verificarAnoCursoSQL, [id_anocurricular, id_curso], (erroAnoCurso, resultadosAnoCurso) => {
+                if (erroAnoCurso) {
+                    console.error("Erro ao verificar Ano Curricular do Curso:", erroAnoCurso);
                     return res.status(500).json({
                         sucesso: false,
                         tipo: "erro",
                         titulo: "Erro no servidor",
-                        mensagem: "Erro interno ao verificar categoria",
-                        detalhes: erroCategoria.message
+                        mensagem: "Erro interno ao verificar relação ano-curso"
                     });
                 }
 
-                if (resultadosCategoria.length === 0) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Categoria inválida",
-                        mensagem: "A categoria selecionada não existe ou está inativa"
-                    });
-                }
-
-                // 7. Verificar se o curso pertence à categoria
-                if (resultadosCurso[0].id_categoria !== id_categoria) {
+                if (resultadosAnoCurso.length === 0) {
                     return res.status(400).json({
                         sucesso: false,
                         tipo: "erro",
                         titulo: "Inconsistência de dados",
-                        mensagem: "O curso selecionado não pertence à categoria informada"
+                        mensagem: "O ano curricular selecionado não pertence ao curso informado"
                     });
                 }
 
-                // 8. Verificar se a turma já existe (buscar ou criar)
+                // 7. Verificar se a turma já existe
                 const verificarTurmaSQL = "SELECT id_turma FROM turma WHERE turma = ? AND id_curso = ? AND status = 'Ativo'";
 
                 conexao.query(verificarTurmaSQL, [turma, id_curso], (erroTurma, resultadosTurma) => {
@@ -1697,17 +1480,17 @@ router.post('/registrarPeriodo', (req, res) => {
                             sucesso: false,
                             tipo: "erro",
                             titulo: "Erro no servidor",
-                            mensagem: "Erro interno ao verificar turma",
-                            detalhes: erroTurma.message
+                            mensagem: "Erro interno ao verificar turma"
                         });
                     }
 
-                    const crypto = require('crypto');
                     let id_turma;
 
                     if (resultadosTurma.length === 0) {
-                        // 8a. Criar nova turma
+                        // 7a. Criar nova turma
+                        
                         id_turma = gerarId();
+                        
                         const criarTurmaSQL = `
                             INSERT INTO turma (id_turma, turma, status, id_user, id_curso, data_criacao) 
                             VALUES (?, ?, 'Ativo', ?, ?, CURDATE())
@@ -1720,8 +1503,7 @@ router.post('/registrarPeriodo', (req, res) => {
                                     sucesso: false,
                                     tipo: "erro",
                                     titulo: "Erro no servidor",
-                                    mensagem: "Erro ao criar nova turma",
-                                    detalhes: erroCriarTurma.message
+                                    mensagem: "Erro ao criar nova turma"
                                 });
                             }
                             continuarCriacaoPeriodo(id_turma);
@@ -1732,7 +1514,7 @@ router.post('/registrarPeriodo', (req, res) => {
                     }
 
                     function continuarCriacaoPeriodo(id_turma_final) {
-                        // 9. Verificar duplicidade de período na mesma turma
+                        // 8. Verificar duplicidade de período na mesma turma
                         const verificarDuplicadoSQL = `
                             SELECT id_periodo 
                             FROM periodo 
@@ -1746,8 +1528,7 @@ router.post('/registrarPeriodo', (req, res) => {
                                     sucesso: false,
                                     tipo: "erro",
                                     titulo: "Erro no servidor",
-                                    mensagem: "Erro interno ao verificar duplicidade",
-                                    detalhes: erroDuplicado.message
+                                    mensagem: "Erro interno ao verificar duplicidade"
                                 });
                             }
 
@@ -1760,123 +1541,215 @@ router.post('/registrarPeriodo', (req, res) => {
                                 });
                             }
 
-                            // 10. Gerar UUID para o período
                             const id_periodo = gerarId();
 
-                            // 11. Inserir Período
+                            // 10. Inserir Período
                             const inserirPeriodoSQL = `
-                                INSERT INTO periodo (id_periodo, periodo, status, id_user, id_turma, data_criacao) 
-                                VALUES (?, ?, 'Ativo', ?, ?, CURDATE())
+                                INSERT INTO periodo (
+                                    id_periodo, 
+                                    periodo, 
+                                    status, 
+                                    id_user, 
+                                    id_turma, 
+                                    id_anocurricular,
+                                    data_criacao
+                                ) 
+                                VALUES (?, ?, 'Ativo', ?, ?, ?, CURDATE())
                             `;
 
-                            conexao.query(inserirPeriodoSQL, [id_periodo, periodo, idAdm, id_turma_final], (erroInsercao, resultados) => {
-                                if (erroInsercao) {
-                                    console.error("Erro ao inserir período:", erroInsercao);
-
-                                    if (erroInsercao.code === 'ER_NO_REFERENCED_ROW_2') {
-                                        return res.status(400).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Chave estrangeira inválida",
-                                            mensagem: "Uma das referências não existe no sistema"
-                                        });
-                                    }
-
-                                    if (erroInsercao.code === 'ER_DUP_ENTRY') {
-                                        return res.status(400).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Entrada duplicada",
-                                            mensagem: "Este período já existe para esta turma"
-                                        });
-                                    }
-
-                                    return res.status(500).json({
-                                        sucesso: false,
-                                        tipo: "erro",
-                                        titulo: "Erro no servidor",
-                                        mensagem: "Erro interno ao registrar período",
-                                        detalhes: erroInsercao.message
-                                    });
-                                }
-
-                                // 12. Inserir Ano Letivo
-                                const id_anoletivo = gerarId();
-                                const inserirAnoLetivoSQL = `
-                                    INSERT INTO anoletivo (id_anoletivo, ano, status, id_user, id_periodo, data_criacao) 
-                                    VALUES (?, ?, 'Ativo', ?, ?, CURDATE())
-                                `;
-
-                                conexao.query(inserirAnoLetivoSQL, [id_anoletivo, anoletivo, idAdm, id_periodo], (erroAnoLetivo) => {
-                                    if (erroAnoLetivo) {
-                                        console.error("Erro ao inserir ano letivo:", erroAnoLetivo);
-                                        // Não falha o registro, apenas loga o erro
-                                    }
-
-                                    // 13. Buscar dados completos para resposta
-                                    const buscarDadosSQL = `
-                                        SELECT 
-                                            p.id_periodo,
-                                            p.periodo,
-                                            p.status,
-                                            p.data_criacao,
-                                            t.id_turma,
-                                            t.turma,
-                                            c.id_curso,
-                                            c.curso AS curso_nome,
-                                            cat.id_categoria,
-                                            cat.categoria AS categoria_nome,
-                                            ac.id_anocurricular,
-                                            ac.ano AS anocurricular,
-                                            al.id_anoletivo,
-                                            al.ano AS anoletivo
-                                        FROM periodo p
-                                        INNER JOIN turma t ON t.id_turma = p.id_turma
-                                        INNER JOIN curso c ON c.id_curso = t.id_curso
-                                        INNER JOIN categoria cat ON cat.id_categoria = c.id_categoria
-                                        INNER JOIN anocurricular ac ON ac.id_anocurricular = ?
-                                        LEFT JOIN anoletivo al ON al.id_periodo = p.id_periodo
-                                        WHERE p.id_periodo = ?
-                                    `;
-
-                                    conexao.query(buscarDadosSQL, [id_anocurricular, id_periodo], (erroBusca, dadosCompletos) => {
-                                        if (erroBusca) {
-                                            console.error("Erro ao buscar dados completos:", erroBusca);
-                                            return res.status(201).json({
-                                                sucesso: true,
-                                                tipo: "sucesso",
-                                                titulo: "Período Registrado",
-                                                mensagem: `Período "${periodo}" registrado com sucesso para a turma "${turma}"!`,
-                                                dados: {
-                                                    id_periodo: id_periodo,
-                                                    periodo: periodo,
-                                                    id_turma: id_turma_final,
-                                                    turma: turma,
-                                                    id_curso: id_curso,
-                                                    curso_nome: nomeCurso,
-                                                    id_categoria: id_categoria,
-                                                    categoria_nome: resultadosCategoria[0].categoria,
-                                                    id_anocurricular: id_anocurricular,
-                                                    anocurricular: anoCurricular,
-                                                    id_anoletivo: id_anoletivo,
-                                                    anoletivo: anoletivo,
-                                                    status: "Ativo",
-                                                    data_criacao: new Date().toISOString().split('T')[0]
-                                                }
+                            conexao.query(
+                                inserirPeriodoSQL, 
+                                [id_periodo, periodo, idAdm, id_turma_final, id_anocurricular], 
+                                (erroInsercao) => {
+                                    if (erroInsercao) {
+                                        console.error("Erro ao inserir período:", erroInsercao);
+                                        
+                                        if (erroInsercao.code === 'ER_NO_REFERENCED_ROW_2') {
+                                            return res.status(400).json({
+                                                sucesso: false,
+                                                tipo: "erro",
+                                                titulo: "Chave estrangeira inválida",
+                                                mensagem: "Uma das referências não existe no sistema"
                                             });
                                         }
 
-                                        return res.status(201).json({
-                                            sucesso: true,
-                                            tipo: "sucesso",
-                                            titulo: "Período Registrado",
-                                            mensagem: `Período "${periodo}" registrado com sucesso para a turma "${turma}"!`,
-                                            dados: dadosCompletos[0]
+                                        if (erroInsercao.code === 'ER_DUP_ENTRY') {
+                                            return res.status(400).json({
+                                                sucesso: false,
+                                                tipo: "erro",
+                                                titulo: "Entrada duplicada",
+                                                mensagem: "Este período já existe para esta turma"
+                                            });
+                                        }
+
+                                        return res.status(500).json({
+                                            sucesso: false,
+                                            tipo: "erro",
+                                            titulo: "Erro no servidor",
+                                            mensagem: "Erro interno ao registrar período"
                                         });
+                                    }
+
+                                    // 11. Sucesso
+                                    return res.status(201).json({
+                                        sucesso: true,
+                                        tipo: "sucesso",
+                                        titulo: "Turma Registrada",
+                                        mensagem: `Turma "${turma}" - Período "${periodo}" registrado com sucesso!`,
+                                        dados: {
+                                            id_periodo: id_periodo,
+                                            periodo: periodo,
+                                            id_turma: id_turma_final,
+                                            turma: turma,
+                                            id_curso: id_curso,
+                                            curso_nome: nomeCurso,
+                                            id_anocurricular: id_anocurricular,
+                                            anocurricular: anoCurricular,
+                                            status: "Ativo"
+                                        }
                                     });
-                                });
-                            });
+                                }
+                            );
                         });
+                    }
+                });
+            });
+        });
+    });
+});
+
+router.post('/registrarAnoLetivo', async (req, res) => {
+    const { id_periodo, anoletivo, idAdm } = req.body;
+
+    console.log('Dados recebidos:', { id_periodo, anoletivo, idAdm });
+
+    // Validações
+    if (!id_periodo) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Campo obrigatório",
+            mensagem: "Selecione uma turma/período"
+        });
+    }
+
+    if (!anoletivo || !anoletivo.trim()) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Campo obrigatório",
+            mensagem: "Informe o ano letivo"
+        });
+    }
+
+
+    if (!idAdm) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Usuário não autenticado",
+            mensagem: "Faça login novamente"
+        });
+    }
+
+    // Verificar se o período existe
+    const checkPeriodoSql = `
+        SELECT 
+            p.id_periodo, 
+            p.periodo AS periodo_nome,
+            t.id_turma,
+            t.turma
+        FROM periodo p
+        INNER JOIN turma t ON p.id_turma = t.id_turma
+        WHERE p.id_periodo = ? AND p.status = 'Ativo'
+    `;
+    
+    conexao.query(checkPeriodoSql, [id_periodo], (error, periodoResult) => {
+        if (error) {
+            console.error("Erro ao verificar período:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro ao verificar período",
+                detalhes: error.message
+            });
+        }
+
+        if (periodoResult.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Período não encontrado",
+                mensagem: "O período selecionado não existe ou está desativado"
+            });
+        }
+
+        const periodoInfo = periodoResult[0];
+
+        // Verificar se o ano letivo já existe para este período
+        const checkAnoLetivoSql = "SELECT id_anoletivo FROM anoletivo WHERE id_periodo = ? AND ano = ?";
+        
+        conexao.query(checkAnoLetivoSql, [id_periodo, anoletivo.trim()], (error, anoResult) => {
+            if (error) {
+                console.error("Erro ao verificar ano letivo:", error);
+                return res.status(500).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Erro no servidor",
+                    mensagem: "Erro ao verificar ano letivo",
+                    detalhes: error.message
+                });
+            }
+
+            if (anoResult.length > 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    tipo: "erro",
+                    titulo: "Ano Letivo já existe",
+                    mensagem: `Já existe um ano letivo ${anoletivo} para esta turma/período`
+                });
+            }
+
+            // Criar novo ano letivo
+            const idAnoLetivo = require('uuid').v4();
+            const insertAnoLetivoSql = `
+                INSERT INTO anoletivo (id_anoletivo, ano, status, id_user, id_periodo, data_criacao, data_atualizacao)
+                VALUES (?, ?, 'Ativo', ?, ?, CURDATE(), CURDATE())
+            `;
+            
+            conexao.query(insertAnoLetivoSql, [idAnoLetivo, anoletivo.trim(), idAdm, id_periodo], (error, insertResult) => {
+                if (error) {
+                    console.error("Erro ao registrar ano letivo:", error);
+                    return res.status(500).json({
+                        sucesso: false,
+                        tipo: "erro",
+                        titulo: "Erro no servidor",
+                        mensagem: "Erro ao registrar ano letivo",
+                        detalhes: error.message
+                    });
+                }
+
+                // Atualizar a data de atualização do período
+                const updatePeriodoSql = "UPDATE periodo SET data_atualizacao = CURDATE() WHERE id_periodo = ?";
+                conexao.query(updatePeriodoSql, [id_periodo], (error) => {
+                    if (error) {
+                        console.error("Erro ao atualizar período:", error);
+                    }
+                });
+
+                return res.status(200).json({
+                    sucesso: true,
+                    tipo: "sucesso",
+                    titulo: "Ano Letivo Registrado",
+                    mensagem: `Ano letivo ${anoletivo.trim()} registrado com sucesso para a turma ${periodoInfo.turma} (${periodoInfo.periodo_nome})`,
+                    dados: {
+                        id_anoletivo: idAnoLetivo,
+                        ano: anoletivo.trim(),
+                        id_periodo: id_periodo,
+                        id_turma: periodoInfo.id_turma,
+                        turma: periodoInfo.turma,
+                        periodo: periodoInfo.periodo_nome
                     }
                 });
             });

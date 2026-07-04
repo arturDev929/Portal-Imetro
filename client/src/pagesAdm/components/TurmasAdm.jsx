@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd, MdPersonAdd } from "react-icons/md";
+import { 
+    MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd, MdPersonAdd, 
+    MdVisibility, MdPerson, MdBook, MdRemoveCircle, MdCalendarToday 
+} from "react-icons/md";
 import { MdFlightClass } from "react-icons/md";
 import api from "../../service/api";
 import { showSuccessToast, showErrorToast, showInfoToast, useConfirmToast } from "../../components/global/CustomToast";
@@ -16,7 +19,6 @@ function TurmasAdm() {
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
     
-    // Estado para edição de turma
     const [dadosEdicao, setDadosEdicao] = useState({
         idperiodo: '',
         turma: '',
@@ -30,7 +32,6 @@ function TurmasAdm() {
         anoCurricular: ''
     });
     
-    // Estado para atribuição de professor
     const [modalProfessorAberto, setModalProfessorAberto] = useState(false);
     const [professorSelecionado, setProfessorSelecionado] = useState("");
     const [disciplinasTurma, setDisciplinasTurma] = useState([]);
@@ -39,6 +40,14 @@ function TurmasAdm() {
     const [carregandoDisciplinas, setCarregandoDisciplinas] = useState(false);
     const [carregandoProfessores, setCarregandoProfessores] = useState(false);
     const [professoresDisciplina, setProfessoresDisciplina] = useState([]);
+    
+    const [modalVisualizarAberto, setModalVisualizarAberto] = useState(false);
+    const [professoresTurma, setProfessoresTurma] = useState([]);
+    const [carregandoProfessoresTurma, setCarregandoProfessoresTurma] = useState(false);
+    const [turmaVisualizar, setTurmaVisualizar] = useState(null);
+    
+    const [anoLetivoSelecionado, setAnoLetivoSelecionado] = useState("");
+    const [anosLetivosDisponiveis, setAnosLetivosDisponiveis] = useState([]);
     
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
@@ -59,7 +68,7 @@ function TurmasAdm() {
     const [user, setUser] = useState(null);
     const { showConfirmToast, isConfirming } = useConfirmToast();
 
-    const periodos = ['Manhã', 'Tarde', 'Noite'];
+    const periodos = ['Manhã', 'Tarde', 'Noite', 'Diurno'];
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
@@ -104,20 +113,37 @@ function TurmasAdm() {
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/turmas');
-            setLista(response.data || []);
-            setListaFiltrada(response.data || []);
+            const response = await apiClient.get('/turmasComAnoLetivo');
+            
+            const dadosMapeados = (response.data || []).map(item => ({
+                id_periodo: item.id_periodo,
+                periodo: item.periodo || '',
+                turma: item.turma || '',
+                anoletivo: item.anoletivo || '',
+                categoriacurso: item.categoriacurso || '',
+                curso: item.curso || '',
+                anocurricular: item.anocurricular || '',
+                id_curso: item.id_curso || '',
+                id_categoria: item.id_categoria || '',
+                id_anocurricular: item.id_anocurricular || '',
+                id_anoletivo: item.id_anoletivo || '',
+                id_periodo_original: item.id_periodo_original || item.id_periodo
+            }));
+            
+            setLista(dadosMapeados);
+            setListaFiltrada(dadosMapeados);
             setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR'));
 
-            if (mostrarNotificacao && response.data && response.data.length > 0) {
+            if (mostrarNotificacao && dadosMapeados.length > 0) {
                 showSuccessToast(
                     "Sucesso",
                     "Dados atualizados com sucesso",
-                    { "Quantidade": `${response.data.length} turma(s)` }
+                    { "Quantidade": `${dadosMapeados.length} turma(s)` }
                 );
             }
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
+            showErrorToast("Erro", "Não foi possível carregar as turmas");
         } finally {
             setLoading(false);
         }
@@ -162,6 +188,89 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    const fetchProfessoresTurma = useCallback(async (idperiodo, anoletivo = null) => {
+        setCarregandoProfessoresTurma(true);
+        try {
+            const url = anoletivo 
+                ? `/professoresPorTurma/${idperiodo}/${anoletivo}`
+                : `/professoresPorTurma/${idperiodo}`;
+            
+            const response = await apiClient.get(url);
+            if (response.data && response.data.length > 0) {
+                setProfessoresTurma(response.data);
+            } else {
+                setProfessoresTurma([]);
+                showInfoToast("Info", "Esta turma não possui professores atribuídos para o ano letivo selecionado");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar professores da turma:", error);
+            setProfessoresTurma([]);
+            showErrorToast("Erro", "Não foi possível carregar os professores da turma");
+        } finally {
+            setCarregandoProfessoresTurma(false);
+        }
+    }, [apiClient]);
+
+    const fetchAnosLetivosTurma = useCallback(async (idperiodo) => {
+        try {
+            const response = await apiClient.get(`/anosLetivosPorTurma/${idperiodo}`);
+            if (response.data && response.data.length > 0) {
+                setAnosLetivosDisponiveis(response.data);
+                setAnoLetivoSelecionado(response.data[0].anoletivo);
+                return response.data[0].anoletivo;
+            } else {
+                setAnosLetivosDisponiveis([]);
+                setAnoLetivoSelecionado("");
+                return null;
+            }
+        } catch (error) {
+            console.error("Erro ao buscar anos letivos:", error);
+            setAnosLetivosDisponiveis([]);
+            setAnoLetivoSelecionado("");
+            return null;
+        }
+    }, [apiClient]);
+
+    const removerProfessorTurma = useCallback(async (idDp, nomeProfessor, disciplinaNome) => {
+        showConfirmToast(
+            `Tem certeza que deseja remover o professor "${nomeProfessor}" da disciplina "${disciplinaNome}" deste ano letivo?`,
+            async () => {
+                try {
+                    showInfoToast("Processando", `Removendo professor "${nomeProfessor}"...`);
+
+                    const response = await apiClient.delete(`/removerProfessorTurma/${idDp}`);
+
+                    showSuccessToast(
+                        "Sucesso",
+                        response.data.message || `Professor "${nomeProfessor}" removido com sucesso`
+                    );
+
+                    await fetchProfessoresTurma(
+                        turmaVisualizar?.id_periodo, 
+                        anoLetivoSelecionado
+                    );
+                    
+                    await fetchData(false);
+                } catch (error) {
+                    console.error("Erro ao remover professor:", error);
+
+                    if (error.response?.data?.message) {
+                        showErrorToast("Erro", error.response.data.message);
+                    } else if (error.response?.data?.error) {
+                        showErrorToast("Erro", error.response.data.error);
+                    } else {
+                        showErrorToast(
+                            "Erro ao remover professor",
+                            "Não foi possível remover o professor da turma. Tente novamente."
+                        );
+                    }
+                }
+            },
+            null,
+            "Confirmar Remoção"
+        );
+    }, [apiClient, fetchProfessoresTurma, turmaVisualizar, anoLetivoSelecionado, fetchData, showConfirmToast]);
+
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -174,7 +283,8 @@ function TurmasAdm() {
                 item.periodo?.toLowerCase().includes(termo.toLowerCase()) ||
                 item.anoletivo?.toString().includes(termo) ||
                 item.curso?.toLowerCase().includes(termo.toLowerCase()) ||
-                item.categoriacurso?.toLowerCase().includes(termo.toLowerCase())
+                item.categoriacurso?.toLowerCase().includes(termo.toLowerCase()) ||
+                item.anocurricular?.toString().includes(termo)
             );
             setListaFiltrada(filtrados);
         }
@@ -198,7 +308,8 @@ function TurmasAdm() {
                 item.periodo?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
                 item.anoletivo?.toString().includes(termoPesquisa) ||
                 item.curso?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
-                item.categoriacurso?.toLowerCase().includes(termoPesquisa.toLowerCase())
+                item.categoriacurso?.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+                item.anocurricular?.toString().includes(termoPesquisa)
             );
             setListaFiltrada(filtrados);
         }
@@ -206,6 +317,10 @@ function TurmasAdm() {
 
     const removerItemLocal = useCallback((id) => {
         setLista(prev => {
+            const updatedList = prev.filter(item => item.id_periodo !== id);
+            return updatedList;
+        });
+        setListaFiltrada(prev => {
             const updatedList = prev.filter(item => item.id_periodo !== id);
             return updatedList;
         });
@@ -263,7 +378,14 @@ function TurmasAdm() {
         setProfessorSelecionado("");
         setDisciplinaSelecionada("");
         setProfessoresDisciplina([]);
-        await fetchDisciplinasTurma(item.id_periodo, item.anocurricular);
+        
+        if (item.anocurricular) {
+            await fetchDisciplinasTurma(item.id_periodo, item.anocurricular);
+        } else {
+            showInfoToast("Info", "Esta turma não possui ano curricular definido");
+            setDisciplinasTurma([]);
+        }
+        
         setModalProfessorAberto(true);
     }, [fetchDisciplinasTurma]);
 
@@ -288,6 +410,36 @@ function TurmasAdm() {
             setProfessoresDisciplina([]);
         }
     }, [salvando]);
+
+    const abrirModalVisualizar = useCallback(async (item) => {
+        setTurmaVisualizar(item);
+        setProfessoresTurma([]);
+        setAnosLetivosDisponiveis([]);
+        setAnoLetivoSelecionado("");
+        setModalVisualizarAberto(true);
+        
+        const anoLetivoPadrao = await fetchAnosLetivosTurma(item.id_periodo);
+        
+        if (anoLetivoPadrao) {
+            await fetchProfessoresTurma(item.id_periodo, anoLetivoPadrao);
+        }
+    }, [fetchAnosLetivosTurma, fetchProfessoresTurma]);
+
+    const handleAnoLetivoChange = useCallback(async (e) => {
+        const ano = e.target.value;
+        setAnoLetivoSelecionado(ano);
+        if (turmaVisualizar && ano) {
+            await fetchProfessoresTurma(turmaVisualizar.id_periodo, ano);
+        }
+    }, [turmaVisualizar, fetchProfessoresTurma]);
+
+    const fecharModalVisualizar = useCallback(() => {
+        setModalVisualizarAberto(false);
+        setTurmaVisualizar(null);
+        setProfessoresTurma([]);
+        setAnosLetivosDisponiveis([]);
+        setAnoLetivoSelecionado("");
+    }, []);
 
     const abrirModalAdicionar = useCallback(() => {
         setModalAdicionarAberto(true);
@@ -444,6 +596,16 @@ function TurmasAdm() {
             return;
         }
 
+        if (!novaTurma.periodo) {
+            showErrorToast("Validação", "Selecione o período");
+            return;
+        }
+
+        if (!novaTurma.anoletivo?.trim()) {
+            showErrorToast("Validação", "Informe o ano letivo");
+            return;
+        }
+
         setSalvando(true);
         try {
             const response = await apiClient.post('/registrarPeriodo', {
@@ -530,16 +692,26 @@ function TurmasAdm() {
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
-    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Professor', 'Editar', 'Excluir'];
+    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Professores', 'Atribuir', 'Editar', 'Excluir'];
 
     const renderRow = (item) => (
-        <tr key={item.id_periodo}>
-            <td className="align-middle">{item.categoriacurso}</td>
-            <td className="align-middle">{item.curso}</td>
-            <td className="text-center align-middle">{item.anocurricular}º</td>
-            <td className="text-center align-middle fw-semibold">{item.turma}</td>
-            <td className="text-center align-middle">{item.periodo}</td>
-            <td className="text-center align-middle">{item.anoletivo}</td>
+        <tr key={`${item.id_periodo}-${item.anoletivo}`}>
+            <td className="align-middle">{item.categoriacurso || '-'}</td>
+            <td className="align-middle">{item.curso || '-'}</td>
+            <td className="text-center align-middle">{item.anocurricular ? `${item.anocurricular}º` : '-'}</td>
+            <td className="text-center align-middle fw-semibold">{item.turma || '-'}</td>
+            <td className="text-center align-middle">{item.periodo || '-'}</td>
+            <td className="text-center align-middle">{item.anoletivo || '-'}</td>
+            <td className="text-center">
+                <button
+                    className={`btn btn-sm ${Style.btnVisualizar}`}
+                    onClick={() => abrirModalVisualizar(item)}
+                    disabled={loading || isConfirming}
+                    title={`Ver professores de ${item.turma}`}
+                >
+                    <MdVisibility size={18} />
+                </button>
+            </td>
             <td className="text-center">
                 <button
                     className={`btn btn-sm ${Style.btnProfessor}`}
@@ -647,15 +819,6 @@ function TurmasAdm() {
                         >
                             <MdRefresh />
                         </button>
-                        <button
-                            className={`btn btn-sm ${Style.btnSubmit}`}
-                            onClick={abrirModalAdicionar}
-                            disabled={loading || salvando || isConfirming}
-                            title="Adicionar nova turma"
-                        >
-                            <MdAdd className="me-1" />
-                            Nova Turma
-                        </button>
                     </div>
                 </div>
 
@@ -717,6 +880,162 @@ function TurmasAdm() {
                 {renderConteudo()}
             </div>
 
+            {/* Modal de Visualização de Professores com Filtro por Ano Letivo */}
+            {modalVisualizarAberto && turmaVisualizar && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5 className="modal-title mb-0">
+                                    <MdPerson className="me-2 mb-1" />
+                                    Professores da Turma: {turmaVisualizar.turma}
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalVisualizar}
+                                    disabled={carregandoProfessoresTurma || isConfirming}
+                                />
+                            </div>
+
+                            <div className="bg-light p-3 border-bottom">
+                                <div className="row">
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Curso</small>
+                                        <strong>{turmaVisualizar.curso || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Período</small>
+                                        <strong>{turmaVisualizar.periodo || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Ano Curricular</small>
+                                        <strong>{turmaVisualizar.anocurricular || '-'}</strong>
+                                    </div>
+                                </div>
+                                <div className="row mt-2">
+                                    <div className="col-md-12">
+                                        <small className="text-muted d-block mb-1">Selecione o Ano Letivo</small>
+                                        <select
+                                            className="form-select form-select-sm"
+                                            value={anoLetivoSelecionado}
+                                            onChange={handleAnoLetivoChange}
+                                            disabled={carregandoProfessoresTurma || anosLetivosDisponiveis.length === 0}
+                                        >
+                                            <option value="">Selecione um ano letivo</option>
+                                            {anosLetivosDisponiveis.map((ano) => (
+                                                <option key={ano.id_anoletivo || ano.anoletivo} value={ano.anoletivo}>
+                                                    {ano.anoletivo}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {anosLetivosDisponiveis.length === 0 && !carregandoProfessoresTurma && (
+                                            <small className="text-warning d-block mt-1">
+                                                Nenhum ano letivo cadastrado para esta turma
+                                            </small>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-body">
+                                {carregandoProfessoresTurma ? (
+                                    <div className="text-center py-5">
+                                        <div className="spinner-border text-info mb-3" role="status">
+                                            <span className="visually-hidden">Carregando...</span>
+                                        </div>
+                                        <p className="text-muted">Carregando professores...</p>
+                                    </div>
+                                ) : professoresTurma.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <MdPerson size={48} className="text-muted mb-3" />
+                                        <p className="text-muted mb-0">Nenhum professor atribuído a esta turma para o ano letivo selecionado</p>
+                                        <small className="text-muted">Clique no botão "Atribuir" para adicionar professores</small>
+                                    </div>
+                                ) : (
+                                    <div className="row">
+                                        {professoresTurma.map((prof) => (
+                                            <div key={`${prof.id_professor}-${prof.id_dp}`} className="col-md-6 mb-3">
+                                                <div className="card h-100 border shadow-sm">
+                                                    <div className="card-body">
+                                                        <div className="d-flex align-items-start">
+                                                            <div className="flex-shrink-0">
+                                                                {prof.foto_url ? (
+                                                                    <img 
+                                                                        src={prof.foto_url} 
+                                                                        alt={prof.nome}
+                                                                        className="rounded-circle"
+                                                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                                                    />
+                                                                ) : (
+                                                                    <div className="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                                                         style={{ width: '50px', height: '50px' }}>
+                                                                        <MdPerson size={24} className="text-white" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="ms-3 flex-grow-1">
+                                                                <div className="d-flex justify-content-between align-items-start">
+                                                                    <div>
+                                                                        <h6 className="mb-1">{prof.nome}</h6>
+                                                                        {prof.titulacao && (
+                                                                            <span className="badge bg-info text-white me-1">
+                                                                                {prof.titulacao}
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="badge bg-success text-white me-1">
+                                                                            Ano: {prof.anoletivo || 'N/A'}
+                                                                        </span>
+                                                                        {prof.disciplina && (
+                                                                            <div className="mt-2">
+                                                                                <MdBook className="me-1 text-primary" size={14} />
+                                                                                <small className="text-muted">{prof.disciplina}</small>
+                                                                            </div>
+                                                                        )}
+                                                                        {prof.email && (
+                                                                            <div className="mt-1">
+                                                                                <small className="text-muted">{prof.email}</small>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        className={`btn btn-sm ${Style.btnDeletar}`}
+                                                                        onClick={() => removerProfessorTurma(
+                                                                            prof.id_dp, 
+                                                                            prof.nome, 
+                                                                            prof.disciplina
+                                                                        )}
+                                                                        disabled={isConfirming}
+                                                                        title={`Remover ${prof.nome} da turma`}
+                                                                    >
+                                                                        <MdRemoveCircle size={18} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer border-0">
+                                <button
+                                    type="button"
+                                    className={`btn ${Style.btnCancelar}`}
+                                    onClick={fecharModalVisualizar}
+                                    disabled={carregandoProfessoresTurma || isConfirming}
+                                >
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal de Edição */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
@@ -739,15 +1058,15 @@ function TurmasAdm() {
                                 <div className="row">
                                     <div className="col-md-4">
                                         <small className="text-muted d-block">Categoria</small>
-                                        <strong>{dadosEdicao.nomeCategoria}</strong>
+                                        <strong>{dadosEdicao.nomeCategoria || '-'}</strong>
                                     </div>
                                     <div className="col-md-4">
                                         <small className="text-muted d-block">Curso</small>
-                                        <strong>{dadosEdicao.nomeCurso}</strong>
+                                        <strong>{dadosEdicao.nomeCurso || '-'}</strong>
                                     </div>
                                     <div className="col-md-4">
                                         <small className="text-muted d-block">Ano Curricular</small>
-                                        <strong>{dadosEdicao.anoCurricular}º Ano</strong>
+                                        <strong>{dadosEdicao.anoCurricular ? `${dadosEdicao.anoCurricular}º Ano` : '-'}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -757,9 +1076,9 @@ function TurmasAdm() {
                                     <CategoriaCursoAno
                                         onChange={handleCategoriaCursoAnoEditChange}
                                         initialValues={{
-                                            idcategoriacurso: dadosEdicao.idcategoriacurso,
-                                            idcurso: dadosEdicao.idcurso,
-                                            idanocurricular: dadosEdicao.idanocurricular
+                                            idcategoriacurso: dadosEdicao.id_categoria,
+                                            idcurso: dadosEdicao.id_curso,
+                                            idanocurricular: dadosEdicao.id_anocurricular
                                         }}
                                     />
 
@@ -861,21 +1180,27 @@ function TurmasAdm() {
 
                             <div className="bg-light p-3 border-bottom">
                                 <div className="row">
-                                    <div className="col-md-6">
+                                    <div className="col-md-4">
                                         <small className="text-muted d-block">Turma</small>
-                                        <strong>{turmaSelecionada.turma}</strong>
+                                        <strong>{turmaSelecionada.turma || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Curso</small>
+                                        <strong>{turmaSelecionada.curso || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Período</small>
+                                        <strong>{turmaSelecionada.periodo || '-'}</strong>
+                                    </div>
+                                </div>
+                                <div className="row mt-2">
+                                    <div className="col-md-6">
+                                        <small className="text-muted d-block">Ano Letivo</small>
+                                        <strong className="text-primary">{turmaSelecionada.anoletivo || '-'}</strong>
                                     </div>
                                     <div className="col-md-6">
-                                        <small className="text-muted d-block">Curso</small>
-                                        <strong>{turmaSelecionada.curso}</strong>
-                                    </div>
-                                    <div className="col-md-6 mt-2">
-                                        <small className="text-muted d-block">Período</small>
-                                        <strong>{turmaSelecionada.periodo}</strong>
-                                    </div>
-                                    <div className="col-md-6 mt-2">
-                                        <small className="text-muted d-block">Ano Letivo</small>
-                                        <strong>{turmaSelecionada.anoletivo}</strong>
+                                        <small className="text-muted d-block">Ano Curricular</small>
+                                        <strong>{turmaSelecionada.anocurricular || '-'}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -933,6 +1258,14 @@ function TurmasAdm() {
                                             </small>
                                         )}
                                     </div>
+
+                                    <div className="alert alert-info">
+                                        <small>
+                                            <strong>Nota:</strong> O professor será atribuído à turma <strong>{turmaSelecionada.turma}</strong> 
+                                            para o ano letivo <strong>{turmaSelecionada.anoletivo}</strong>.
+                                            Cada ano letivo pode ter professores diferentes para a mesma turma.
+                                        </small>
+                                    </div>
                                 </div>
                                 <div className="modal-footer border-0">
                                     <button
@@ -964,105 +1297,6 @@ function TurmasAdm() {
                 </div>
             )}
 
-            {/* Modal de Adicionar Turma */}
-            {modalAdicionarAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-lg modal-dialog-centered">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <MdAdd className="me-2" />
-                                    Adicionar Nova Turma
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalAdicionar}
-                                    disabled={salvando || isConfirming}
-                                />
-                            </div>
-                            <form onSubmit={salvarNovaTurma}>
-                                <div className="modal-body">
-                                    <CategoriaCursoAno onChange={handleCategoriaCursoAnoChange} />
-
-                                    <div className="row mt-3">
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Turma</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                name="turma"
-                                                value={novaTurma.turma}
-                                                onChange={handleNovaTurmaChange}
-                                                placeholder="Ex: LCC1M, LCC2M..."
-                                                disabled={salvando || isConfirming}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Período</label>
-                                            <select
-                                                className="form-select"
-                                                name="periodo"
-                                                value={novaTurma.periodo}
-                                                onChange={handleNovaTurmaChange}
-                                                disabled={salvando || isConfirming}
-                                                required
-                                            >
-                                                <option value="">Selecione...</option>
-                                                {periodos.map(periodo => (
-                                                    <option key={periodo} value={periodo}>
-                                                        {periodo}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Ano Letivo</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                name="anoletivo"
-                                                value={novaTurma.anoletivo}
-                                                onChange={handleNovaTurmaChange}
-                                                placeholder="Ex: 2025-2026"
-                                                pattern="\d{4}-\d{4}"
-                                                title="Formato: YYYY-YYYY (ex: 2025-2026)"
-                                                disabled={salvando || isConfirming}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={fecharModalAdicionar}
-                                        disabled={salvando || isConfirming}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className={`btn px-4 ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !novaTurma.turma.trim()}
-                                    >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Adicionando...
-                                            </>
-                                        ) : (
-                                            'Adicionar Turma'
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

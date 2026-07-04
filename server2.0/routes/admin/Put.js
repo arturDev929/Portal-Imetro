@@ -506,7 +506,7 @@ router.put("/professor/senha/:id", verificarToken, async (req, res) => {
     }
 });
 
-router.put('/categoriaCurso/:id', (req, res) => {
+router.put('/categoriaCurso/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     const { categoriacurso } = req.body;
 
@@ -615,7 +615,7 @@ router.put('/categoriaCurso/:id', (req, res) => {
     });
 });
 
-router.put('/Curso/:id', (req, res) => {
+router.put('/Curso/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     const { curso, idcategoriacurso } = req.body;
 
@@ -725,7 +725,7 @@ router.put('/Curso/:id', (req, res) => {
     });
 });
 
-router.put('/disciplina/:id', (req, res) => {
+router.put('/disciplina/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     const { disciplina } = req.body;
     
@@ -795,7 +795,7 @@ router.put('/disciplina/:id', (req, res) => {
     });
 });
 
-router.put('/periodo/:id', (req, res) => {
+router.put('/periodo/:id', verificarToken, (req, res) => {
     const { id } = req.params;
     console.log("ID recebido:", id);
     

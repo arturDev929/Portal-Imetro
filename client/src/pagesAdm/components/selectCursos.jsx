@@ -4,7 +4,7 @@ import Style from "../../pages/Cadastro.module.css";
 import { IoMdFolder } from "react-icons/io";
 
 function SelectCurso({ value, onChange, disabled }) {  
-    const [categorias, setCategorias] = useState([]); 
+    const [cursos, setCursos] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -13,11 +13,11 @@ function SelectCurso({ value, onChange, disabled }) {
             try {
                 setLoading(true);
                 const response = await api.get(`/Cursos`);
-                setCategorias(response.data);
+                setCursos(response.data);
                 setError(null);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
-                setError("Erro ao carregar categorias");
+                setError("Erro ao carregar cursos");
             } finally {
                 setLoading(false);
             }
@@ -37,8 +37,8 @@ function SelectCurso({ value, onChange, disabled }) {
             <span className={`${Style.span} input-group-text`}><IoMdFolder /></span>
             <select 
                 className={`${Style.inputHome} form-control`} 
-                id="idcategoriacurso" 
-                name="idcategoriacurso"
+                id="id_curso" 
+                name="id_curso"
                 value={value || ''}
                 onChange={handleChange}
                 disabled={disabled || loading}
@@ -54,16 +54,16 @@ function SelectCurso({ value, onChange, disabled }) {
                     <option value="" disabled>{error}</option>
                 )}
                 
-                {!loading && !error && categorias.length > 0 && 
-                    categorias.map((categoria) => (
-                        <option key={categoria.idcurso} value={categoria.idcurso}>
-                            {categoria.curso}
+                {!loading && !error && cursos.length > 0 && 
+                    cursos.map((curso) => (
+                        <option key={curso.id_curso} value={curso.id_curso}>
+                            {curso.curso}
                         </option>
                     ))
                 }
                 
-                {!loading && !error && categorias.length === 0 && (
-                    <option value="" disabled>Nenhuma categoria disponível</option>
+                {!loading && !error && cursos.length === 0 && (
+                    <option value="" disabled>Nenhum curso disponível</option>
                 )}
             </select>
         </div>

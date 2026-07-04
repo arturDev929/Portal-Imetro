@@ -14,16 +14,38 @@ function SelectDisciplina({ value, onChange, disabled }) {
                 setLoading(true);
                 const response = await api.get(`/Disciplinas`);
                 
-                // O endpoint retorna dados com sucesso e dados
-                if (response.data.sucesso && response.data.dados) {
-                    setDisciplinas(response.data.dados);
+                let dados = [];
+                
+                if (Array.isArray(response.data)) {
+                    dados = response.data;
+                } else if (response.data && typeof response.data === 'object') {
+                    if (response.data.dados && Array.isArray(response.data.dados)) {
+                        dados = response.data.dados;
+                    } else if (response.data.data && Array.isArray(response.data.data)) {
+                        dados = response.data.data;
+                    } else if (response.data.result && Array.isArray(response.data.result)) {
+                        dados = response.data.result;
+                    } else {
+                        const keys = Object.keys(response.data);
+                        if (keys.length > 0 && !isNaN(keys[0])) {
+                            dados = Object.values(response.data);
+                        } else {
+                            dados = [];
+                        }
+                    }
+                }
+                
+                if (dados && dados.length > 0) {
+                    setDisciplinas(dados);
+                    setError(null);
                 } else {
                     setDisciplinas([]);
+                    setError('Nenhuma disciplina disponível');
                 }
-                setError(null);
             } catch (error) {
-                console.error('Erro ao buscar dados:', error);
-                setError("Erro ao carregar disciplinas");
+                console.error('Erro ao buscar disciplinas:', error);
+                setError('Erro ao carregar disciplinas');
+                setDisciplinas([]);
             } finally {
                 setLoading(false);
             }
@@ -62,8 +84,11 @@ function SelectDisciplina({ value, onChange, disabled }) {
                 
                 {!loading && !error && disciplinas.length > 0 && 
                     disciplinas.map((disciplina) => (
-                        <option key={disciplina.id_disciplina} value={disciplina.id_disciplina}>
-                            {disciplina.disciplina}
+                        <option 
+                            key={disciplina.id_disciplina || disciplina.id || Math.random()} 
+                            value={disciplina.id_disciplina || disciplina.id}
+                        >
+                            {disciplina.disciplina || disciplina.nome || JSON.stringify(disciplina)}
                         </option>
                     ))
                 }

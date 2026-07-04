@@ -646,4 +646,99 @@ router.delete('/periodo/:id', (req, res) => {
     });
 });
 
+// Rota para remover professor da turma
+router.delete('/removerProfessorTurma/:idDp', async (req, res) => {
+    const { idDp } = req.params;
+
+    if (!idDp) {
+        return res.status(400).json({
+            error: 'ID da associação não informado'
+        });
+    }
+
+    // Primeiro, verificar se a associação existe
+    const checkSql = `
+        SELECT 
+            dp.id_dp,
+            p.nome AS nome_professor,
+            d.disciplina AS nome_disciplina,
+            ptd.id_ptd
+        FROM disc_professor dp
+        INNER JOIN professor p ON dp.id_professor = p.id_professor
+        INNER JOIN disciplina d ON dp.id_disciplina = d.id_disciplina
+        INNER JOIN prof_turma_disc ptd ON ptd.id_dp = dp.id_dp
+        WHERE dp.id_dp = ? AND dp.status = 'Ativo'
+    `;
+
+    conexao.query(checkSql, [idDp], (checkError, checkResults) => {
+        if (checkError) {
+            console.error("Erro ao verificar associação:", checkError);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: checkError.message
+            });
+        }
+
+        if (checkResults.length === 0) {
+            return res.status(404).json({
+                error: "Associação não encontrada",
+                message: "Este professor já pode ter sido removido da turma"
+            });
+        }
+
+        const assoc = checkResults[0];
+
+        // Remover da tabela prof_turma_disc (soft delete ou hard delete)
+        const deleteSql = "DELETE FROM prof_turma_disc WHERE id_dp = ?";
+
+        conexao.query(deleteSql, [idDp], (deleteError, deleteResults) => {
+            if (deleteError) {
+                console.error("Erro ao remover professor da turma:", deleteError);
+                
+                // Se for erro de chave estrangeira, tentar soft delete
+                if (deleteError.code === 'ER_ROW_IS_REFERENCED_2') {
+                    const updateSql = "UPDATE prof_turma_disc SET status = 'Eliminado' WHERE id_dp = ?";
+                    
+                    conexao.query(updateSql, [idDp], (updateError, updateResults) => {
+                        if (updateError) {
+                            console.error("Erro ao desativar associação:", updateError);
+                            return res.status(500).json({
+                                error: "Erro interno do servidor",
+                                details: updateError.message
+                            });
+                        }
+
+                        return res.status(200).json({
+                            success: true,
+                            message: `Professor "${assoc.nome_professor}" removido da disciplina "${assoc.nome_disciplina}" com sucesso (desativado)`,
+                            dados: {
+                                id_dp: idDp,
+                                professor: assoc.nome_professor,
+                                disciplina: assoc.nome_disciplina,
+                                status: 'Desativado'
+                            }
+                        });
+                    });
+                } else {
+                    return res.status(500).json({
+                        error: "Erro interno do servidor",
+                        details: deleteError.message
+                    });
+                }
+            } else {
+                return res.status(200).json({
+                    success: true,
+                    message: `Professor "${assoc.nome_professor}" removido da disciplina "${assoc.nome_disciplina}" com sucesso`,
+                    dados: {
+                        id_dp: idDp,
+                        professor: assoc.nome_professor,
+                        disciplina: assoc.nome_disciplina,
+                        affectedRows: deleteResults.affectedRows
+                    }
+                });
+            }
+        });
+    });
+});
+
 module.exports = router;
