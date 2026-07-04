@@ -19,6 +19,7 @@ function TurmasAdm() {
     const [loading, setLoading] = useState(false);
     const [salvando, setSalvando] = useState(false);
     
+    // Estado para edição - CORRIGIDO
     const [dadosEdicao, setDadosEdicao] = useState({
         idperiodo: '',
         turma: '',
@@ -27,6 +28,7 @@ function TurmasAdm() {
         idcurso: '',
         idanocurricular: '',
         idcategoriacurso: '',
+        id_anoletivo: '',
         nomeCurso: '',
         nomeCategoria: '',
         anoCurricular: ''
@@ -110,6 +112,7 @@ function TurmasAdm() {
         return client;
     }, []);
 
+    // BUSCAR DADOS
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -149,6 +152,7 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    // BUSCAR DISCIPLINAS DA TURMA
     const fetchDisciplinasTurma = useCallback(async (idperiodo, anocurricular) => {
         setCarregandoDisciplinas(true);
         try {
@@ -168,6 +172,7 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    // BUSCAR PROFESSORES POR DISCIPLINA
     const fetchProfessoresPorDisciplina = useCallback(async (iddisciplina) => {
         setCarregandoProfessores(true);
         setProfessorSelecionado("");
@@ -188,6 +193,7 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    // BUSCAR PROFESSORES DA TURMA
     const fetchProfessoresTurma = useCallback(async (idperiodo, anoletivo = null) => {
         setCarregandoProfessoresTurma(true);
         try {
@@ -211,6 +217,7 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    // BUSCAR ANOS LETIVOS DA TURMA
     const fetchAnosLetivosTurma = useCallback(async (idperiodo) => {
         try {
             const response = await apiClient.get(`/anosLetivosPorTurma/${idperiodo}`);
@@ -231,6 +238,7 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
+    // REMOVER PROFESSOR DA TURMA
     const removerProfessorTurma = useCallback(async (idDp, nomeProfessor, disciplinaNome) => {
         showConfirmToast(
             `Tem certeza que deseja remover o professor "${nomeProfessor}" da disciplina "${disciplinaNome}" deste ano letivo?`,
@@ -271,6 +279,7 @@ function TurmasAdm() {
         );
     }, [apiClient, fetchProfessoresTurma, turmaVisualizar, anoLetivoSelecionado, fetchData, showConfirmToast]);
 
+    // PESQUISAR
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -326,19 +335,9 @@ function TurmasAdm() {
         });
     }, []);
 
-    const handleCategoriaCursoAnoChange = useCallback((data) => {
-        setCategoriaCursoAnoData(data);
-    }, []);
-
-    const handleCategoriaCursoAnoEditChange = useCallback((data) => {
-        setDadosEdicao(prev => ({
-            ...prev,
-            idcategoriacurso: data.idcategoriacurso,
-            idcurso: data.idcurso,
-            idanocurricular: data.idanocurricular
-        }));
-    }, []);
-
+    // ==================== FUNÇÕES DE EDIÇÃO - CORRIGIDAS ====================
+    
+    // ABRIR MODAL DE EDIÇÃO
     const abrirModalEditar = useCallback((item) => {
         setDadosEdicao({
             idperiodo: item.id_periodo,
@@ -348,6 +347,7 @@ function TurmasAdm() {
             idcurso: item.id_curso || '',
             idanocurricular: item.id_anocurricular || '',
             idcategoriacurso: item.id_categoria || '',
+            id_anoletivo: item.id_anoletivo || '',
             nomeCurso: item.curso || '',
             nomeCategoria: item.categoriacurso || '',
             anoCurricular: item.anocurricular || ''
@@ -355,6 +355,7 @@ function TurmasAdm() {
         setModalEditarAberto(true);
     }, []);
 
+    // FECHAR MODAL DE EDIÇÃO
     const fecharModalEditar = useCallback(() => {
         if (!salvando) {
             setModalEditarAberto(false);
@@ -366,6 +367,7 @@ function TurmasAdm() {
                 idcurso: '',
                 idanocurricular: '',
                 idcategoriacurso: '',
+                id_anoletivo: '',
                 nomeCurso: '',
                 nomeCategoria: '',
                 anoCurricular: ''
@@ -373,6 +375,95 @@ function TurmasAdm() {
         }
     }, [salvando]);
 
+    // HANDLE CHANGE PARA CategoriaCursoAno - CORRIGIDO
+    const handleCategoriaCursoAnoEditChange = useCallback((data) => {
+        setDadosEdicao(prev => ({
+            ...prev,
+            idcategoriacurso: data.id_categoria || '',
+            idcurso: data.id_curso || '',
+            idanocurricular: data.id_anocurricular || ''
+        }));
+    }, []);
+
+    // HANDLE CHANGE PARA INPUTS
+    const handleInputChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setDadosEdicao(prev => ({ ...prev, [name]: value }));
+    }, []);
+
+    // SALVAR EDIÇÃO - CORRIGIDO
+    const salvarEdicao = useCallback(async (e) => {
+        e?.preventDefault();
+
+        // VALIDAÇÕES
+        if (!dadosEdicao.turma?.trim()) {
+            showErrorToast("Validação", "Preencha o nome da turma");
+            return;
+        }
+
+        if (!dadosEdicao.idcategoriacurso) {
+            showErrorToast("Validação", "Selecione a categoria");
+            return;
+        }
+
+        if (!dadosEdicao.idcurso) {
+            showErrorToast("Validação", "Selecione o curso");
+            return;
+        }
+
+        if (!dadosEdicao.idanocurricular) {
+            showErrorToast("Validação", "Selecione o ano curricular");
+            return;
+        }
+
+        if (!dadosEdicao.periodo) {
+            showErrorToast("Validação", "Selecione o período");
+            return;
+        }
+
+        setSalvando(true);
+        try {
+            const payload = {
+                id_anocurricular: dadosEdicao.idanocurricular,
+                id_curso: dadosEdicao.idcurso,
+                id_categoria: dadosEdicao.idcategoriacurso,
+                turma: dadosEdicao.turma.trim(),
+                periodo: dadosEdicao.periodo,
+                idAdm: user.id,
+                id_anoletivo: dadosEdicao.id_anoletivo || null
+            };
+
+            console.log('Enviando para edição:', payload);
+
+            const response = await apiClient.put(`/periodo/${dadosEdicao.idperiodo}`, payload);
+
+            showSuccessToast(
+                "Sucesso",
+                response.data.mensagem || "Turma atualizada com sucesso"
+            );
+
+            await fetchData(false);
+            fecharModalEditar();
+        } catch (error) {
+            console.error("Erro ao editar:", error);
+
+            if (error.response?.data?.mensagem) {
+                showErrorToast("Erro", error.response.data.mensagem);
+            } else if (error.response?.data?.error) {
+                showErrorToast("Erro", error.response.data.error);
+            } else {
+                showErrorToast(
+                    "Erro ao editar",
+                    "Não foi possível atualizar a turma. Tente novamente."
+                );
+            }
+        } finally {
+            setSalvando(false);
+        }
+    }, [dadosEdicao, apiClient, fetchData, fecharModalEditar]);
+
+    // ==================== FUNÇÕES DE ATRIBUIÇÃO DE PROFESSOR ====================
+    
     const abrirModalProfessor = useCallback(async (item) => {
         setTurmaSelecionada(item);
         setProfessorSelecionado("");
@@ -410,115 +501,6 @@ function TurmasAdm() {
             setProfessoresDisciplina([]);
         }
     }, [salvando]);
-
-    const abrirModalVisualizar = useCallback(async (item) => {
-        setTurmaVisualizar(item);
-        setProfessoresTurma([]);
-        setAnosLetivosDisponiveis([]);
-        setAnoLetivoSelecionado("");
-        setModalVisualizarAberto(true);
-        
-        const anoLetivoPadrao = await fetchAnosLetivosTurma(item.id_periodo);
-        
-        if (anoLetivoPadrao) {
-            await fetchProfessoresTurma(item.id_periodo, anoLetivoPadrao);
-        }
-    }, [fetchAnosLetivosTurma, fetchProfessoresTurma]);
-
-    const handleAnoLetivoChange = useCallback(async (e) => {
-        const ano = e.target.value;
-        setAnoLetivoSelecionado(ano);
-        if (turmaVisualizar && ano) {
-            await fetchProfessoresTurma(turmaVisualizar.id_periodo, ano);
-        }
-    }, [turmaVisualizar, fetchProfessoresTurma]);
-
-    const fecharModalVisualizar = useCallback(() => {
-        setModalVisualizarAberto(false);
-        setTurmaVisualizar(null);
-        setProfessoresTurma([]);
-        setAnosLetivosDisponiveis([]);
-        setAnoLetivoSelecionado("");
-    }, []);
-
-    const abrirModalAdicionar = useCallback(() => {
-        setModalAdicionarAberto(true);
-        setNovaTurma({
-            turma: '',
-            periodo: '',
-            anoletivo: '',
-        });
-        setCategoriaCursoAnoData({
-            idcategoriacurso: '',
-            idcurso: '',
-            idanocurricular: ''
-        });
-    }, []);
-
-    const fecharModalAdicionar = useCallback(() => {
-        if (!salvando) {
-            setModalAdicionarAberto(false);
-            setNovaTurma({
-                turma: '',
-                periodo: '',
-                anoletivo: '',
-            });
-            setCategoriaCursoAnoData({
-                idcategoriacurso: '',
-                idcurso: '',
-                idanocurricular: ''
-            });
-        }
-    }, [salvando]);
-
-    const salvarEdicao = useCallback(async (e) => {
-        e?.preventDefault();
-
-        if (!dadosEdicao.turma?.trim()) {
-            showErrorToast("Validação", "Preencha o nome da turma");
-            return;
-        }
-
-        if (!dadosEdicao.idcategoriacurso || !dadosEdicao.idcurso || !dadosEdicao.idanocurricular) {
-            showErrorToast("Validação", "Selecione a categoria, curso e ano curricular");
-            return;
-        }
-
-        setSalvando(true);
-        try {
-            const response = await apiClient.put(`/periodo/${dadosEdicao.idperiodo}`, {
-                id_anocurricular: dadosEdicao.idanocurricular,
-                id_curso: dadosEdicao.idcurso,
-                id_categoria: dadosEdicao.idcategoriacurso,
-                turma: dadosEdicao.turma,
-                periodo: dadosEdicao.periodo,
-                id_anoletivo: dadosEdicao.anoletivo || null
-            });
-
-            showSuccessToast(
-                "Sucesso",
-                response.data.mensagem || "Turma atualizada com sucesso"
-            );
-
-            await fetchData(false);
-            fecharModalEditar();
-        } catch (error) {
-            console.error("Erro ao editar:", error);
-
-            if (error.response?.data?.mensagem) {
-                showErrorToast("Erro", error.response.data.mensagem);
-            } else if (error.response?.data?.error) {
-                showErrorToast("Erro", error.response.data.error);
-            } else {
-                showErrorToast(
-                    "Erro ao editar",
-                    "Não foi possível atualizar a turma. Tente novamente."
-                );
-            }
-        } finally {
-            setSalvando(false);
-        }
-    }, [dadosEdicao, apiClient, fetchData, fecharModalEditar]);
 
     const salvarAtribuicaoProfessor = useCallback(async (e) => {
         e?.preventDefault();
@@ -577,6 +559,79 @@ function TurmasAdm() {
             setSalvando(false);
         }
     }, [turmaSelecionada, disciplinaSelecionada, professorSelecionado, user, apiClient, fecharModalProfessor, fetchData]);
+
+    // ==================== FUNÇÕES DE VISUALIZAÇÃO ====================
+    
+    const abrirModalVisualizar = useCallback(async (item) => {
+        setTurmaVisualizar(item);
+        setProfessoresTurma([]);
+        setAnosLetivosDisponiveis([]);
+        setAnoLetivoSelecionado("");
+        setModalVisualizarAberto(true);
+        
+        const anoLetivoPadrao = await fetchAnosLetivosTurma(item.id_periodo);
+        
+        if (anoLetivoPadrao) {
+            await fetchProfessoresTurma(item.id_periodo, anoLetivoPadrao);
+        }
+    }, [fetchAnosLetivosTurma, fetchProfessoresTurma]);
+
+    const handleAnoLetivoChange = useCallback(async (e) => {
+        const ano = e.target.value;
+        setAnoLetivoSelecionado(ano);
+        if (turmaVisualizar && ano) {
+            await fetchProfessoresTurma(turmaVisualizar.id_periodo, ano);
+        }
+    }, [turmaVisualizar, fetchProfessoresTurma]);
+
+    const fecharModalVisualizar = useCallback(() => {
+        setModalVisualizarAberto(false);
+        setTurmaVisualizar(null);
+        setProfessoresTurma([]);
+        setAnosLetivosDisponiveis([]);
+        setAnoLetivoSelecionado("");
+    }, []);
+
+    // ==================== FUNÇÕES DE ADIÇÃO ====================
+    
+    const abrirModalAdicionar = useCallback(() => {
+        setModalAdicionarAberto(true);
+        setNovaTurma({
+            turma: '',
+            periodo: '',
+            anoletivo: '',
+        });
+        setCategoriaCursoAnoData({
+            idcategoriacurso: '',
+            idcurso: '',
+            idanocurricular: ''
+        });
+    }, []);
+
+    const fecharModalAdicionar = useCallback(() => {
+        if (!salvando) {
+            setModalAdicionarAberto(false);
+            setNovaTurma({
+                turma: '',
+                periodo: '',
+                anoletivo: '',
+            });
+            setCategoriaCursoAnoData({
+                idcategoriacurso: '',
+                idcurso: '',
+                idanocurricular: ''
+            });
+        }
+    }, [salvando]);
+
+    const handleNovaTurmaChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setNovaTurma(prev => ({ ...prev, [name]: value }));
+    }, []);
+
+    const handleCategoriaCursoAnoChange = useCallback((data) => {
+        setCategoriaCursoAnoData(data);
+    }, []);
 
     const salvarNovaTurma = useCallback(async (e) => {
         e?.preventDefault();
@@ -637,16 +692,8 @@ function TurmasAdm() {
         }
     }, [novaTurma, categoriaCursoAnoData, apiClient, user, fetchData, fecharModalAdicionar]);
 
-    const handleInputChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setDadosEdicao(prev => ({ ...prev, [name]: value }));
-    }, []);
-
-    const handleNovaTurmaChange = useCallback((e) => {
-        const { name, value } = e.target;
-        setNovaTurma(prev => ({ ...prev, [name]: value }));
-    }, []);
-
+    // ==================== FUNÇÃO DE DELETAR ====================
+    
     const deletarTurma = useCallback(async (id, nome) => {
         showConfirmToast(
             `Tem certeza que deseja excluir a turma "${nome}"? Esta ação não pode ser desfeita.`,
@@ -689,6 +736,8 @@ function TurmasAdm() {
         );
     }, [apiClient, removerItemLocal, showConfirmToast]);
 
+    // ==================== RENDERIZAÇÃO ====================
+    
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
@@ -880,7 +929,147 @@ function TurmasAdm() {
                 {renderConteudo()}
             </div>
 
-            {/* Modal de Visualização de Professores com Filtro por Ano Letivo */}
+            {/* ==================== MODAL DE EDIÇÃO - CORRIGIDO ==================== */}
+            {modalEditarAberto && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5 className="modal-title mb-0">
+                                    <MdEdit className="me-2 mb-1" />
+                                    Editar Turma: {dadosEdicao.turma}
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalEditar}
+                                    disabled={salvando || isConfirming}
+                                />
+                            </div>
+
+                            <div className="bg-light p-3 border-bottom">
+                                <div className="row">
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Categoria</small>
+                                        <strong>{dadosEdicao.nomeCategoria || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Curso</small>
+                                        <strong>{dadosEdicao.nomeCurso || '-'}</strong>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <small className="text-muted d-block">Ano Curricular</small>
+                                        <strong>{dadosEdicao.anoCurricular ? `${dadosEdicao.anoCurricular}º Ano` : '-'}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={salvarEdicao}>
+                                <div className="modal-body">
+                                    <CategoriaCursoAno
+                                        onChange={handleCategoriaCursoAnoEditChange}
+                                        initialValues={{
+                                            id_categoria: dadosEdicao.idcategoriacurso,
+                                            id_curso: dadosEdicao.idcurso,
+                                            id_anocurricular: dadosEdicao.idanocurricular
+                                        }}
+                                        disabled={salvando || isConfirming}
+                                    />
+
+                                    <div className="row mt-3">
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Turma *</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="turma"
+                                                value={dadosEdicao.turma}
+                                                onChange={handleInputChange}
+                                                placeholder="Ex: A, B, C..."
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Período *</label>
+                                            <select
+                                                className="form-select"
+                                                name="periodo"
+                                                value={dadosEdicao.periodo}
+                                                onChange={handleInputChange}
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {periodos.map(periodo => (
+                                                    <option key={periodo} value={periodo}>
+                                                        {periodo}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Ano Letivo</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="anoletivo"
+                                                value={dadosEdicao.anoletivo}
+                                                onChange={handleInputChange}
+                                                placeholder="Ex: 2024-2025"
+                                                pattern="\d{4}-\d{4}"
+                                                title="Formato: YYYY-YYYY (ex: 2024-2025)"
+                                                disabled={salvando || isConfirming}
+                                            />
+                                            <small className="text-muted d-block">Formato: 2024-2025</small>
+                                        </div>
+                                    </div>
+
+                                    {/* DEBUG - Mostrar dados que serão enviados */}
+                                    <div className="alert alert-info mt-3">
+                                        <small>
+                                            <strong>Dados a serem enviados:</strong><br />
+                                            ID Período: {dadosEdicao.idperiodo}<br />
+                                            Categoria: {dadosEdicao.idcategoriacurso || 'Não selecionado'}<br />
+                                            Curso: {dadosEdicao.idcurso || 'Não selecionado'}<br />
+                                            Ano Curricular: {dadosEdicao.idanocurricular || 'Não selecionado'}<br />
+                                            Turma: {dadosEdicao.turma || 'Não preenchido'}<br />
+                                            Período: {dadosEdicao.periodo || 'Não selecionado'}<br />
+                                            Ano Letivo: {dadosEdicao.anoletivo || 'Não preenchido'}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button
+                                        type="button"
+                                        className={`btn ${Style.btnCancelar}`}
+                                        onClick={fecharModalEditar}
+                                        disabled={salvando || isConfirming}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className={`btn px-4 ${Style.btnSubmit}`}
+                                        disabled={salvando || isConfirming || !dadosEdicao.turma.trim() || !dadosEdicao.idcurso}
+                                    >
+                                        {salvando ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Salvando...
+                                            </>
+                                        ) : (
+                                            'Salvar Alterações'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ==================== MODAL DE VISUALIZAÇÃO DE PROFESSORES ==================== */}
             {modalVisualizarAberto && turmaVisualizar && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -1036,131 +1225,7 @@ function TurmasAdm() {
                 </div>
             )}
 
-            {/* Modal de Edição */}
-            {modalEditarAberto && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    <div className="modal-dialog modal-lg modal-dialog-centered">
-                        <div className="modal-content shadow-lg border-0">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
-                                <h5 className="modal-title mb-0">
-                                    <MdEdit className="me-2 mb-1" />
-                                    Editar Turma: {dadosEdicao.turma}
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close btn-close-white"
-                                    onClick={fecharModalEditar}
-                                    disabled={salvando || isConfirming}
-                                />
-                            </div>
-
-                            <div className="bg-light p-3 border-bottom">
-                                <div className="row">
-                                    <div className="col-md-4">
-                                        <small className="text-muted d-block">Categoria</small>
-                                        <strong>{dadosEdicao.nomeCategoria || '-'}</strong>
-                                    </div>
-                                    <div className="col-md-4">
-                                        <small className="text-muted d-block">Curso</small>
-                                        <strong>{dadosEdicao.nomeCurso || '-'}</strong>
-                                    </div>
-                                    <div className="col-md-4">
-                                        <small className="text-muted d-block">Ano Curricular</small>
-                                        <strong>{dadosEdicao.anoCurricular ? `${dadosEdicao.anoCurricular}º Ano` : '-'}</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <form onSubmit={salvarEdicao}>
-                                <div className="modal-body">
-                                    <CategoriaCursoAno
-                                        onChange={handleCategoriaCursoAnoEditChange}
-                                        initialValues={{
-                                            idcategoriacurso: dadosEdicao.id_categoria,
-                                            idcurso: dadosEdicao.id_curso,
-                                            idanocurricular: dadosEdicao.id_anocurricular
-                                        }}
-                                    />
-
-                                    <div className="row mt-3">
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Turma</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                name="turma"
-                                                value={dadosEdicao.turma}
-                                                onChange={handleInputChange}
-                                                placeholder="Ex: A, B, C..."
-                                                disabled={salvando || isConfirming}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Período</label>
-                                            <select
-                                                className="form-select"
-                                                name="periodo"
-                                                value={dadosEdicao.periodo}
-                                                onChange={handleInputChange}
-                                                disabled={salvando || isConfirming}
-                                                required
-                                            >
-                                                <option value="">Selecione...</option>
-                                                {periodos.map(periodo => (
-                                                    <option key={periodo} value={periodo}>
-                                                        {periodo}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label">Ano Letivo</label>
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                name="anoletivo"
-                                                value={dadosEdicao.anoletivo}
-                                                onChange={handleInputChange}
-                                                placeholder="Ex: 2024-2025"
-                                                pattern="\d{4}-\d{4}"
-                                                title="Formato: YYYY-YYYY (ex: 2024-2025)"
-                                                disabled={salvando || isConfirming}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer border-0">
-                                    <button
-                                        type="button"
-                                        className={`btn ${Style.btnCancelar}`}
-                                        onClick={fecharModalEditar}
-                                        disabled={salvando || isConfirming}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className={`btn px-4 ${Style.btnSubmit}`}
-                                        disabled={salvando || isConfirming || !dadosEdicao.turma.trim()}
-                                    >
-                                        {salvando ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                                Salvando...
-                                            </>
-                                        ) : (
-                                            'Salvar Alterações'
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Atribuição de Professor */}
+            {/* ==================== MODAL DE ATRIBUIÇÃO DE PROFESSOR ==================== */}
             {modalProfessorAberto && turmaSelecionada && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered">
@@ -1288,6 +1353,111 @@ function TurmasAdm() {
                                             </>
                                         ) : (
                                             'Atribuir Professor'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ==================== MODAL DE ADIÇÃO ==================== */}
+            {modalAdicionarAberto && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content shadow-lg border-0">
+                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                                <h5 className="modal-title mb-0">
+                                    <MdAdd className="me-2 mb-1" />
+                                    Adicionar Nova Turma
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    onClick={fecharModalAdicionar}
+                                    disabled={salvando || isConfirming}
+                                />
+                            </div>
+
+                            <form onSubmit={salvarNovaTurma}>
+                                <div className="modal-body">
+                                    <CategoriaCursoAno
+                                        onChange={handleCategoriaCursoAnoChange}
+                                        disabled={salvando || isConfirming}
+                                    />
+
+                                    <div className="row mt-3">
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Turma *</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="turma"
+                                                value={novaTurma.turma}
+                                                onChange={handleNovaTurmaChange}
+                                                placeholder="Ex: A, B, C..."
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Período *</label>
+                                            <select
+                                                className="form-select"
+                                                name="periodo"
+                                                value={novaTurma.periodo}
+                                                onChange={handleNovaTurmaChange}
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {periodos.map(periodo => (
+                                                    <option key={periodo} value={periodo}>
+                                                        {periodo}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-bold">Ano Letivo *</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                name="anoletivo"
+                                                value={novaTurma.anoletivo}
+                                                onChange={handleNovaTurmaChange}
+                                                placeholder="Ex: 2024-2025"
+                                                pattern="\d{4}-\d{4}"
+                                                title="Formato: YYYY-YYYY (ex: 2024-2025)"
+                                                disabled={salvando || isConfirming}
+                                                required
+                                            />
+                                            <small className="text-muted d-block">Formato: 2024-2025</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button
+                                        type="button"
+                                        className={`btn ${Style.btnCancelar}`}
+                                        onClick={fecharModalAdicionar}
+                                        disabled={salvando || isConfirming}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className={`btn px-4 ${Style.btnSubmit}`}
+                                        disabled={salvando || isConfirming || !novaTurma.turma.trim() || !novaTurma.periodo || !novaTurma.anoletivo.trim()}
+                                    >
+                                        {salvando ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                Adicionando...
+                                            </>
+                                        ) : (
+                                            'Adicionar Turma'
                                         )}
                                     </button>
                                 </div>
