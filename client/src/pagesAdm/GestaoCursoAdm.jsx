@@ -9,12 +9,13 @@ import {
 } from 'recharts';
 import { 
   FaUniversity, FaBook, FaLayerGroup, FaGraduationCap,
-  FaClock, FaChartBar, FaChartPie, FaChartLine
+  FaClock, FaChartBar, FaChartPie, FaChartLine, FaUsers,
+  FaChalkboardTeacher, FaUserGraduate, FaRegClock
 } from 'react-icons/fa';
-import CursoEdit from "./components/CursosEdit"
-import DepartamentoEdit from "./components/DepartamentosEdit"
-import DisciplinasEdit from "./components/DisciplinasEdit"
-import { MdAdd, MdFlightClass } from "react-icons/md";
+import CursoEdit from "./components/CursosEdit";
+import DepartamentoEdit from "./components/DepartamentosEdit";
+import DisciplinasEdit from "./components/DisciplinasEdit";
+import { MdAdd, MdFlightClass, MdRefresh, MdSchool, MdAssignment } from "react-icons/md";
 import OutrosRegistros from "./components/OutrosRegistros";
 import TurmasAdm from "./components/TurmasAdm";
 
@@ -28,6 +29,17 @@ function GestaoCursoAdm() {
     const [dadosDisciplinasPorCurso, setDadosDisciplinasPorCurso] = useState([]);
     const [loading, setLoading] = useState(true);
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date());
+    
+    // ==================== ESTADOS PARA TURMAS ====================
+    const [totalTurmas, setTotalTurmas] = useState(0);
+    const [totalPeriodos, setTotalPeriodos] = useState(0);
+    const [totalTurmasAtivas, setTotalTurmasAtivas] = useState(0);
+    const [totalTurmasDesativadas, setTotalTurmasDesativadas] = useState(0);
+    const [totalTurmasSemAno, setTotalTurmasSemAno] = useState(0);
+    const [dadosTurmasPorCurso, setDadosTurmasPorCurso] = useState([]);
+    const [dadosTurmasPorPeriodo, setDadosTurmasPorPeriodo] = useState([]);
+    const [dadosTurmasPorAnoLetivo, setDadosTurmasPorAnoLetivo] = useState([]);
+    const [loadingTurmas, setLoadingTurmas] = useState(false);
     
     const [secaoAtiva, setSecaoAtiva] = useState("geral");
 
@@ -102,7 +114,7 @@ function GestaoCursoAdm() {
                 .then(response => {
                     const dadosFormatados = response.data.map((item) => ({
                         cursos: item.total_cursos,
-                        departamento: item.categoriacurso,
+                        departamento: item.categoria,
                         valor: item.total_cursos
                     }));
                     
@@ -110,7 +122,7 @@ function GestaoCursoAdm() {
                     
                     const totalCursos = response.data.reduce((acc, curr) => acc + curr.total_cursos, 0);
                     const comparativo = response.data.map((item) => ({
-                        departamento: item.categoriacurso,
+                        departamento: item.categoria,
                         proporcao: ((item.total_cursos / totalCursos) * 100).toFixed(1),
                         peso: item.total_cursos
                     }));
@@ -144,6 +156,95 @@ function GestaoCursoAdm() {
         
         fetchDisciplinasPorCurso();
         const interval = setInterval(fetchDisciplinasPorCurso, 30000);
+        
+        return () => {
+            clearInterval(interval);
+        }
+    }, []);
+
+    // ==================== BUSCAR DADOS DE TURMAS ====================
+    useEffect(() => {
+        const fetchDadosTurmas = async () => {
+            setLoadingTurmas(true);
+            try {
+                // Buscar todas as turmas
+                const response = await api.get('/turmasCompletas');
+                const dados = response.data || [];
+                
+                // Estatísticas gerais
+                const ativas = dados.filter(item => item.status_anoletivo === 'Ativo');
+                const desativadas = dados.filter(item => item.status_anoletivo === 'Desativado');
+                const semAno = dados.filter(item => item.status_anoletivo === 'Sem Ano Letivo' || !item.anoletivo);
+                
+                setTotalTurmas(dados.length);
+                setTotalTurmasAtivas(ativas.length);
+                setTotalTurmasDesativadas(desativadas.length);
+                setTotalTurmasSemAno(semAno.length);
+                
+                // Contar períodos únicos
+                const periodosUnicos = new Set(dados.map(item => item.id_periodo));
+                setTotalPeriodos(periodosUnicos.size);
+                
+                // Agrupar turmas por curso
+                const turmasPorCurso = dados.reduce((acc, item) => {
+                    const key = item.curso || 'Sem curso';
+                    if (!acc[key]) {
+                        acc[key] = { curso: key, total: 0, ativas: 0, desativadas: 0, semAno: 0 };
+                    }
+                    acc[key].total++;
+                    if (item.status_anoletivo === 'Ativo') acc[key].ativas++;
+                    else if (item.status_anoletivo === 'Desativado') acc[key].desativadas++;
+                    else acc[key].semAno++;
+                    return acc;
+                }, {});
+                
+                const dadosTurmasPorCursoArray = Object.values(turmasPorCurso)
+                    .sort((a, b) => b.total - a.total)
+                    .slice(0, 10);
+                setDadosTurmasPorCurso(dadosTurmasPorCursoArray);
+                
+                // Agrupar turmas por período
+                const turmasPorPeriodo = dados.reduce((acc, item) => {
+                    const key = item.periodo || 'Sem período';
+                    if (!acc[key]) {
+                        acc[key] = { periodo: key, total: 0 };
+                    }
+                    acc[key].total++;
+                    return acc;
+                }, {});
+                
+                const dadosTurmasPorPeriodoArray = Object.values(turmasPorPeriodo)
+                    .sort((a, b) => b.total - a.total);
+                setDadosTurmasPorPeriodo(dadosTurmasPorPeriodoArray);
+                
+                // Agrupar turmas por ano letivo
+                const turmasPorAnoLetivo = dados.reduce((acc, item) => {
+                    const key = item.anoletivo || 'Sem ano letivo';
+                    if (!acc[key]) {
+                        acc[key] = { ano: key, total: 0 };
+                    }
+                    acc[key].total++;
+                    return acc;
+                }, {});
+                
+                const dadosTurmasPorAnoLetivoArray = Object.values(turmasPorAnoLetivo)
+                    .sort((a, b) => {
+                        if (a.ano === 'Sem ano letivo') return 1;
+                        if (b.ano === 'Sem ano letivo') return -1;
+                        return b.ano.localeCompare(a.ano);
+                    })
+                    .slice(0, 8);
+                setDadosTurmasPorAnoLetivo(dadosTurmasPorAnoLetivoArray);
+                
+            } catch (error) {
+                console.error("Erro ao buscar dados de turmas:", error);
+            } finally {
+                setLoadingTurmas(false);
+            }
+        };
+        
+        fetchDadosTurmas();
+        const interval = setInterval(fetchDadosTurmas, 60000);
         
         return () => {
             clearInterval(interval);
@@ -237,6 +338,9 @@ function GestaoCursoAdm() {
                             >
                                 <MdFlightClass className="me-2 mb-1" />
                                 Turmas
+                                {totalTurmas > 0 && (
+                                    <span className="badge bg-danger ms-1">{totalTurmas}</span>
+                                )}
                             </button>
                         </div>
                         <div className="col-md-2">
@@ -254,7 +358,7 @@ function GestaoCursoAdm() {
                     {secaoAtiva === "geral" && (
                         <>
                             <div className="row mb-4 g-3">
-                                <div className="col-md-4">
+                                <div className="col-md-3">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #003366 0%, #1a4d80 100%)' }}>
                                         <div className="card-body">
                                             <div className="d-flex justify-content-between align-items-start mb-3">
@@ -273,7 +377,7 @@ function GestaoCursoAdm() {
                                     </div>
                                 </div>
 
-                                <div className="col-md-4">
+                                <div className="col-md-3">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #B8860B 0%, #DAA520 100%)' }}>
                                         <div className="card-body">
                                             <div className="d-flex justify-content-between align-items-start mb-3">
@@ -292,7 +396,7 @@ function GestaoCursoAdm() {
                                     </div>
                                 </div>
 
-                                <div className="col-md-4">
+                                <div className="col-md-3">
                                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #4A90E2 0%, #6AA6E8 100%)' }}>
                                         <div className="card-body">
                                             <div className="d-flex justify-content-between align-items-start mb-3">
@@ -307,6 +411,27 @@ function GestaoCursoAdm() {
                                                 </div>
                                             </div>
                                             <p className="text-white-50 small mb-0">Componentes curriculares ofertados</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="col-md-3">
+                                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '15px', background: 'linear-gradient(135deg, #50C878 0%, #6DD89A 100%)' }}>
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 className="text-white-50 mb-2">Total de Turmas</h6>
+                                                    <h2 className="text-white mb-0" style={{ fontSize: '2.5rem', fontWeight: '700' }}>
+                                                        {totalTurmas}
+                                                    </h2>
+                                                </div>
+                                                <div className="bg-white bg-opacity-25 p-3 rounded-circle">
+                                                    <FaChalkboardTeacher size={28} />
+                                                </div>
+                                            </div>
+                                            <p className="text-white-50 small mb-0">
+                                                {totalTurmasAtivas} ativas • {totalTurmasDesativadas} desativadas
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -549,62 +674,138 @@ function GestaoCursoAdm() {
                                 </div>
                             </div>
 
-                            <div className="row mt-4">
+                            {/* ==================== SEÇÃO DE TURMAS NO PAINEL GERAL ==================== */}
+                            <div className="row g-4 mb-4">
                                 <div className="col-12">
                                     <div className="card border-0 shadow-sm" style={{ borderRadius: '15px' }}>
                                         <div className="card-header bg-white border-0 pt-4 px-4">
-                                            <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
-                                                Ranking de Cursos por Número de Disciplinas
-                                            </h5>
-                                            <p className="text-muted small mb-0">Os 10 cursos com mais disciplinas</p>
+                                            <div className="d-flex align-items-center justify-content-between">
+                                                <div className="d-flex align-items-center gap-2">
+                                                    <FaChalkboardTeacher size={20} color="#003366" />
+                                                    <h5 className="mb-0" style={{ color: 'var(--azul-escuro)', fontWeight: '600' }}>
+                                                        Estatísticas de Turmas
+                                                    </h5>
+                                                </div>
+                                                <button 
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => setSecaoAtiva("turmas")}
+                                                >
+                                                    <MdFlightClass className="me-1" />
+                                                    Gerenciar Turmas
+                                                </button>
+                                            </div>
+                                            <p className="text-muted small mb-0">Visão geral das turmas cadastradas</p>
                                         </div>
                                         <div className="card-body">
-                                            <div className="table-responsive">
-                                                <table className="table table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>#</th>
-                                                            <th>Curso</th>
-                                                            <th className="text-center">Total de Disciplinas</th>
-                                                            <th className="text-center">Participação no Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {dadosDisciplinasPorCurso.slice(0, 10).map((item, index) => {
-                                                            const totalGeral = dadosDisciplinasPorCurso.reduce((acc, curr) => acc + curr.total_disciplinas, 0);
-                                                            const percentual = totalGeral > 0 ? ((item.total_disciplinas / totalGeral) * 100).toFixed(1) : 0;
-                                                            
-                                                            return (
-                                                                <tr key={item.idcurso}>
-                                                                    <td>
-                                                                        <span className={`badge bg-${index < 3 ? 'warning' : 'secondary'} text-dark`} style={{ fontSize: '14px', padding: '8px 12px' }}>
-                                                                            {index + 1}º
-                                                                        </span>
-                                                                    </td>
-                                                                    <td style={{ color: COLORS[index % COLORS.length], fontWeight: '500' }}>
-                                                                        {item.curso}
-                                                                    </td>
-                                                                    <td className="text-center fw-bold">{item.total_disciplinas}</td>
-                                                                    <td className="text-center">
-                                                                        <div className="d-flex align-items-center justify-content-center gap-2">
-                                                                            <span style={{ minWidth: '45px' }}>{percentual}%</span>
-                                                                            <div className="progress" style={{ width: '100px', height: '8px' }}>
-                                                                                <div 
-                                                                                    className="progress-bar" 
-                                                                                    style={{ 
-                                                                                        width: `${percentual}%`,
-                                                                                        backgroundColor: COLORS[index % COLORS.length]
-                                                                                    }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
+                                            <div className="row g-3 mb-4">
+                                                <div className="col-md-3">
+                                                    <div className="p-3 rounded-3 text-center" style={{ backgroundColor: '#f8f9fa' }}>
+                                                        <h3 className="mb-1" style={{ color: '#003366' }}>{totalTurmas}</h3>
+                                                        <small className="text-muted">Total de Turmas</small>
+                                                    </div>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <div className="p-3 rounded-3 text-center" style={{ backgroundColor: '#e8f5e9' }}>
+                                                        <h3 className="mb-1" style={{ color: '#2e7d32' }}>{totalTurmasAtivas}</h3>
+                                                        <small className="text-muted">Turmas Ativas</small>
+                                                    </div>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <div className="p-3 rounded-3 text-center" style={{ backgroundColor: '#fce4ec' }}>
+                                                        <h3 className="mb-1" style={{ color: '#c62828' }}>{totalTurmasDesativadas}</h3>
+                                                        <small className="text-muted">Turmas Desativadas</small>
+                                                    </div>
+                                                </div>
+                                                <div className="col-md-3">
+                                                    <div className="p-3 rounded-3 text-center" style={{ backgroundColor: '#fff3e0' }}>
+                                                        <h3 className="mb-1" style={{ color: '#e65100' }}>{totalTurmasSemAno}</h3>
+                                                        <small className="text-muted">Sem Ano Letivo</small>
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            <div className="row">
+                                                <div className="col-md-6">
+                                                    <h6 className="mb-3" style={{ color: '#003366' }}>
+                                                        <FaChartBar className="me-2" />
+                                                        Turmas por Período
+                                                    </h6>
+                                                    <ResponsiveContainer width="100%" height={200}>
+                                                        <BarChart data={dadosTurmasPorPeriodo}>
+                                                            <CartesianGrid strokeDasharray="3 3" />
+                                                            <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
+                                                            <YAxis tick={{ fontSize: 11 }} />
+                                                            <Tooltip />
+                                                            <Bar dataKey="total" fill="#003366" name="Total de Turmas" radius={[5,5,0,0]}>
+                                                                {dadosTurmasPorPeriodo.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                                                                ))}
+                                                            </Bar>
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                                <div className="col-md-6">
+                                                    <h6 className="mb-3" style={{ color: '#003366' }}>
+                                                        <FaChartPie className="me-2" />
+                                                        Turmas por Ano Letivo
+                                                    </h6>
+                                                    <ResponsiveContainer width="100%" height={200}>
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={dadosTurmasPorAnoLetivo}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                labelLine={false}
+                                                                label={({ ano, percent }) => `${ano}: ${(percent * 100).toFixed(0)}%`}
+                                                                outerRadius={80}
+                                                                fill="#8884d8"
+                                                                dataKey="total"
+                                                                labelStyle={{ fontSize: '9px' }}
+                                                            >
+                                                                {dadosTurmasPorAnoLetivo.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+
+                                            {dadosTurmasPorCurso.length > 0 && (
+                                                <div className="mt-4">
+                                                    <h6 className="mb-3" style={{ color: '#003366' }}>
+                                                        <FaGraduationCap className="me-2" />
+                                                        Turmas por Curso (Top 10)
+                                                    </h6>
+                                                    <div className="table-responsive">
+                                                        <table className="table table-sm table-hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>#</th>
+                                                                    <th>Curso</th>
+                                                                    <th className="text-center">Total</th>
+                                                                    <th className="text-center">Ativas</th>
+                                                                    <th className="text-center">Desativadas</th>
+                                                                    <th className="text-center">Sem Ano</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {dadosTurmasPorCurso.map((item, index) => (
+                                                                    <tr key={index}>
+                                                                        <td>{index + 1}º</td>
+                                                                        <td>{item.curso}</td>
+                                                                        <td className="text-center fw-bold">{item.total}</td>
+                                                                        <td className="text-center text-success">{item.ativas || 0}</td>
+                                                                        <td className="text-center text-danger">{item.desativadas || 0}</td>
+                                                                        <td className="text-center text-warning">{item.semAno || 0}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -641,6 +842,14 @@ function GestaoCursoAdm() {
                                                     </p>
                                                 </div>
                                             </div>
+                                            <div className="row mt-2">
+                                                <div className="col-12">
+                                                    <p className="small mb-0 text-muted">
+                                                        <span style={{ color: '#003366', fontWeight: 'bold' }}>●</span> 
+                                                        <strong> Estatísticas de Turmas:</strong> Visão geral de turmas por período, ano letivo e curso
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -659,9 +868,11 @@ function GestaoCursoAdm() {
                     {secaoAtiva === "disciplinas" && (
                         <DisciplinasEdit />
                     )}
+                    
                     {secaoAtiva === "turmas" && (
                         <TurmasAdm />
                     )}
+                    
                     {secaoAtiva === "outros" && (
                         <OutrosRegistros />
                     )}

@@ -534,7 +534,6 @@ router.put('/categoriaCurso/:id', verificarToken, (req, res) => {
         });
     }
 
-    // Verifica se a categoria existe
     const checkSql = 'SELECT * FROM categoria WHERE id_categoria = ?';
     
     conexao.query(checkSql, [id], (checkError, checkResults) => {
@@ -553,7 +552,6 @@ router.put('/categoriaCurso/:id', verificarToken, (req, res) => {
             });
         }
 
-        // Verifica duplicidade (outra categoria com mesmo nome)
         const duplicateSql = 'SELECT * FROM categoria WHERE categoria = ? AND id_categoria != ?';
         
         conexao.query(duplicateSql, [categoriacurso.trim(), id], (duplicateError, duplicateResults) => {
@@ -572,7 +570,6 @@ router.put('/categoriaCurso/:id', verificarToken, (req, res) => {
                 });
             }
 
-            // Atualiza a categoria
             const updateSql = 'UPDATE categoria SET categoria = ? WHERE id_categoria = ?';
             const values = [categoriacurso.trim(), id];
             
@@ -592,7 +589,6 @@ router.put('/categoriaCurso/:id', verificarToken, (req, res) => {
                     });
                 }
                 
-                // Busca a categoria atualizada
                 const selectSql = 'SELECT id_categoria as idcategoriacurso, categoria as categoriacurso FROM categoria WHERE id_categoria = ?';
                 conexao.query(selectSql, [id], (selectError, selectResults) => {
                     if (selectError) {
@@ -639,7 +635,6 @@ router.put('/Curso/:id', verificarToken, (req, res) => {
             error: 'O nome do curso não pode exceder 100 caracteres'
         });
     }
-
 
     const checkCursoSql = 'SELECT * FROM curso WHERE id_curso = ?';
     conexao.query(checkCursoSql, [id], (checkError, checkResults) => {
@@ -795,20 +790,22 @@ router.put('/disciplina/:id', verificarToken, (req, res) => {
     });
 });
 
-// routes/periodoRoutes.js ou similar
-router.put('/periodo/:id', (req, res) => {
+// ==================== PUT MELHORADO PARA EDIÇÃO DE TURMA ====================
+
+router.put('/periodo/:id', async (req, res) => {
     const { id } = req.params;
-    console.log("ID do período recebido:", id);
-    
-    const { id_anocurricular, id_curso, id_categoria, turma, periodo, id_anoletivo } = req.body;
-    
+    const { id_anocurricular, id_curso, id_categoria, turma, periodo, id_anoletivo, idAdm, anoletivo } = req.body;
+
     console.log("Dados recebidos para atualização:", {
+        id,
         id_anocurricular,
         id_curso,
         id_categoria,
         turma,
         periodo,
-        id_anoletivo
+        id_anoletivo,
+        idAdm,
+        anoletivo
     });
 
     // 1. VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
@@ -821,20 +818,16 @@ router.put('/periodo/:id', (req, res) => {
         });
     }
 
-    // 2. VERIFICAR SE O PERÍODO EXISTE
-    const verificarExistenciaSQL = "SELECT id_periodo, id_turma FROM periodo WHERE id_periodo = ?";
-    
-    conexao.query(verificarExistenciaSQL, [id], (erroExistencia, existe) => {
-        if (erroExistencia) {
-            console.error("Erro ao verificar existência:", erroExistencia);
-            return res.status(500).json({
-                sucesso: false,
-                tipo: "erro",
-                titulo: "Erro no servidor",
-                mensagem: "Erro interno do servidor"
+    try {
+        // 2. VERIFICAR SE O PERÍODO EXISTE
+        const verificarExistenciaSQL = "SELECT id_periodo, id_turma FROM periodo WHERE id_periodo = ?";
+        const existe = await new Promise((resolve, reject) => {
+            conexao.query(verificarExistenciaSQL, [id], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
             });
-        }
-        
+        });
+
         if (existe.length === 0) {
             return res.status(404).json({
                 sucesso: false,
@@ -844,286 +837,354 @@ router.put('/periodo/:id', (req, res) => {
             });
         }
 
-        const id_turma_atual = existe[0].id_turma;
-
         // 3. VERIFICAR ANO CURRICULAR
         const verificarAnoSQL = "SELECT id_anocurricular, ano FROM anocurricular WHERE id_anocurricular = ? AND status = 'Ativo'";
+        const anoResult = await new Promise((resolve, reject) => {
+            conexao.query(verificarAnoSQL, [id_anocurricular], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        if (anoResult.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Ano Curricular inválido",
+                mensagem: "O ano curricular selecionado não existe ou está inativo"
+            });
+        }
+
+        // 4. VERIFICAR CURSO
+        const verificarCursoSQL = "SELECT id_curso, curso, id_categoria FROM curso WHERE id_curso = ? AND status = 'Ativo'";
+        const cursoResult = await new Promise((resolve, reject) => {
+            conexao.query(verificarCursoSQL, [id_curso], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        if (cursoResult.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Curso inválido",
+                mensagem: "O curso selecionado não existe ou está inativo"
+            });
+        }
+
+        // 5. VERIFICAR CATEGORIA
+        const verificarCategoriaSQL = "SELECT id_categoria, categoria FROM categoria WHERE id_categoria = ? AND status = 'Ativo'";
+        const catResult = await new Promise((resolve, reject) => {
+            conexao.query(verificarCategoriaSQL, [id_categoria], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        if (catResult.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Categoria inválida",
+                mensagem: "A categoria selecionada não existe ou está inativa"
+            });
+        }
+
+        // 6. VERIFICAR SE O CURSO PERTENCE À CATEGORIA
+        if (cursoResult[0].id_categoria !== id_categoria) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Inconsistência de dados",
+                mensagem: "O curso selecionado não pertence à categoria informada"
+            });
+        }
+
+        // 7. VERIFICAR SE O ANO CURRICULAR PERTENCE AO CURSO
+        const verificarAnoCursoSQL = "SELECT id_anocurricular FROM anocurricular WHERE id_anocurricular = ? AND id_curso = ?";
+        const anoCursoResult = await new Promise((resolve, reject) => {
+            conexao.query(verificarAnoCursoSQL, [id_anocurricular, id_curso], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        if (anoCursoResult.length === 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Inconsistência de dados",
+                mensagem: "O ano curricular selecionado não pertence ao curso informado"
+            });
+        }
+
+        // 8. VALIDAR PERÍODO
+        const periodosPermitidos = ['Manhã', 'Tarde', 'Noite', 'Diurno'];
+        if (!periodosPermitidos.includes(periodo)) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Período inválido",
+                mensagem: "O período deve ser: Manhã, Tarde, Noite ou Diurno"
+            });
+        }
+
+        // 9. PROCESSAR TURMA (BUSCAR OU CRIAR)
+        const processarTurma = async () => {
+            const verificarTurmaSQL = "SELECT id_turma FROM turma WHERE turma = ? AND id_curso = ? AND status = 'Ativo'";
+            const turmaResult = await new Promise((resolve, reject) => {
+                conexao.query(verificarTurmaSQL, [turma, id_curso], (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                });
+            });
+
+            let id_turma_final;
+            const crypto = require('crypto');
+
+            if (turmaResult.length === 0) {
+                id_turma_final = crypto.randomUUID();
+                await new Promise((resolve, reject) => {
+                    conexao.query(
+                        `INSERT INTO turma (id_turma, turma, status, id_user, id_curso) VALUES (?, ?, 'Ativo', ?, ?)`,
+                        [id_turma_final, turma, idAdm, id_curso],
+                        (error) => {
+                            if (error) reject(error);
+                            else resolve();
+                        }
+                    );
+                });
+            } else {
+                id_turma_final = turmaResult[0].id_turma;
+            }
+
+            return id_turma_final;
+        };
+
+        const id_turma_final = await processarTurma();
+
+        // 10. VERIFICAR DUPLICIDADE DE PERÍODO (mesmo nome de turma e mesmo período)
+        const verificarDuplicadoSQL = `SELECT id_periodo FROM periodo WHERE id_turma = ? AND periodo = ? AND id_periodo != ?`;
+        const duplicadoResult = await new Promise((resolve, reject) => {
+            conexao.query(verificarDuplicadoSQL, [id_turma_final, periodo, id], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        if (duplicadoResult.length > 0) {
+            return res.status(400).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Período Duplicado",
+                mensagem: `Já existe o período "${periodo}" para esta turma`
+            });
+        }
+
+        // 11. ATUALIZAR PERÍODO - INCLUINDO id_anocurricular
+        await new Promise((resolve, reject) => {
+            conexao.query(
+                `UPDATE periodo SET 
+                    id_turma = ?, 
+                    periodo = ?, 
+                    id_anocurricular = ?,
+                    id_user = ?, 
+                    data_atualizacao = CURDATE() 
+                WHERE id_periodo = ?`,
+                [id_turma_final, periodo, id_anocurricular, idAdm, id],
+                (error) => {
+                    if (error) reject(error);
+                    else resolve();
+                }
+            );
+        });
+
+        // 12. PROCESSAR ANO LETIVO - PODE SER IGUAL, APENAS INFORMAR
+        let resultadoAnoLetivo = null;
+
+        if (anoletivo && anoletivo.trim()) {
+            const verificarAnoLetivoSQL = `SELECT id_anoletivo, status FROM anoletivo WHERE id_periodo = ? AND ano = ?`;
+            const anoExistente = await new Promise((resolve, reject) => {
+                conexao.query(verificarAnoLetivoSQL, [id, anoletivo.trim()], (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                });
+            });
+
+            if (anoExistente.length > 0) {
+                // Se existe mas está desativado, podemos ativar novamente
+                if (anoExistente[0].status === 'Desativado') {
+                    await new Promise((resolve, reject) => {
+                        conexao.query(
+                            `UPDATE anoletivo SET status = 'Ativo', data_atualizacao = CURDATE() WHERE id_anoletivo = ?`,
+                            [anoExistente[0].id_anoletivo],
+                            (error) => {
+                                if (error) reject(error);
+                                else resolve();
+                            }
+                        );
+                    });
+                    resultadoAnoLetivo = {
+                        id_anoletivo: anoExistente[0].id_anoletivo,
+                        ano: anoletivo.trim(),
+                        status: 'Ativo (reativado)'
+                    };
+                } else {
+                    // Ano letivo já existe e está ativo - apenas informar, não bloquear
+                    resultadoAnoLetivo = {
+                        id_anoletivo: anoExistente[0].id_anoletivo,
+                        ano: anoletivo.trim(),
+                        status: 'Ativo (existente)'
+                    };
+                    // Não retorna erro, apenas continua
+                }
+            } else {
+                // Criar novo ano letivo
+                const novoIdAnoLetivo = require('crypto').randomUUID();
+                await new Promise((resolve, reject) => {
+                    conexao.query(
+                        `INSERT INTO anoletivo (id_anoletivo, ano, id_periodo, id_user, data_criacao, status) 
+                         VALUES (?, ?, ?, ?, CURDATE(), 'Ativo')`,
+                        [novoIdAnoLetivo, anoletivo.trim(), id, idAdm],
+                        (error) => {
+                            if (error) reject(error);
+                            else resolve();
+                        }
+                    );
+                });
+                resultadoAnoLetivo = {
+                    id_anoletivo: novoIdAnoLetivo,
+                    ano: anoletivo.trim(),
+                    status: 'Ativo (novo)'
+                };
+            }
+        } else if (id_anoletivo) {
+            // Verificar se o ano letivo existe
+            const verificarAnoLetivoExistente = `SELECT id_anoletivo FROM anoletivo WHERE id_anoletivo = ?`;
+            const anoExistente = await new Promise((resolve, reject) => {
+                conexao.query(verificarAnoLetivoExistente, [id_anoletivo], (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                });
+            });
+
+            if (anoExistente.length > 0) {
+                resultadoAnoLetivo = { id_anoletivo, status: 'Existente' };
+            }
+        }
+
+        // 13. BUSCAR DADOS COMPLETOS PARA RESPOSTA
+        const buscaDadosSQL = `
+            SELECT 
+                p.id_periodo,
+                p.periodo,
+                p.status,
+                t.id_turma,
+                t.turma,
+                c.id_curso,
+                c.curso,
+                cat.id_categoria,
+                cat.categoria,
+                ac.id_anocurricular,
+                ac.ano AS anocurricular,
+                al.id_anoletivo,
+                al.ano AS anoletivo
+            FROM periodo p
+            INNER JOIN turma t ON t.id_turma = p.id_turma
+            INNER JOIN curso c ON c.id_curso = t.id_curso
+            INNER JOIN categoria cat ON cat.id_categoria = c.id_categoria
+            INNER JOIN anocurricular ac ON ac.id_anocurricular = p.id_anocurricular
+            LEFT JOIN anoletivo al ON al.id_periodo = p.id_periodo AND al.id_anoletivo = ?
+            WHERE p.id_periodo = ?
+        `;
+
+        const dadosCompletos = await new Promise((resolve, reject) => {
+            conexao.query(buscaDadosSQL, [resultadoAnoLetivo?.id_anoletivo || null, id], (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            });
+        });
+
+        res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Período Atualizado",
+            mensagem: `Turma "${turma}" - Período "${periodo}" atualizado com sucesso!`,
+            dados: dadosCompletos[0] || {
+                id_periodo: id,
+                periodo: periodo,
+                turma: turma,
+                curso: cursoResult[0].curso,
+                categoria: catResult[0].categoria,
+                anocurricular: anoResult[0].ano,
+                id_anocurricular: id_anocurricular,
+                id_curso: id_curso,
+                id_categoria: id_categoria,
+                id_turma: id_turma_final,
+                anoletivo: resultadoAnoLetivo?.ano || null,
+                id_anoletivo: resultadoAnoLetivo?.id_anoletivo || null
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao atualizar período:', error);
+        res.status(500).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "Erro no servidor",
+            mensagem: "Erro interno ao atualizar período: " + error.message
+        });
+    }
+});
+
+router.put('/periodo/ativar/:id', (req, res) => {
+    const { id } = req.params;
+    
+    const checkSql = "SELECT status FROM anoletivo WHERE id_anoletivo = ?";
+    conexao.query(checkSql, [id], (checkError, checkResult) => {
+        if (checkError) {
+            console.error('Erro ao verificar status:', checkError);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Erro ao verificar status do período' 
+            });
+        }
         
-        conexao.query(verificarAnoSQL, [id_anocurricular], (erroAno, resultadosAno) => {
-            if (erroAno) {
-                console.error("Erro ao verificar Ano:", erroAno);
-                return res.status(500).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Erro no servidor",
-                    mensagem: "Erro interno do servidor"
+        if (checkResult.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Período não encontrado' 
+            });
+        }
+        
+        if (checkResult[0].status === 'Ativo') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Este período já está ativo' 
+            });
+        }
+        
+        const sql = "UPDATE anoletivo SET status = 'Ativo' WHERE id_anoletivo = ?";
+        conexao.query(sql, [id], (error, result) => {
+            if (error) {
+                console.error('Erro ao ativar período:', error);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Erro interno ao ativar o período' 
                 });
             }
             
-            if (resultadosAno.length === 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    tipo: "erro",
-                    titulo: "Ano Curricular inválido",
-                    mensagem: "O ano curricular selecionado não existe ou está inativo"
-                });
-            }
-
-            // 4. VERIFICAR CURSO
-            const verificarCursoSQL = "SELECT id_curso, curso, id_categoria FROM curso WHERE id_curso = ? AND status = 'Ativo'";
-            
-            conexao.query(verificarCursoSQL, [id_curso], (erroCurso, resultadosCurso) => {
-                if (erroCurso) {
-                    console.error("Erro ao verificar Curso:", erroCurso);
-                    return res.status(500).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Erro no servidor",
-                        mensagem: "Erro interno do servidor"
-                    });
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Período ativado com sucesso',
+                data: {
+                    id: id,
+                    status: 'Ativo'
                 }
-                
-                if (resultadosCurso.length === 0) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        tipo: "erro",
-                        titulo: "Curso inválido",
-                        mensagem: "O curso selecionado não existe ou está inativo"
-                    });
-                }
-
-                // 5. VERIFICAR CATEGORIA
-                const verificarCategoriaSQL = "SELECT id_categoria, categoria FROM categoria WHERE id_categoria = ? AND status = 'Ativo'";
-                
-                conexao.query(verificarCategoriaSQL, [id_categoria], (erroCategoria, resultadosCategoria) => {
-                    if (erroCategoria) {
-                        console.error("Erro ao verificar Categoria:", erroCategoria);
-                        return res.status(500).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Erro no servidor",
-                            mensagem: "Erro interno do servidor"
-                        });
-                    }
-                    
-                    if (resultadosCategoria.length === 0) {
-                        return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Categoria inválida",
-                            mensagem: "A categoria selecionada não existe ou está inativa"
-                        });
-                    }
-
-                    // 6. VERIFICAR SE O CURSO PERTENCE À CATEGORIA
-                    if (resultadosCurso[0].id_categoria !== id_categoria) {
-                        return res.status(400).json({
-                            sucesso: false,
-                            tipo: "erro",
-                            titulo: "Inconsistência de dados",
-                            mensagem: "O curso selecionado não pertence à categoria informada"
-                        });
-                    }
-
-                    // 7. PROCESSAR TURMA (BUSCAR OU CRIAR)
-                    const processarTurma = () => {
-                        const verificarTurmaSQL = "SELECT id_turma FROM turma WHERE turma = ? AND id_curso = ? AND status = 'Ativo'";
-                        
-                        conexao.query(verificarTurmaSQL, [turma, id_curso], (erroTurma, resultadosTurma) => {
-                            if (erroTurma) {
-                                console.error("Erro ao verificar Turma:", erroTurma);
-                                return res.status(500).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Erro no servidor",
-                                    mensagem: "Erro interno do servidor"
-                                });
-                            }
-
-                            let id_turma_final;
-
-                            if (resultadosTurma.length === 0) {
-                                // Criar nova turma
-                                const crypto = require('crypto');
-                                id_turma_final = crypto.randomUUID();
-                                
-                                const criarTurmaSQL = `
-                                    INSERT INTO turma (id_turma, turma, status, id_user, id_curso) 
-                                    VALUES (?, ?, 'Ativo', ?, ?)
-                                `;
-                                
-                                conexao.query(criarTurmaSQL, [id_turma_final, turma, req.user.id_user, id_curso], (erroCriarTurma) => {
-                                    if (erroCriarTurma) {
-                                        console.error("Erro ao criar turma:", erroCriarTurma);
-                                        return res.status(500).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Erro no servidor",
-                                            mensagem: "Erro ao criar nova turma"
-                                        });
-                                    }
-                                    atualizarPeriodo(id_turma_final);
-                                });
-                            } else {
-                                id_turma_final = resultadosTurma[0].id_turma;
-                                atualizarPeriodo(id_turma_final);
-                            }
-                        });
-                    };
-
-                    // 8. ATUALIZAR PERÍODO
-                    const atualizarPeriodo = (id_turma_final) => {
-                        // Verificar duplicidade de período
-                        const verificarDuplicadoSQL = `
-                            SELECT id_periodo 
-                            FROM periodo 
-                            WHERE id_turma = ? AND periodo = ? AND id_periodo != ?
-                        `;
-                        
-                        conexao.query(verificarDuplicadoSQL, [id_turma_final, periodo, id], (erroDuplicado, resultadosDuplicado) => {
-                            if (erroDuplicado) {
-                                console.error("Erro ao verificar duplicidade:", erroDuplicado);
-                                return res.status(500).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Erro no servidor",
-                                    mensagem: "Erro interno do servidor"
-                                });
-                            }
-                            
-                            if (resultadosDuplicado.length > 0) {
-                                return res.status(400).json({
-                                    sucesso: false,
-                                    tipo: "erro",
-                                    titulo: "Período Duplicado",
-                                    mensagem: `Já existe o período "${periodo}" para esta turma`
-                                });
-                            }
-
-                            // Atualizar período
-                            const updateSQL = `
-                                UPDATE periodo 
-                                SET id_turma = ?, 
-                                    periodo = ?,
-                                    id_user = ?,
-                                    data_atualizacao = CURDATE()
-                                WHERE id_periodo = ?
-                            `;
-                            
-                            conexao.query(updateSQL, [id_turma_final, periodo, req.user.id_user, id], (erroUpdate, resultados) => {
-                                if (erroUpdate) {
-                                    console.error("Erro ao atualizar período:", erroUpdate);
-                                    
-                                    if (erroUpdate.code === 'ER_NO_REFERENCED_ROW_2') {
-                                        return res.status(400).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Chave estrangeira inválida",
-                                            mensagem: "Uma das referências não existe no sistema"
-                                        });
-                                    }
-                                    
-                                    if (erroUpdate.code === 'ER_DUP_ENTRY') {
-                                        return res.status(400).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Entrada duplicada",
-                                            mensagem: "Este período já existe para esta turma"
-                                        });
-                                    }
-
-                                    return res.status(500).json({
-                                        sucesso: false,
-                                        tipo: "erro",
-                                        titulo: "Erro no servidor",
-                                        mensagem: "Erro interno ao atualizar período"
-                                    });
-                                }
-
-                                // 9. ATUALIZAR ANO LETIVO (se fornecido)
-                                if (id_anoletivo) {
-                                    const updateAnoLetivoSQL = `
-                                        UPDATE anoletivo 
-                                        SET id_periodo = ?,
-                                            id_user = ?,
-                                            data_atualizacao = CURDATE()
-                                        WHERE id_anoletivo = ?
-                                    `;
-                                    
-                                    conexao.query(updateAnoLetivoSQL, [id, req.user.id_user, id_anoletivo], (erroUpdateAno) => {
-                                        if (erroUpdateAno) {
-                                            console.error("Erro ao atualizar ano letivo:", erroUpdateAno);
-                                            // Não falha a operação principal
-                                        }
-                                    });
-                                }
-
-                                // 10. BUSCAR DADOS COMPLETOS PARA RESPOSTA
-                                const buscaDadosSQL = `
-                                    SELECT 
-                                        p.id_periodo,
-                                        p.periodo,
-                                        p.status,
-                                        t.id_turma,
-                                        t.turma,
-                                        c.id_curso,
-                                        c.curso,
-                                        cat.id_categoria,
-                                        cat.categoria,
-                                        ac.id_anocurricular,
-                                        ac.ano AS anocurricular,
-                                        al.id_anoletivo,
-                                        al.ano AS anoletivo
-                                    FROM periodo p
-                                    INNER JOIN turma t ON t.id_turma = p.id_turma
-                                    INNER JOIN curso c ON c.id_curso = t.id_curso
-                                    INNER JOIN categoria cat ON cat.id_categoria = c.id_categoria
-                                    INNER JOIN anocurricular ac ON ac.id_anocurricular = ?
-                                    LEFT JOIN anoletivo al ON al.id_periodo = p.id_periodo
-                                    WHERE p.id_periodo = ?
-                                `;
-                                
-                                conexao.query(buscaDadosSQL, [id_anocurricular, id], (erroBusca, dadosCompletos) => {
-                                    if (erroBusca) {
-                                        console.error("Erro ao buscar dados completos:", erroBusca);
-                                        return res.status(500).json({
-                                            sucesso: false,
-                                            tipo: "erro",
-                                            titulo: "Erro no servidor",
-                                            mensagem: "Erro interno ao buscar dados atualizados"
-                                        });
-                                    }
-
-                                    // RESPOSTA DE SUCESSO
-                                    return res.status(200).json({
-                                        sucesso: true,
-                                        tipo: "sucesso",
-                                        titulo: "Período Atualizado",
-                                        mensagem: `Turma "${turma}" - Período "${periodo}" atualizado com sucesso!`,
-                                        dados: dadosCompletos[0] || {
-                                            id_periodo: id,
-                                            periodo: periodo,
-                                            turma: turma,
-                                            curso: resultadosCurso[0].curso,
-                                            categoria: resultadosCategoria[0].categoria,
-                                            anocurricular: resultadosAno[0].ano,
-                                            id_anocurricular: id_anocurricular,
-                                            id_curso: id_curso,
-                                            id_categoria: id_categoria,
-                                            id_turma: id_turma_final,
-                                            id_anoletivo: id_anoletivo || null,
-                                            anoletivo: null
-                                        }
-                                    });
-                                });
-                            });
-                        });
-                    };
-
-                    processarTurma();
-                });
             });
         });
     });
 });
+
 module.exports = router;

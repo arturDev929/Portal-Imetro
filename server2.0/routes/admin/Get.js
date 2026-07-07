@@ -800,7 +800,6 @@ router.get('/anoCurricular/:id', (req, res) => {
                 details: error.message
             });
         } else {
-            // Retorna todos os resultados
             res.status(200).json(result);
         }
     });
@@ -835,7 +834,6 @@ router.get('/disciplinasPorCurso/:idcurso', (req, res) => {
                 details: error.message
             });
         } else {
-            // Buscar informações do curso
             const sqlCurso = "SELECT c.curso, cc.categoria FROM curso c INNER JOIN categoria cc ON c.id_categoria = cc.id_categoria WHERE c.id_curso = ?";
             
             conexao.query(sqlCurso, [idcurso], (errorCurso, resultCurso) => {
@@ -1115,12 +1113,10 @@ router.get('/CategoriaCursosAno', (req, res) => {
             });
         }
 
-        // Agrupar os dados por categoria
         const dadosAgrupados = [];
         const mapaCategorias = {};
 
         result.forEach(item => {
-            // Se a categoria ainda não existe no mapa, criar
             if (!mapaCategorias[item.id_categoria]) {
                 mapaCategorias[item.id_categoria] = {
                     id_categoria: item.id_categoria,
@@ -1130,12 +1126,10 @@ router.get('/CategoriaCursosAno', (req, res) => {
                 dadosAgrupados.push(mapaCategorias[item.id_categoria]);
             }
 
-            // Verificar se o curso já existe na categoria
             const categoria = mapaCategorias[item.id_categoria];
             let cursoExistente = categoria.cursos.find(c => c.id_curso === item.id_curso);
 
             if (!cursoExistente) {
-                // Criar novo curso
                 cursoExistente = {
                     id_curso: item.id_curso,
                     curso: item.curso,
@@ -1144,7 +1138,6 @@ router.get('/CategoriaCursosAno', (req, res) => {
                 categoria.cursos.push(cursoExistente);
             }
 
-            // Adicionar o ano curricular ao curso
             cursoExistente.anos_curriculares.push({
                 id_anocurricular: item.id_anocurricular,
                 anocurricular: item.anocurricular
@@ -1184,7 +1177,6 @@ router.get('/Disciplinas', (req, res) => {
         console.log('  - Quantidade:', result ? result.length : 0);
         console.log('  - Primeiro item:', result && result.length > 0 ? result[0] : 'Nenhum');
         
-        // Garantir que sempre retorne um array
         const dados = result || [];
         
         const resposta = {
@@ -1229,7 +1221,6 @@ router.get('/turmasComPeriodos', (req, res) => {
             });
         }
 
-        // Agrupar os dados por turma
         const turmasAgrupadas = {};
         
         result.forEach(item => {
@@ -1244,7 +1235,6 @@ router.get('/turmasComPeriodos', (req, res) => {
                 };
             }
 
-            // Adicionar período à turma
             turmasAgrupadas[key].periodos.push({
                 id_periodo: item.id_periodo,
                 periodo: item.periodo,
@@ -1252,7 +1242,6 @@ router.get('/turmasComPeriodos', (req, res) => {
             });
         });
 
-        // Converter para array
         const resultadoFinal = Object.values(turmasAgrupadas);
 
         return res.status(200).json({
@@ -1346,7 +1335,6 @@ router.get('/professoresPorTurma/:idperiodo', async (req, res) => {
     });
 });
 
-// Rota para buscar turmas com anos letivos
 router.get('/turmasComAnoLetivo', async (req, res) => {
     const sql = `SELECT 
                     p.id_periodo,
@@ -1367,7 +1355,7 @@ router.get('/turmasComAnoLetivo', async (req, res) => {
                 INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
                 LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
                 LEFT JOIN anocurricular ac ON p.id_anocurricular = ac.id_anocurricular
-                WHERE t.status = 'Ativo' AND p.status = 'Ativo'
+                WHERE al.status = 'Ativo' AND p.status = 'Ativo'
                 ORDER BY 
                     cat.categoria ASC,
                     c.curso ASC,
@@ -1389,9 +1377,234 @@ router.get('/turmasComAnoLetivo', async (req, res) => {
     });
 });
 
-// Rota para buscar professores por turma com filtro por ano letivo
+// ==================== NOVAS ROTAS PARA TURMAS ====================
+
+router.get('/turmasCompletas', async (req, res) => {
+    const sql = `SELECT 
+                    p.id_periodo,
+                    p.periodo,
+                    t.turma,
+                    al.ano AS anoletivo,
+                    al.id_anoletivo,
+                    cat.categoria AS categoriacurso,
+                    cat.id_categoria,
+                    c.curso,
+                    c.id_curso,
+                    ac.ano AS anocurricular,
+                    ac.id_anocurricular,
+                    p.id_periodo AS id_periodo_original,
+                    CASE 
+                        WHEN al.id_anoletivo IS NOT NULL AND al.status = 'Ativo' THEN 'Ativo'
+                        WHEN al.id_anoletivo IS NOT NULL AND al.status = 'Desativado' THEN 'Desativado'
+                        ELSE 'Sem Ano Letivo'
+                    END AS status_anoletivo
+                FROM periodo p
+                INNER JOIN turma t ON p.id_turma = t.id_turma
+                INNER JOIN curso c ON t.id_curso = c.id_curso
+                INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
+                LEFT JOIN anocurricular ac ON p.id_anocurricular = ac.id_anocurricular
+                LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
+                WHERE p.status = 'Ativo'
+                ORDER BY 
+                    cat.categoria ASC,
+                    c.curso ASC,
+                    COALESCE(ac.ano, 999) ASC,
+                    t.turma ASC,
+                    p.periodo ASC,
+                    al.ano ASC`;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar turmas completas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
+    });
+});
+
+router.get('/turmaDeleteInfo/:id_periodo', async (req, res) => {
+    const { id_periodo } = req.params;
+
+    const sql = `
+        SELECT 
+            p.id_periodo,
+            p.periodo,
+            t.id_turma,
+            t.turma,
+            c.id_curso,
+            c.curso,
+            cat.id_categoria,
+            cat.categoria,
+            ac.id_anocurricular,
+            ac.ano AS anocurricular,
+            al.id_anoletivo,
+            al.ano AS anoletivo,
+            al.status AS status_anoletivo,
+            (SELECT COUNT(*) FROM prof_turma_disc WHERE id_periodo = p.id_periodo AND status = 'Ativo') AS total_professores,
+            (SELECT GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') 
+             FROM prof_turma_disc ptd
+             INNER JOIN disc_professor dp ON ptd.id_dp = dp.id_dp
+             INNER JOIN disciplina d ON dp.id_disciplina = d.id_disciplina
+             WHERE ptd.id_periodo = p.id_periodo AND ptd.status = 'Ativo'
+            ) AS disciplinas,
+            (SELECT GROUP_CONCAT(DISTINCT prof.nome SEPARATOR ', ') 
+             FROM prof_turma_disc ptd
+             INNER JOIN disc_professor dp ON ptd.id_dp = dp.id_dp
+             INNER JOIN professor prof ON dp.id_professor = prof.id_professor
+             WHERE ptd.id_periodo = p.id_periodo AND ptd.status = 'Ativo'
+            ) AS professores
+        FROM periodo p
+        INNER JOIN turma t ON p.id_turma = t.id_turma
+        INNER JOIN curso c ON t.id_curso = c.id_curso
+        INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
+        LEFT JOIN anocurricular ac ON p.id_anocurricular = ac.id_anocurricular
+        LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
+        WHERE p.id_periodo = ?
+    `;
+
+    conexao.query(sql, [id_periodo], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar informações de exclusão:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({
+                error: "Turma não encontrada"
+            });
+        }
+
+        const dados = result[0];
+        
+        const sqlAnos = `
+            SELECT id_anoletivo, ano, status 
+            FROM anoletivo 
+            WHERE id_periodo = ?
+        `;
+
+        conexao.query(sqlAnos, [id_periodo], (errorAnos, anosResult) => {
+            if (errorAnos) {
+                console.error("Erro ao buscar anos letivos:", errorAnos);
+            }
+
+            const sqlProfessoresDetalhados = `
+                SELECT 
+                    prof.nome,
+                    prof.titulacao,
+                    d.disciplina,
+                    s.semestre,
+                    al.ano AS anoletivo
+                FROM prof_turma_disc ptd
+                INNER JOIN disc_professor dp ON ptd.id_dp = dp.id_dp
+                INNER JOIN professor prof ON dp.id_professor = prof.id_professor
+                INNER JOIN disciplina d ON dp.id_disciplina = d.id_disciplina
+                LEFT JOIN semestre s ON s.id_disciplina = d.id_disciplina 
+                    AND s.id_curso = (SELECT id_curso FROM turma WHERE id_turma = ptd.id_turma)
+                    AND s.id_anocurricular = (SELECT id_anocurricular FROM periodo WHERE id_periodo = ptd.id_periodo)
+                LEFT JOIN anoletivo al ON ptd.id_anoletivo = al.id_anoletivo
+                WHERE ptd.id_periodo = ? AND ptd.status = 'Ativo'
+                ORDER BY s.semestre ASC, d.disciplina ASC
+            `;
+
+            conexao.query(sqlProfessoresDetalhados, [id_periodo], (errorProf, profResult) => {
+                if (errorProf) {
+                    console.error("Erro ao buscar professores detalhados:", errorProf);
+                }
+
+                const response = {
+                    dados_gerais: {
+                        ...dados,
+                        anos_letivos: anosResult || []
+                    },
+                    professores_detalhados: profResult || [],
+                    total_anos_letivos: anosResult ? anosResult.length : 0,
+                    total_professores: dados.total_professores || 0
+                };
+
+                res.status(200).json(response);
+            });
+        });
+    });
+});
+
+router.get('/verificarAnoLetivo/:id_periodo/:ano', async (req, res) => {
+    const { id_periodo, ano } = req.params;
+
+    const sql = `
+        SELECT id_anoletivo, ano, status 
+        FROM anoletivo 
+        WHERE id_periodo = ? AND ano = ?
+    `;
+
+    conexao.query(sql, [id_periodo, ano], (error, result) => {
+        if (error) {
+            console.error("Erro ao verificar ano letivo:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        if (result.length > 0) {
+            return res.status(200).json({
+                existe: true,
+                id_anoletivo: result[0].id_anoletivo,
+                status: result[0].status,
+                mensagem: `O ano letivo ${ano} já existe para esta turma`
+            });
+        }
+
+        res.status(200).json({
+            existe: false,
+            mensagem: `O ano letivo ${ano} está disponível para esta turma`
+        });
+    });
+});
+
+router.get('/anosLetivosTurma/:id_periodo', async (req, res) => {
+    const { id_periodo } = req.params;
+
+    const sql = `
+        SELECT 
+            id_anoletivo,
+            ano,
+            status,
+            data_criacao,
+            data_atualizacao
+        FROM anoletivo 
+        WHERE id_periodo = ?
+        ORDER BY ano DESC
+    `;
+
+    conexao.query(sql, [id_periodo], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar anos letivos:", error);
+            return res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        }
+
+        res.status(200).json({
+            total: result.length,
+            anos: result
+        });
+    });
+});
+
 router.get('/professoresPorTurma/:idperiodo/:anoletivo', async (req, res) => {
     const { idperiodo, anoletivo } = req.params;
+
+    console.log("=== ROTA /professoresPorTurma/:idperiodo/:anoletivo ===");
+    console.log("idperiodo:", idperiodo);
+    console.log("anoletivo:", anoletivo);
 
     if (!idperiodo) {
         return res.status(400).json({
@@ -1409,13 +1622,17 @@ router.get('/professoresPorTurma/:idperiodo/:anoletivo', async (req, res) => {
             d.disciplina,
             dp.id_dp,
             al.ano AS anoletivo,
-            al.id_anoletivo
+            al.id_anoletivo,
+            s.semestre
         FROM prof_turma_disc ptd
         INNER JOIN disc_professor dp ON ptd.id_dp = dp.id_dp
         INNER JOIN professor p ON dp.id_professor = p.id_professor
         INNER JOIN disciplina d ON dp.id_disciplina = d.id_disciplina
         INNER JOIN periodo per ON ptd.id_periodo = per.id_periodo
         LEFT JOIN anoletivo al ON ptd.id_anoletivo = al.id_anoletivo
+        LEFT JOIN semestre s ON s.id_disciplina = d.id_disciplina 
+            AND s.id_curso = (SELECT id_curso FROM turma WHERE id_turma = per.id_turma)
+            AND s.id_anocurricular = (SELECT id_anocurricular FROM periodo WHERE id_periodo = per.id_periodo)
         WHERE ptd.id_periodo = ? 
         AND ptd.status = 'Ativo'
         AND p.status = 'Ativo'
@@ -1428,7 +1645,10 @@ router.get('/professoresPorTurma/:idperiodo/:anoletivo', async (req, res) => {
         params.push(anoletivo);
     }
 
-    query += ` ORDER BY p.nome ASC`;
+    query += ` ORDER BY s.semestre ASC, p.nome ASC`;
+
+    console.log("Query:", query);
+    console.log("Params:", params);
 
     conexao.query(query, params, (error, results) => {
         if (error) {
@@ -1439,17 +1659,20 @@ router.get('/professoresPorTurma/:idperiodo/:anoletivo', async (req, res) => {
             });
         }
 
+        console.log("Resultados encontrados:", results.length);
+        console.log("Primeiro resultado:", results[0] || 'Nenhum');
+
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const professoresComFoto = results.map(prof => ({
             ...prof,
-            foto_url: prof.foto ? `${baseUrl}/api/img/professores/${prof.foto}` : null
+            foto_url: prof.foto ? `${baseUrl}/api/img/professores/${prof.foto}` : null,
+            semestre: prof.semestre || 0
         }));
 
         res.status(200).json(professoresComFoto);
     });
 });
 
-// Rota para buscar anos letivos disponíveis para uma turma
 router.get('/anosLetivosPorTurma/:idperiodo', async (req, res) => {
     const { idperiodo } = req.params;
 
@@ -1480,6 +1703,48 @@ router.get('/anosLetivosPorTurma/:idperiodo', async (req, res) => {
         }
 
         res.status(200).json(results);
+    });
+});
+
+router.get('/turmasComAnoLetivoDesativado', async (req, res) => {
+    const sql = `SELECT 
+                    p.id_periodo,
+                    p.periodo,
+                    t.turma,
+                    al.ano AS anoletivo,
+                    al.id_anoletivo,
+                    cat.categoria AS categoriacurso,
+                    cat.id_categoria,
+                    c.curso,
+                    c.id_curso,
+                    ac.ano AS anocurricular,
+                    ac.id_anocurricular,
+                    p.id_periodo AS id_periodo_original
+                FROM periodo p
+                INNER JOIN turma t ON p.id_turma = t.id_turma
+                INNER JOIN curso c ON t.id_curso = c.id_curso
+                INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
+                LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
+                LEFT JOIN anocurricular ac ON p.id_anocurricular = ac.id_anocurricular
+                WHERE al.status = 'Desativado' AND p.status = 'Ativo'
+                ORDER BY 
+                    cat.categoria ASC,
+                    c.curso ASC,
+                    ac.ano ASC,
+                    t.turma ASC,
+                    p.periodo ASC,
+                    al.ano ASC`;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar turmas:", error);
+            res.status(500).json({
+                error: "Erro interno do servidor",
+                details: error.message
+            });
+        } else {
+            res.status(200).json(result);
+        }
     });
 });
 
