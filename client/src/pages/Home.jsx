@@ -176,10 +176,10 @@ function Home() {
 
                   <div className={Style.registerSection}>
                     <span className={Style.registerText}>
-                      Ainda não tem uma conta?
+                      Ainda não fez a sua inscrição?
                     </span>
                     <Link to="/cadastro" className={Style.registerLink}>
-                      Criar conta
+                      Fazer inscrição
                     </Link>
                   </div>
                 </form>

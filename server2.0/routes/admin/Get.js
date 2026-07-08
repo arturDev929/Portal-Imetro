@@ -985,6 +985,8 @@ router.get('/turmas', async (req, res) => {
                     t.id_curso,
                     al.id_anoletivo,
                     al.ano AS anoletivo,
+                    al.status_inscricao,
+                    al.status AS status_anoletivo,
                     cat.id_categoria,
                     cat.categoria AS categoriacurso,
                     c.curso,
@@ -1202,9 +1204,12 @@ router.get('/turmasComPeriodos', (req, res) => {
             t.status AS status_turma,
             p.id_periodo,
             p.periodo,
-            p.status AS status_periodo
+            p.status AS status_periodo,
+            al.status_inscricao,
+            al.status AS status_anoletivo
         FROM turma t
         INNER JOIN periodo p ON t.id_turma = p.id_turma
+        LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
         WHERE t.status = 'Ativo' AND p.status = 'Ativo'
         ORDER BY t.turma ASC, p.periodo ASC
     `;
@@ -1231,6 +1236,8 @@ router.get('/turmasComPeriodos', (req, res) => {
                     id_turma: item.id_turma,
                     turma: item.turma,
                     status_turma: item.status_turma,
+                    status_inscricao: item.status_inscricao || 'Fechado',
+                    status_anoletivo: item.status_anoletivo || 'Ativo',
                     periodos: []
                 };
             }
@@ -1261,9 +1268,12 @@ router.get('/turmasSimples', (req, res) => {
             t.id_turma,
             t.turma,
             p.id_periodo,
-            p.periodo
+            p.periodo,
+            al.status_inscricao,
+            al.status AS status_anoletivo
         FROM turma t
         INNER JOIN periodo p ON t.id_turma = p.id_turma
+        LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
         WHERE t.status = 'Ativo' AND p.status = 'Ativo'
         ORDER BY t.turma ASC, p.periodo ASC
     `;
@@ -1342,6 +1352,8 @@ router.get('/turmasComAnoLetivo', async (req, res) => {
                     t.turma,
                     al.ano AS anoletivo,
                     al.id_anoletivo,
+                    al.status_inscricao,
+                    al.status AS status_anoletivo,
                     cat.categoria AS categoriacurso,
                     cat.id_categoria,
                     c.curso,
@@ -1377,8 +1389,6 @@ router.get('/turmasComAnoLetivo', async (req, res) => {
     });
 });
 
-// ==================== NOVAS ROTAS PARA TURMAS ====================
-
 router.get('/turmasCompletas', async (req, res) => {
     const sql = `SELECT 
                     p.id_periodo,
@@ -1386,6 +1396,8 @@ router.get('/turmasCompletas', async (req, res) => {
                     t.turma,
                     al.ano AS anoletivo,
                     al.id_anoletivo,
+                    al.status_inscricao,
+                    al.status AS status_anoletivo,
                     cat.categoria AS categoriacurso,
                     cat.id_categoria,
                     c.curso,
@@ -1444,6 +1456,7 @@ router.get('/turmaDeleteInfo/:id_periodo', async (req, res) => {
             al.id_anoletivo,
             al.ano AS anoletivo,
             al.status AS status_anoletivo,
+            al.status_inscricao,
             (SELECT COUNT(*) FROM prof_turma_disc WHERE id_periodo = p.id_periodo AND status = 'Ativo') AS total_professores,
             (SELECT GROUP_CONCAT(DISTINCT d.disciplina SEPARATOR ', ') 
              FROM prof_turma_disc ptd
@@ -1484,7 +1497,7 @@ router.get('/turmaDeleteInfo/:id_periodo', async (req, res) => {
         const dados = result[0];
         
         const sqlAnos = `
-            SELECT id_anoletivo, ano, status 
+            SELECT id_anoletivo, ano, status, status_inscricao 
             FROM anoletivo 
             WHERE id_periodo = ?
         `;
@@ -1576,6 +1589,7 @@ router.get('/anosLetivosTurma/:id_periodo', async (req, res) => {
             id_anoletivo,
             ano,
             status,
+            status_inscricao,
             data_criacao,
             data_atualizacao
         FROM anoletivo 
@@ -1713,6 +1727,8 @@ router.get('/turmasComAnoLetivoDesativado', async (req, res) => {
                     t.turma,
                     al.ano AS anoletivo,
                     al.id_anoletivo,
+                    al.status_inscricao,
+                    al.status AS status_anoletivo,
                     cat.categoria AS categoriacurso,
                     cat.id_categoria,
                     c.curso,
@@ -1745,6 +1761,172 @@ router.get('/turmasComAnoLetivoDesativado', async (req, res) => {
         } else {
             res.status(200).json(result);
         }
+    });
+});
+
+router.get('/turmaEditar/:id_periodo', async (req, res) => {
+    const { id_periodo } = req.params;
+
+    const sql = `
+        SELECT 
+            p.id_periodo,
+            p.periodo,
+            t.id_turma,
+            t.turma,
+            t.id_curso,
+            t.status AS status_turma,
+            c.id_curso,
+            c.curso AS nomeCurso,
+            cat.id_categoria,
+            cat.categoria AS nomeCategoria,
+            ac.id_anocurricular,
+            ac.ano AS anoCurricular,
+            al.id_anoletivo,
+            al.ano AS anoletivo,
+            al.status AS status_anoletivo,
+            al.status_inscricao
+        FROM periodo p
+        INNER JOIN turma t ON p.id_turma = t.id_turma
+        INNER JOIN curso c ON t.id_curso = c.id_curso
+        INNER JOIN categoria cat ON c.id_categoria = cat.id_categoria
+        INNER JOIN anocurricular ac ON p.id_anocurricular = ac.id_anocurricular
+        LEFT JOIN anoletivo al ON p.id_periodo = al.id_periodo
+        WHERE p.id_periodo = ?
+    `;
+
+    conexao.query(sql, [id_periodo], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar dados da turma para edição:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao buscar dados da turma",
+                detalhes: error.message
+            });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Turma não encontrada",
+                mensagem: "A turma que você está tentando editar não existe"
+            });
+        }
+
+        res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Dados carregados com sucesso",
+            dados: result[0]
+        });
+    });
+});
+
+router.get('/cursosSelectInscricoesAbertas', verificarToken, async (req, res) => {
+    const sql = `
+        SELECT DISTINCT
+            c.id_curso,
+            c.curso,
+            cat.id_categoria,
+            cat.categoria
+        FROM curso c
+        INNER JOIN categoria cat ON cat.id_categoria = c.id_categoria
+        WHERE c.status = 'Ativo'
+          AND cat.status = 'Ativo'
+          AND EXISTS (
+              SELECT 1 
+              FROM anocurricular ac 
+              INNER JOIN periodo p ON p.id_anocurricular = ac.id_anocurricular
+              INNER JOIN anoletivo al ON al.id_periodo = p.id_periodo
+              WHERE ac.id_curso = c.id_curso
+                AND ac.status = 'Ativo'
+                AND p.status = 'Ativo'
+                AND al.status = 'Ativo'
+                AND al.status_inscricao = 'Aberto'
+          )
+        ORDER BY c.curso ASC
+    `;
+
+    conexao.query(sql, (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar cursos:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao buscar cursos",
+                detalhes: error.message
+            });
+        }
+
+        res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Cursos carregados com sucesso",
+            total: result.length,
+            dados: result
+        });
+    });
+});
+
+router.get('/periodosPorCurso/:id_curso', verificarToken, async (req, res) => {
+    const { id_curso } = req.params;
+
+    if (!id_curso) {
+        return res.status(400).json({
+            sucesso: false,
+            tipo: "erro",
+            titulo: "ID do curso não informado",
+            mensagem: "Por favor, informe o ID do curso"
+        });
+    }
+
+    const sql = `
+        SELECT DISTINCT
+            p.id_periodo,
+            p.periodo,
+            p.status AS status_periodo,
+            t.id_turma,
+            t.turma,
+            al.id_anoletivo,
+            al.ano AS anoletivo,
+            ac.id_anocurricular,
+            ac.ano AS ano_curricular
+        FROM periodo p
+        INNER JOIN turma t ON t.id_turma = p.id_turma
+        INNER JOIN anocurricular ac ON ac.id_anocurricular = p.id_anocurricular
+        INNER JOIN anoletivo al ON al.id_periodo = p.id_periodo
+        INNER JOIN curso c ON c.id_curso = t.id_curso
+        WHERE c.id_curso = ?
+          AND p.status = 'Ativo'
+          AND t.status = 'Ativo'
+          AND ac.status = 'Ativo'
+          AND al.status = 'Ativo'
+          AND al.status_inscricao = 'Aberto'
+        ORDER BY p.periodo ASC
+    `;
+
+    conexao.query(sql, [id_curso], (error, result) => {
+        if (error) {
+            console.error("Erro ao buscar períodos:", error);
+            return res.status(500).json({
+                sucesso: false,
+                tipo: "erro",
+                titulo: "Erro no servidor",
+                mensagem: "Erro interno ao buscar períodos",
+                detalhes: error.message
+            });
+        }
+
+        res.status(200).json({
+            sucesso: true,
+            tipo: "sucesso",
+            titulo: "Períodos carregados com sucesso",
+            total: result.length,
+            dados: result
+        });
     });
 });
 

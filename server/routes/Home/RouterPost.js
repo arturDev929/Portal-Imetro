@@ -1,5 +1,3 @@
-/* This JavaScript code defines a set of functionalities related to student registration and
-verification process. Here is a breakdown of what the code does: */
 const { Router } = require("express");
 const router = Router();
 const conexao = require("../../infra/conexao");

@@ -4,13 +4,14 @@ import imetro from "../img/logo_goldenrod.png";
 import Style from "./Cadastro.module.css";
 import { 
   FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, 
-  FaArrowRight, FaArrowLeft, FaCheckCircle, FaFileUpload 
+  FaArrowRight, FaArrowLeft, FaCheckCircle, FaFileUpload,
+  FaTimes, FaFilePdf, FaFileImage, FaFileAlt
 } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
 import { FiMail, FiArrowLeft } from "react-icons/fi";
 import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
-import SelectCurso from "../pagesAdm/components/selectCursos";
+import SelectCursoPeriodo from "./components/selectCursoPeriodo";
 import Api from "../service/api"
 
 function Cadastro() {
@@ -24,6 +25,7 @@ function Cadastro() {
         sexoEstudante: '',
         periodoEstudante: '',
         idcurso: '',
+        id_periodo: '',
         senhaEstudante: '',
         confirmarSenha: ''
     });
@@ -34,7 +36,7 @@ function Cadastro() {
     const [tempoRestante, setTempoRestante] = useState(600);
     const [timerAtivo, setTimerAtivo] = useState(false);
     const [arquivos, setArquivos] = useState({
-        documentoEstudante: null,
+        documentosEstudante: [],
         fotoEstudante: null
     });
 
@@ -60,18 +62,68 @@ function Cadastro() {
 
     const handleFileChange = (e) => {
         const { name, files } = e.target;
-        if (files && files[0]) {
+        if (files && files.length > 0) {
+            const novosArquivos = Array.from(files);
+            
+            const arquivosInvalidos = novosArquivos.filter(file => file.size > 10 * 1024 * 1024);
+            if (arquivosInvalidos.length > 0) {
+                showErrorToast("Erro", "Cada arquivo deve ter no máximo 10MB");
+                return;
+            }
+
+            const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+            const arquivosInvalidosExt = novosArquivos.filter(file => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                return !extensoesPermitidas.includes(ext);
+            });
+            
+            if (arquivosInvalidosExt.length > 0) {
+                showErrorToast("Erro", "Formatos permitidos: PDF, JPG, PNG, DOC, DOCX");
+                return;
+            }
+
             setArquivos(prev => ({
                 ...prev,
-                [name]: files[0]
+                [name]: [...prev.documentosEstudante, ...novosArquivos]
             }));
         }
     };
 
-    const handleCursoChange = (cursoId) => {
+    const removerArquivo = (index) => {
+        setArquivos(prev => ({
+            ...prev,
+            documentosEstudante: prev.documentosEstudante.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleFotoChange = (e) => {
+        const { name, files } = e.target;
+        if (files && files[0]) {
+            const file = files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                showErrorToast("Erro", "A foto deve ter no máximo 5MB");
+                return;
+            }
+            const extensoesPermitidas = ['jpg', 'jpeg', 'png'];
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!extensoesPermitidas.includes(ext)) {
+                showErrorToast("Erro", "Formatos permitidos para foto: JPG, PNG");
+                return;
+            }
+            
+            setArquivos(prev => ({
+                ...prev,
+                [name]: file
+            }));
+        }
+    };
+
+    const handleCursoPeriodoChange = (data) => {
         setValores(prev => ({
             ...prev,
-            idcurso: cursoId
+            idcurso: data.id_curso || '',
+            id_periodo: data.id_periodo || '',
+            periodoEstudante: data.periodo || ''
         }));
     };
 
@@ -117,10 +169,16 @@ function Cadastro() {
     };
 
     const validarEtapa3 = () => {
-        if (!valores.periodoEstudante || !valores.idcurso) {
-            showErrorToast("Erro", "Selecione o período e o curso!");
+        if (!valores.idcurso) {
+            showErrorToast("Erro", "Selecione o curso!");
             return false;
         }
+        
+        if (!valores.id_periodo) {
+            showErrorToast("Erro", "Selecione o período!");
+            return false;
+        }
+        
         return true;
     };
 
@@ -140,8 +198,13 @@ function Cadastro() {
             return false;
         }
 
-        if (!arquivos.documentoEstudante || !arquivos.fotoEstudante) {
-            showErrorToast("Erro", "Por favor, selecione todos os arquivos necessários!");
+        if (arquivos.documentosEstudante.length === 0) {
+            showErrorToast("Erro", "Por favor, selecione pelo menos um documento!");
+            return false;
+        }
+
+        if (!arquivos.fotoEstudante) {
+            showErrorToast("Erro", "Por favor, selecione uma foto!");
             return false;
         }
 
@@ -220,10 +283,15 @@ function Cadastro() {
             formData.append('sexoEstudante', valores.sexoEstudante);
             formData.append('periodoEstudante', valores.periodoEstudante);
             formData.append('idcurso', valores.idcurso);
+            formData.append('id_periodo', valores.id_periodo);
             formData.append('senhaEstudante', valores.senhaEstudante);
             formData.append('codigo', codigoCompleto);
             formData.append('email', valores.emailEstudante);
-            formData.append('documentoEstudante', arquivos.documentoEstudante);
+            
+            arquivos.documentosEstudante.forEach((file, index) => {
+                formData.append(`documentosEstudante[${index}]`, file);
+            });
+            
             formData.append('fotoEstudante', arquivos.fotoEstudante);
 
             const response = await Api.post(
@@ -250,12 +318,13 @@ function Cadastro() {
                     sexoEstudante: '',
                     periodoEstudante: '',
                     idcurso: '',
+                    id_periodo: '',
                     senhaEstudante: '',
                     confirmarSenha: ''
                 });
                 
                 setArquivos({
-                    documentoEstudante: null,
+                    documentosEstudante: [],
                     fotoEstudante: null
                 });
                 
@@ -308,6 +377,21 @@ function Cadastro() {
     const voltarParaFormulario = () => {
         setEtapaVerificacao(false);
         setTimerAtivo(false);
+    };
+
+    const getFileIcon = (fileName) => {
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (ext === 'pdf') return <FaFilePdf />;
+        if (['jpg', 'jpeg', 'png'].includes(ext)) return <FaFileImage />;
+        return <FaFileAlt />;
+    };
+
+    const getFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
     return (
@@ -432,27 +516,16 @@ function Cadastro() {
 
                                         {etapa === 3 && (
                                             <div className={Style.formSection}>
-                                                <div className={Style.inputGroup}>
-                                                    <IoPartlySunny className={Style.inputIcon} />
-                                                    <select 
-                                                        name="periodoEstudante"
-                                                        value={valores.periodoEstudante}
-                                                        onChange={handleChangeInput}
-                                                        required
+                                                <div className={Style.inputGroup} style={{ width: '100%' }}>
+                                                    <SelectCursoPeriodo 
+                                                        onChange={handleCursoPeriodoChange}
+                                                        initialValues={{
+                                                            id_curso: valores.idcurso,
+                                                            id_periodo: valores.id_periodo,
+                                                            periodo: valores.periodoEstudante
+                                                        }}
                                                         disabled={loading}
-                                                    >
-                                                        <option value="">Selecione o período</option>
-                                                        <option value="Manhã">Manhã</option>
-                                                        <option value="Tarde">Tarde</option>
-                                                        <option value="Noite">Noite</option> 
-                                                    </select>
-                                                </div>
-                                                
-                                                <div className={Style.inputGroup}>
-                                                    <SelectCurso 
-                                                        value={valores.idcurso}
-                                                        onChange={handleCursoChange}
-                                                        disabled={loading}
+                                                        showLabels={false}
                                                     />
                                                 </div>
                                             </div>
@@ -487,39 +560,84 @@ function Cadastro() {
                                                     />
                                                 </div>
 
-                                                <div className={Style.fileInputGroup}>
-                                                    <label className={Style.fileLabel}>
-                                                        <FaFileUpload />
-                                                        <span>Documento (BI/Certificado)</span>
-                                                        <input 
-                                                            type="file" 
-                                                            name="documentoEstudante"
-                                                            onChange={handleFileChange}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </label>
-                                                    {arquivos.documentoEstudante && (
-                                                        <span className={Style.fileName}>{arquivos.documentoEstudante.name}</span>
+                                                <div className={Style.fileUploadContainer}>
+                                                    <div className={Style.fileInputGroup}>
+                                                        <label className={Style.fileLabel}>
+                                                            <FaFileUpload />
+                                                            <span>Documentos (BI, Certificados, etc.)</span>
+                                                            <input 
+                                                                type="file" 
+                                                                name="documentosEstudante"
+                                                                onChange={handleFileChange}
+                                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                                                multiple
+                                                                disabled={loading}
+                                                            />
+                                                        </label>
+                                                        <small className={Style.fileHelper}>
+                                                            Formatos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB cada)
+                                                        </small>
+                                                    </div>
+
+                                                    {arquivos.documentosEstudante.length > 0 && (
+                                                        <div className={Style.fileList}>
+                                                            <p className={Style.fileListTitle}>
+                                                                <FaFileAlt /> Documentos selecionados ({arquivos.documentosEstudante.length})
+                                                            </p>
+                                                            {arquivos.documentosEstudante.map((file, index) => (
+                                                                <div key={index} className={Style.fileItem}>
+                                                                    <span className={Style.fileIcon}>
+                                                                        {getFileIcon(file.name)}
+                                                                    </span>
+                                                                    <div className={Style.fileInfo}>
+                                                                        <span className={Style.fileName}>{file.name}</span>
+                                                                        <span className={Style.fileSize}>{getFileSize(file.size)}</span>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removerArquivo(index)}
+                                                                        className={Style.removeFileButton}
+                                                                        disabled={loading}
+                                                                    >
+                                                                        <FaTimes />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     )}
                                                 </div>
-                                                
-                                                <div className={Style.fileInputGroup}>
-                                                    <label className={Style.fileLabel}>
-                                                        <FaFileUpload />
-                                                        <span>Foto tipo passe</span>
-                                                        <input 
-                                                            type="file" 
-                                                            name="fotoEstudante"
-                                                            onChange={handleFileChange}
-                                                            accept=".jpg,.jpeg,.png"
-                                                            required
-                                                            disabled={loading}
-                                                        />
-                                                    </label>
+
+                                                <div className={Style.fileUploadContainer}>
+                                                    <div className={Style.fileInputGroup}>
+                                                        <label className={Style.fileLabel}>
+                                                            <FaFileUpload />
+                                                            <span>Foto tipo passe</span>
+                                                            <input 
+                                                                type="file" 
+                                                                name="fotoEstudante"
+                                                                onChange={handleFotoChange}
+                                                                accept=".jpg,.jpeg,.png"
+                                                                required
+                                                                disabled={loading}
+                                                            />
+                                                        </label>
+                                                        <small className={Style.fileHelper}>
+                                                            Formatos: JPG, PNG (máx. 5MB)
+                                                        </small>
+                                                    </div>
+
                                                     {arquivos.fotoEstudante && (
-                                                        <span className={Style.fileName}>{arquivos.fotoEstudante.name}</span>
+                                                        <div className={Style.fileList}>
+                                                            <div className={Style.fileItem}>
+                                                                <span className={Style.fileIcon}>
+                                                                    <FaFileImage />
+                                                                </span>
+                                                                <div className={Style.fileInfo}>
+                                                                    <span className={Style.fileName}>{arquivos.fotoEstudante.name}</span>
+                                                                    <span className={Style.fileSize}>{getFileSize(arquivos.fotoEstudante.size)}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>

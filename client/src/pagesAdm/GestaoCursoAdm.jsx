@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../service/api";
+import api from "../service/api";
 import AdminLayout from "../layouts/AdminLayout";
 import Style from "./GestaoCursoAdm.module.css";
 import { 
@@ -167,11 +167,9 @@ function GestaoCursoAdm() {
         const fetchDadosTurmas = async () => {
             setLoadingTurmas(true);
             try {
-                // Buscar todas as turmas
                 const response = await api.get('/turmasCompletas');
                 const dados = response.data || [];
                 
-                // Estatísticas gerais
                 const ativas = dados.filter(item => item.status_anoletivo === 'Ativo');
                 const desativadas = dados.filter(item => item.status_anoletivo === 'Desativado');
                 const semAno = dados.filter(item => item.status_anoletivo === 'Sem Ano Letivo' || !item.anoletivo);
@@ -181,11 +179,9 @@ function GestaoCursoAdm() {
                 setTotalTurmasDesativadas(desativadas.length);
                 setTotalTurmasSemAno(semAno.length);
                 
-                // Contar períodos únicos
                 const periodosUnicos = new Set(dados.map(item => item.id_periodo));
                 setTotalPeriodos(periodosUnicos.size);
                 
-                // Agrupar turmas por curso
                 const turmasPorCurso = dados.reduce((acc, item) => {
                     const key = item.curso || 'Sem curso';
                     if (!acc[key]) {
@@ -203,7 +199,6 @@ function GestaoCursoAdm() {
                     .slice(0, 10);
                 setDadosTurmasPorCurso(dadosTurmasPorCursoArray);
                 
-                // Agrupar turmas por período
                 const turmasPorPeriodo = dados.reduce((acc, item) => {
                     const key = item.periodo || 'Sem período';
                     if (!acc[key]) {
@@ -217,7 +212,6 @@ function GestaoCursoAdm() {
                     .sort((a, b) => b.total - a.total);
                 setDadosTurmasPorPeriodo(dadosTurmasPorPeriodoArray);
                 
-                // Agrupar turmas por ano letivo
                 const turmasPorAnoLetivo = dados.reduce((acc, item) => {
                     const key = item.anoletivo || 'Sem ano letivo';
                     if (!acc[key]) {

@@ -32,7 +32,9 @@ function TurmasAdm() {
         id_anoletivo: '',
         nomeCurso: '',
         nomeCategoria: '',
-        anoCurricular: ''
+        anoCurricular: '',
+        status_inscricao: 'Fechado',
+        status_anoletivo: 'Ativo'
     });
     
     const [modalProfessorAberto, setModalProfessorAberto] = useState(false);
@@ -59,13 +61,11 @@ function TurmasAdm() {
     const [modalDesativadasAberto, setModalDesativadasAberto] = useState(false);
     const [carregandoDesativadas, setCarregandoDesativadas] = useState(false);
 
-    // ==================== ESTADO PARA EXCLUSÃO DETALHADA ====================
     const [modalExclusaoDetalhada, setModalExclusaoDetalhada] = useState(false);
     const [dadosExclusao, setDadosExclusao] = useState(null);
     const [carregandoExclusao, setCarregandoExclusao] = useState(false);
     const [textoConfirmacao, setTextoConfirmacao] = useState('');
 
-    // ==================== ESTADO PARA VER PROFESSORES POR SEMESTRE ====================
     const [modalProfessoresSemestre, setModalProfessoresSemestre] = useState(false);
     const [professoresPorSemestre, setProfessoresPorSemestre] = useState([]);
     const [carregandoProfSemestre, setCarregandoProfSemestre] = useState(false);
@@ -110,7 +110,6 @@ function TurmasAdm() {
         return client;
     }, []);
 
-    // ==================== DEFINIR getListaFiltradaPorModo ====================
     const getListaFiltradaPorModo = useCallback(() => {
         switch(modoExibicao) {
             case 'ativas':
@@ -124,7 +123,6 @@ function TurmasAdm() {
         }
     }, [lista, modoExibicao]);
 
-    // ==================== REMOVER ITEM LOCAL ====================
     const removerItemLocal = useCallback((id) => {
         setLista(prev => {
             const updatedList = prev.filter(item => item.id_anoletivo !== id);
@@ -136,7 +134,6 @@ function TurmasAdm() {
         });
     }, []);
 
-    // ==================== BUSCAR TODAS AS TURMAS ====================
     const fetchData = useCallback(async (mostrarNotificacao = false) => {
         try {
             setLoading(true);
@@ -155,7 +152,8 @@ function TurmasAdm() {
                 id_anocurricular: item.id_anocurricular || '',
                 id_anoletivo: item.id_anoletivo || '',
                 id_periodo_original: item.id_periodo_original || item.id_periodo,
-                status_anoletivo: item.status_anoletivo || 'Sem Ano Letivo'
+                status_anoletivo: item.status_anoletivo || 'Sem Ano Letivo',
+                status_inscricao: item.status_inscricao || 'Fechado'
             }));
             
             setLista(dadosMapeados);
@@ -183,7 +181,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== BUSCAR TURMAS DESATIVADAS ====================
     const fetchTurmasDesativadas = useCallback(async (mostrarNotificacao = false) => {
         setCarregandoDesativadas(true);
         try {
@@ -206,7 +203,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== ATIVAR TURMA ====================
     const ativarTurma = useCallback(async (id_anoletivo, nome) => {
         if (!id_anoletivo) {
             showErrorToast("Erro", "Esta turma não possui ano letivo para ativar");
@@ -252,7 +248,6 @@ function TurmasAdm() {
         );
     }, [apiClient, fetchData, turmasDesativadas, showConfirmToast]);
 
-    // ==================== ABRIR/FECHAR MODAL DESATIVADAS ====================
     const abrirModalDesativadas = useCallback(() => {
         setModalDesativadasAberto(true);
         fetchTurmasDesativadas(true);
@@ -262,7 +257,6 @@ function TurmasAdm() {
         setModalDesativadasAberto(false);
     }, []);
 
-    // ==================== BUSCAR DISCIPLINAS DA TURMA ====================
     const fetchDisciplinasTurma = useCallback(async (idperiodo, anocurricular) => {
         setCarregandoDisciplinas(true);
         try {
@@ -282,7 +276,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== BUSCAR PROFESSORES POR DISCIPLINA ====================
     const fetchProfessoresPorDisciplina = useCallback(async (iddisciplina) => {
         setCarregandoProfessores(true);
         setProfessorSelecionado("");
@@ -303,7 +296,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== BUSCAR PROFESSORES DA TURMA POR ANO LETIVO (CORRIGIDO) ====================
     const fetchProfessoresTurma = useCallback(async (idperiodo, anoletivo = null) => {
         setCarregandoProfessoresTurma(true);
         try {
@@ -315,11 +307,9 @@ function TurmasAdm() {
             }
             
             const response = await apiClient.get(url);
-            console.log("Resposta da API de professores:", response.data);
             
             if (response.data && response.data.length > 0) {
                 setProfessoresTurma(response.data);
-                // Agrupar por semestre
                 const agrupado = response.data.reduce((acc, prof) => {
                     const semestre = prof.semestre || 0;
                     if (!acc[semestre]) {
@@ -348,7 +338,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== BUSCAR ANOS LETIVOS DA TURMA ====================
     const fetchAnosLetivosTurma = useCallback(async (idperiodo) => {
         try {
             const response = await apiClient.get(`/anosLetivosTurma/${idperiodo}`);
@@ -370,7 +359,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== REMOVER PROFESSOR DA TURMA ====================
     const removerProfessorTurma = useCallback(async (idDp, nomeProfessor, disciplinaNome) => {
         showConfirmToast(
             `Tem certeza que deseja remover o professor "${nomeProfessor}" da disciplina "${disciplinaNome}"?`,
@@ -385,7 +373,6 @@ function TurmasAdm() {
                         response.data.message || `Professor "${nomeProfessor}" removido com sucesso`
                     );
 
-                    // Recarregar professores após remoção
                     await fetchProfessoresTurma(
                         turmaVisualizar?.id_periodo, 
                         anoLetivoSelecionado
@@ -412,7 +399,6 @@ function TurmasAdm() {
         );
     }, [apiClient, fetchProfessoresTurma, turmaVisualizar, anoLetivoSelecionado, fetchData, showConfirmToast]);
 
-    // ==================== BUSCAR INFORMAÇÕES PARA EXCLUSÃO ====================
     const fetchDeleteInfo = useCallback(async (id_periodo) => {
         setCarregandoExclusao(true);
         setDadosExclusao(null);
@@ -430,7 +416,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== DELETAR TURMA COMPLETAMENTE ====================
     const deletarTurmaCompleta = useCallback(async () => {
         if (!dadosExclusao || !dadosExclusao.dados_gerais) {
             showErrorToast("Erro", "Dados da turma não disponíveis");
@@ -479,7 +464,6 @@ function TurmasAdm() {
         );
     }, [dadosExclusao, textoConfirmacao, apiClient, fetchData, showConfirmToast]);
 
-    // ==================== DESATIVAR TURMA ====================
     const desativarTurma = useCallback(async (id_anoletivo, nome) => {
         if (!id_anoletivo) {
             showErrorToast("Erro", "Esta turma não possui ano letivo para desativar");
@@ -528,7 +512,6 @@ function TurmasAdm() {
         );
     }, [apiClient, removerItemLocal, fetchData, showConfirmToast]);
 
-    // ==================== ABRIR MODAL DE PROFESSORES POR SEMESTRE (CORRIGIDO) ====================
     const abrirModalProfessoresSemestre = useCallback(async (item) => {
         setCarregandoProfSemestre(true);
         setProfessoresPorSemestre({});
@@ -536,7 +519,6 @@ function TurmasAdm() {
         setTurmaVisualizar(item);
         
         try {
-            // Primeiro buscar os anos letivos disponíveis
             const anosResponse = await apiClient.get(`/anosLetivosTurma/${item.id_periodo}`);
             
             if (anosResponse.data && anosResponse.data.anos && anosResponse.data.anos.length > 0) {
@@ -545,7 +527,6 @@ function TurmasAdm() {
                 const anoSelecionado = anosOrdenados[0].ano;
                 setAnoLetivoSelecionado(anoSelecionado);
                 
-                // Buscar professores para o ano letivo selecionado
                 await fetchProfessoresTurma(item.id_periodo, anoSelecionado);
             } else {
                 setAnosLetivosDisponiveis([]);
@@ -564,7 +545,6 @@ function TurmasAdm() {
         }
     }, [apiClient, fetchProfessoresTurma]);
 
-    // ==================== VERIFICAR ANO LETIVO DUPLICADO ====================
     const verificarAnoLetivoDuplicado = useCallback(async (idPeriodo, ano) => {
         try {
             const response = await apiClient.get(`/verificarAnoLetivo/${idPeriodo}/${ano}`);
@@ -575,7 +555,6 @@ function TurmasAdm() {
         }
     }, [apiClient]);
 
-    // ==================== PESQUISAR ====================
     const handlePesquisa = useCallback((e) => {
         const termo = e.target.value;
         setTermoPesquisa(termo);
@@ -600,7 +579,6 @@ function TurmasAdm() {
         setListaFiltrada(getListaFiltradaPorModo());
     }, [getListaFiltradaPorModo]);
 
-    // ==================== FILTROS DE EXIBIÇÃO ====================
     const getFiltroLabel = useCallback(() => {
         switch(modoExibicao) {
             case 'ativas': return 'Com Ano Letivo';
@@ -618,7 +596,6 @@ function TurmasAdm() {
         fetchData(false);
     }, [fetchData]);
 
-    // ==================== FUNÇÕES DE EDIÇÃO ====================
     const abrirModalEditar = useCallback((item) => {
         setDadosEdicao({
             idperiodo: item.id_periodo,
@@ -631,7 +608,9 @@ function TurmasAdm() {
             id_anoletivo: item.id_anoletivo || '',
             nomeCurso: item.curso || '',
             nomeCategoria: item.categoriacurso || '',
-            anoCurricular: item.anocurricular || ''
+            anoCurricular: item.anocurricular || '',
+            status_inscricao: item.status_inscricao || 'Fechado',
+            status_anoletivo: item.status_anoletivo || 'Ativo'
         });
         setModalEditarAberto(true);
     }, []);
@@ -650,7 +629,9 @@ function TurmasAdm() {
                 id_anoletivo: '',
                 nomeCurso: '',
                 nomeCategoria: '',
-                anoCurricular: ''
+                anoCurricular: '',
+                status_inscricao: 'Fechado',
+                status_anoletivo: 'Ativo'
             });
         }
     }, [salvando]);
@@ -669,11 +650,9 @@ function TurmasAdm() {
         setDadosEdicao(prev => ({ ...prev, [name]: value }));
     }, []);
 
-    // ==================== SALVAR EDIÇÃO CORRIGIDA ====================
     const salvarEdicao = useCallback(async (e) => {
         e?.preventDefault();
 
-        // VALIDAÇÕES BÁSICAS
         if (!dadosEdicao.turma?.trim()) {
             showErrorToast("Validação", "Preencha o nome da turma");
             return;
@@ -699,7 +678,6 @@ function TurmasAdm() {
             return;
         }
 
-        // ==================== VALIDAÇÃO DE DUPLICIDADE DE NOME DA TURMA ====================
         try {
             const turmaDuplicada = lista.find(item => 
                 item.id_periodo !== dadosEdicao.idperiodo &&
@@ -716,7 +694,6 @@ function TurmasAdm() {
                 return;
             }
 
-            // ==================== ANO LETIVO PODE SER IGUAL ====================
             if (dadosEdicao.anoletivo && dadosEdicao.anoletivo.trim()) {
                 const verificar = await verificarAnoLetivoDuplicado(
                     dadosEdicao.idperiodo,
@@ -747,7 +724,9 @@ function TurmasAdm() {
                 periodo: dadosEdicao.periodo,
                 idAdm: user?.id,
                 id_anoletivo: dadosEdicao.id_anoletivo || null,
-                anoletivo: dadosEdicao.anoletivo || null
+                anoletivo: dadosEdicao.anoletivo || null,
+                status_inscricao: dadosEdicao.status_inscricao || 'Fechado',
+                status_anoletivo: dadosEdicao.status_anoletivo || 'Ativo'
             };
 
             const response = await apiClient.put(`/periodo/${dadosEdicao.idperiodo}`, payload);
@@ -777,7 +756,6 @@ function TurmasAdm() {
         }
     }, [dadosEdicao, apiClient, fetchData, fecharModalEditar, user, lista, verificarAnoLetivoDuplicado]);
 
-    // ==================== FUNÇÕES DE ATRIBUIÇÃO DE PROFESSOR ====================
     const abrirModalProfessor = useCallback(async (item) => {
         setTurmaSelecionada(item);
         setProfessorSelecionado("");
@@ -874,7 +852,6 @@ function TurmasAdm() {
         }
     }, [turmaSelecionada, disciplinaSelecionada, professorSelecionado, user, apiClient, fecharModalProfessor, fetchData]);
 
-    // ==================== FUNÇÕES DE VISUALIZAÇÃO ====================
     const abrirModalVisualizar = useCallback(async (item) => {
         setTurmaVisualizar(item);
         setProfessoresTurma([]);
@@ -905,18 +882,22 @@ function TurmasAdm() {
         setAnoLetivoSelecionado("");
     }, []);
 
-    // ==================== RENDERIZAÇÃO ====================
     const isEmpty = lista.length === 0 && !loading;
     const semResultados = !loading && listaFiltrada.length === 0 && termoPesquisa !== '';
 
-    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Status', 'Professores', 'Atribuir', 'Editar', 'Desativar/Ativar', 'Excluir'];
+    const headers = ['Categoria', 'Curso', 'Ano', 'Turma', 'Período', 'Ano Letivo', 'Status', 'Inscrição', 'Professores', 'Atribuir', 'Editar', 'Desativar/Ativar', 'Excluir'];
 
     const renderRow = (item) => {
         const statusBadge = item.status_anoletivo === 'Ativo' ? 
-            'bg-warning text-dark' : 
+            'bg-success text-white' : 
             item.status_anoletivo === 'Desativado' ? 'bg-secondary text-white' : 'bg-light text-dark border';
         
         const statusLabel = item.status_anoletivo || 'Sem Ano Letivo';
+        
+        const inscricaoBadge = item.status_inscricao === 'Aberto' ? 
+            'bg-info text-white' : 'bg-danger text-white';
+        
+        const inscricaoLabel = item.status_inscricao || 'Fechado';
 
         const temAnoLetivo = item.anoletivo && item.id_anoletivo;
         const estaDesativada = item.status_anoletivo === 'Desativado';
@@ -932,6 +913,11 @@ function TurmasAdm() {
                 <td className="text-center">
                     <span className={`badge ${statusBadge}`}>
                         {statusLabel}
+                    </span>
+                </td>
+                <td className="text-center">
+                    <span className={`badge ${inscricaoBadge}`}>
+                        {inscricaoLabel}
                     </span>
                 </td>
                 <td className="text-center">
@@ -999,7 +985,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== FILTROS UI ====================
     const renderFiltros = () => (
         <div className="btn-group mb-3 flex-wrap" role="group">
             <button
@@ -1098,7 +1083,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE EXCLUSÃO DETALHADA ====================
     const renderModalExclusao = () => {
         if (!modalExclusaoDetalhada || !dadosExclusao) return null;
 
@@ -1149,7 +1133,7 @@ function TurmasAdm() {
                                                         <strong>{total_anos_letivos}</strong> ano(s) letivo(s): 
                                                         {dados_gerais?.anos_letivos?.map(a => 
                                                             <span key={a.id_anoletivo} className="badge bg-secondary ms-1">
-                                                                {a.ano} ({a.status})
+                                                                {a.ano} ({a.status}) - Inscrição: {a.status_inscricao || 'Fechado'}
                                                             </span>
                                                         )}
                                                     </span>
@@ -1269,7 +1253,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE PROFESSORES POR SEMESTRE (CORRIGIDO) ====================
     const renderModalProfessoresSemestre = () => {
         if (!modalProfessoresSemestre || !turmaVisualizar) return null;
 
@@ -1307,7 +1290,6 @@ function TurmasAdm() {
                                 </div>
                             ) : (
                                 <>
-                                    {/* FILTRO DE ANO LETIVO */}
                                     {anosLetivosDisponiveis.length > 0 && (
                                         <div className="mb-3">
                                             <label className="form-label fw-bold">Selecione o Ano Letivo:</label>
@@ -1319,7 +1301,7 @@ function TurmasAdm() {
                                             >
                                                 {anosLetivosDisponiveis.map((ano) => (
                                                     <option key={ano.id_anoletivo} value={ano.ano}>
-                                                        {ano.ano} {ano.status === 'Desativado' ? '(Desativado)' : '(Ativo)'}
+                                                        {ano.ano} {ano.status === 'Desativado' ? '(Desativado)' : '(Ativo)'} - Inscrição: {ano.status_inscricao || 'Fechado'}
                                                     </option>
                                                 ))}
                                             </select>
@@ -1439,7 +1421,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE EDIÇÃO ====================
     const renderModalEditar = () => {
         if (!modalEditarAberto) return null;
 
@@ -1473,6 +1454,24 @@ function TurmasAdm() {
                                 <div className="col-md-4">
                                     <small className="text-muted d-block">Ano Curricular</small>
                                     <strong>{dadosEdicao.anoCurricular ? `${dadosEdicao.anoCurricular}º Ano` : '-'}</strong>
+                                </div>
+                            </div>
+                            <div className="row mt-2">
+                                <div className="col-md-4">
+                                    <small className="text-muted d-block">Ano Letivo</small>
+                                    <strong className="text-primary">{dadosEdicao.anoletivo || 'Nenhum'}</strong>
+                                </div>
+                                <div className="col-md-4">
+                                    <small className="text-muted d-block">Status</small>
+                                    <span className={`badge ${dadosEdicao.status_anoletivo === 'Ativo' ? 'bg-success' : 'bg-secondary'}`}>
+                                        {dadosEdicao.status_anoletivo || 'Ativo'}
+                                    </span>
+                                </div>
+                                <div className="col-md-4">
+                                    <small className="text-muted d-block">Inscrição</small>
+                                    <span className={`badge ${dadosEdicao.status_inscricao === 'Aberto' ? 'bg-info' : 'bg-danger'}`}>
+                                        {dadosEdicao.status_inscricao || 'Fechado'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -1534,7 +1533,45 @@ function TurmasAdm() {
                                             title="Formato: YYYY-YYYY (ex: 2024-2025)"
                                             disabled={salvando || isConfirming}
                                         />
-                                        <small className="text-muted d-block">Formato: 2024-2025</small>
+                                        <small className="text-muted d-block">Formato: 2024-2025. Deixe em branco para manter o atual.</small>
+                                    </div>
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label fw-bold">Status do Ano Letivo</label>
+                                        <select
+                                            className="form-select"
+                                            name="status_anoletivo"
+                                            value={dadosEdicao.status_anoletivo || 'Ativo'}
+                                            onChange={handleInputChange}
+                                            disabled={salvando || isConfirming || !dadosEdicao.id_anoletivo}
+                                        >
+                                            <option value="Ativo">✅ Ativo</option>
+                                            <option value="Desativado">❌ Desativado</option>
+                                        </select>
+                                        <small className="text-muted d-block">
+                                            {!dadosEdicao.id_anoletivo ? 'Crie um ano letivo primeiro para alterar o status' : 
+                                            dadosEdicao.status_anoletivo === 'Ativo' ? 
+                                                'Ano letivo ativo - alunos podem se matricular' : 
+                                                'Ano letivo desativado - alunos não podem se matricular'}
+                                        </small>
+                                    </div>
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label fw-bold">Status de Inscrição</label>
+                                        <select
+                                            className="form-select"
+                                            name="status_inscricao"
+                                            value={dadosEdicao.status_inscricao || 'Fechado'}
+                                            onChange={handleInputChange}
+                                            disabled={salvando || isConfirming || !dadosEdicao.id_anoletivo}
+                                        >
+                                            <option value="Aberto">Aberto</option>
+                                            <option value="Fechado">Fechado</option>
+                                        </select>
+                                        <small className="text-muted d-block">
+                                            {!dadosEdicao.id_anoletivo ? 'Crie um ano letivo primeiro para alterar o status de inscrição' :
+                                            dadosEdicao.status_inscricao === 'Aberto' ? 
+                                                '✅ Inscrições abertas para esta turma' : 
+                                                '❌ Inscrições fechadas para esta turma'}
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -1573,7 +1610,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE ATRIBUIÇÃO DE PROFESSOR ====================
     const renderModalProfessor = () => {
         if (!modalProfessorAberto || !turmaSelecionada) return null;
 
@@ -1718,7 +1754,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE VISUALIZAÇÃO DE PROFESSORES ====================
     const renderModalVisualizar = () => {
         if (!modalVisualizarAberto || !turmaVisualizar) return null;
 
@@ -1766,7 +1801,7 @@ function TurmasAdm() {
                                         <option value="">Selecione um ano letivo</option>
                                         {anosLetivosDisponiveis.map((ano) => (
                                             <option key={ano.id_anoletivo || ano.anoletivo} value={ano.anoletivo}>
-                                                {ano.anoletivo}
+                                                {ano.anoletivo} - Inscrição: {ano.status_inscricao || 'Fechado'}
                                             </option>
                                         ))}
                                     </select>
@@ -1879,7 +1914,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== MODAL DE TURMAS DESATIVADAS ====================
     const renderModalDesativadas = () => {
         if (!modalDesativadasAberto) return null;
 
@@ -1925,40 +1959,59 @@ function TurmasAdm() {
                                                 <th>Turma</th>
                                                 <th>Período</th>
                                                 <th>Ano Letivo</th>
+                                                <th>Status</th>
+                                                <th>Inscrição</th>
                                                 <th className="text-center">Ação</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {turmasDesativadas.map((item) => (
-                                                <tr key={`${item.id_periodo}-${item.anoletivo}`}>
-                                                    <td className="align-middle">{item.categoriacurso || '-'}</td>
-                                                    <td className="align-middle">{item.curso || '-'}</td>
-                                                    <td className="text-center align-middle">{item.anocurricular ? `${item.anocurricular}º` : '-'}</td>
-                                                    <td className="text-center align-middle fw-semibold">{item.turma || '-'}</td>
-                                                    <td className="text-center align-middle">{item.periodo || '-'}</td>
-                                                    <td className="text-center align-middle">
-                                                        <span className="badge bg-danger">{item.anoletivo || '-'}</span>
-                                                    </td>
-                                                    <td className="text-center">
-                                                        <button
-                                                            className="btn btn-sm btn-success"
-                                                            onClick={() => ativarTurma(
-                                                                item.id_anoletivo,
-                                                                item.turma
-                                                            )}
-                                                            disabled={isConfirming}
-                                                            title={`Ativar ${item.turma}`}
-                                                        >
-                                                            <MdRestore size={18} className="me-1" />
-                                                            Ativar
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {turmasDesativadas.map((item) => {
+                                                const inscricaoBadge = item.status_inscricao === 'Aberto' ? 
+                                                    'bg-info text-white' : 'bg-danger text-white';
+                                                const statusBadge = item.status_anoletivo === 'Ativo' ? 
+                                                    'bg-success text-white' : 'bg-secondary text-white';
+                                                
+                                                return (
+                                                    <tr key={`${item.id_periodo}-${item.anoletivo}`}>
+                                                        <td className="align-middle">{item.categoriacurso || '-'}</td>
+                                                        <td className="align-middle">{item.curso || '-'}</td>
+                                                        <td className="text-center align-middle">{item.anocurricular ? `${item.anocurricular}º` : '-'}</td>
+                                                        <td className="text-center align-middle fw-semibold">{item.turma || '-'}</td>
+                                                        <td className="text-center align-middle">{item.periodo || '-'}</td>
+                                                        <td className="text-center align-middle">
+                                                            <span className="badge bg-secondary">{item.anoletivo || '-'}</span>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            <span className={`badge ${statusBadge}`}>
+                                                                {item.status_anoletivo || 'Desativado'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            <span className={`badge ${inscricaoBadge}`}>
+                                                                {item.status_inscricao || 'Fechado'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            <button
+                                                                className="btn btn-sm btn-success"
+                                                                onClick={() => ativarTurma(
+                                                                    item.id_anoletivo,
+                                                                    item.turma
+                                                                )}
+                                                                disabled={isConfirming}
+                                                                title={`Ativar ${item.turma}`}
+                                                            >
+                                                                <MdRestore size={18} className="me-1" />
+                                                                Ativar
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colSpan="7" className="text-muted">
+                                                <td colSpan="9" className="text-muted">
                                                     Total: {turmasDesativadas.length} turma(s) desativada(s)
                                                 </td>
                                             </tr>
@@ -1993,7 +2046,6 @@ function TurmasAdm() {
         );
     };
 
-    // ==================== RENDER PRINCIPAL ====================
     return (
         <div className="row mb-4">
             <div className="col-12">
@@ -2091,7 +2143,6 @@ function TurmasAdm() {
                 {renderConteudo()}
             </div>
 
-            {/* MODAIS */}
             {renderModalExclusao()}
             {renderModalProfessoresSemestre()}
             {renderModalEditar()}
