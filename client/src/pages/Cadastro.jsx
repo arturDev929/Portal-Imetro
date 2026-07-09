@@ -61,16 +61,19 @@ function Cadastro() {
     };
 
     const handleFileChange = (e) => {
-        const { name, files } = e.target;
+        const { files } = e.target;
         if (files && files.length > 0) {
             const novosArquivos = Array.from(files);
             
+            // Validar tamanho
             const arquivosInvalidos = novosArquivos.filter(file => file.size > 10 * 1024 * 1024);
             if (arquivosInvalidos.length > 0) {
                 showErrorToast("Erro", "Cada arquivo deve ter no máximo 10MB");
+                e.target.value = '';
                 return;
             }
 
+            // Validar extensões
             const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
             const arquivosInvalidosExt = novosArquivos.filter(file => {
                 const ext = file.name.split('.').pop().toLowerCase();
@@ -79,13 +82,17 @@ function Cadastro() {
             
             if (arquivosInvalidosExt.length > 0) {
                 showErrorToast("Erro", "Formatos permitidos: PDF, JPG, PNG, DOC, DOCX");
+                e.target.value = '';
                 return;
             }
 
             setArquivos(prev => ({
                 ...prev,
-                [name]: [...prev.documentosEstudante, ...novosArquivos]
+                documentosEstudante: [...prev.documentosEstudante, ...novosArquivos]
             }));
+            
+            // Limpar o input para permitir selecionar o mesmo arquivo novamente
+            e.target.value = '';
         }
     };
 
@@ -97,24 +104,33 @@ function Cadastro() {
     };
 
     const handleFotoChange = (e) => {
-        const { name, files } = e.target;
+        const { files } = e.target;
         if (files && files[0]) {
             const file = files[0];
+            
+            // Validar tamanho
             if (file.size > 5 * 1024 * 1024) {
                 showErrorToast("Erro", "A foto deve ter no máximo 5MB");
+                e.target.value = '';
                 return;
             }
+            
+            // Validar extensões
             const extensoesPermitidas = ['jpg', 'jpeg', 'png'];
             const ext = file.name.split('.').pop().toLowerCase();
             if (!extensoesPermitidas.includes(ext)) {
                 showErrorToast("Erro", "Formatos permitidos para foto: JPG, PNG");
+                e.target.value = '';
                 return;
             }
             
             setArquivos(prev => ({
                 ...prev,
-                [name]: file
+                fotoEstudante: file
             }));
+            
+            // Limpar o input
+            e.target.value = '';
         }
     };
 
@@ -234,7 +250,9 @@ function Cadastro() {
         try {
             const response = await Api.post(`/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
-                nomeEstudante: valores.nomeEstudante
+                nomeEstudante: valores.nomeEstudante,
+                contactoEstudante: valores.contactoEstudante,
+                biEstudante: valores.biEstudante
             });
 
             if (response.data.sucesso) {
@@ -272,10 +290,24 @@ function Cadastro() {
             return;
         }
 
+        // LOG DE DEBUG
+        console.log("=== VALORES DO FORMULÁRIO ===");
+        console.log("Nome:", valores.nomeEstudante);
+        console.log("Contacto:", valores.contactoEstudante);
+        console.log("Email:", valores.emailEstudante);
+        console.log("BI:", valores.biEstudante);
+        console.log("Sexo:", valores.sexoEstudante);
+        console.log("ID Curso:", valores.idcurso);
+        console.log("ID Período:", valores.id_periodo);
+        console.log("Código:", codigoCompleto);
+        console.log("Foto:", arquivos.fotoEstudante?.name);
+        console.log("Documentos:", arquivos.documentosEstudante.map(d => d.name));
+
         setLoading(true);
         try {
             const formData = new FormData();
             
+            // Adicionar campos de texto
             formData.append('nomeEstudante', valores.nomeEstudante);
             formData.append('contactoEstudante', valores.contactoEstudante);
             formData.append('emailEstudante', valores.emailEstudante);
@@ -288,11 +320,29 @@ function Cadastro() {
             formData.append('codigo', codigoCompleto);
             formData.append('email', valores.emailEstudante);
             
-            arquivos.documentosEstudante.forEach((file, index) => {
-                formData.append(`documentosEstudante[${index}]`, file);
-            });
+            // IMPORTANTE: Adicionar FOTO com o nome "foto" (não "fotoEstudante")
+            if (arquivos.fotoEstudante) {
+                formData.append('foto', arquivos.fotoEstudante);
+            }
             
-            formData.append('fotoEstudante', arquivos.fotoEstudante);
+            // IMPORTANTE: Adicionar DOCUMENTOS com o nome "documentos" (não "documentosEstudante")
+            arquivos.documentosEstudante.forEach((file) => {
+                formData.append('documentos', file);
+            });
+
+            // Mostrar o que está sendo enviado para debug
+            console.log('Enviando dados:', {
+                nomeEstudante: valores.nomeEstudante,
+                contactoEstudante: valores.contactoEstudante,
+                emailEstudante: valores.emailEstudante,
+                biEstudante: valores.biEstudante,
+                sexoEstudante: valores.sexoEstudante,
+                idcurso: valores.idcurso,
+                id_periodo: valores.id_periodo,
+                codigo: codigoCompleto,
+                foto: arquivos.fotoEstudante?.name || 'Nenhuma foto',
+                documentos: arquivos.documentosEstudante.length + ' documentos'
+            });
 
             const response = await Api.post(
                 `/verificarCodigoECompletarCadastro`, 
@@ -336,12 +386,17 @@ function Cadastro() {
             }
         } catch (error) {
             console.error("Erro ao verificar código:", error);
+            console.error("Detalhes do erro:", {
+                status: error.response?.status,
+                data: error.response?.data,
+                headers: error.response?.headers
+            });
             
             const errorData = error.response?.data;
             setTentativas(prev => prev + 1);
             showErrorToast(
                 errorData?.titulo || "Erro",
-                errorData?.mensagem || "Erro na verificação"
+                errorData?.mensagem || "Erro na verificação. Verifique os dados e tente novamente."
             );
             
             setCodigoVerificacao(['', '', '', '', '', '']);
@@ -356,7 +411,9 @@ function Cadastro() {
         try {
             const response = await Api.post(`/enviarCodigoVerificacao`, {
                 emailEstudante: valores.emailEstudante,
-                nomeEstudante: valores.nomeEstudante
+                nomeEstudante: valores.nomeEstudante,
+                contactoEstudante: valores.contactoEstudante,
+                biEstudante: valores.biEstudante
             });
 
             if (response.data.sucesso) {

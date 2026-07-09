@@ -3,7 +3,8 @@ import {
     MdEdit, MdDeleteForever, MdRefresh, MdSearch, MdAdd, MdPerson, MdPhone,
     MdLock, MdPhotoCamera, MdEmail, MdAttachFile, MdVisibility,
     MdCalendarToday, MdBloodtype, MdSchool, MdRemoveRedEye, MdClose,
-    MdCheckCircle, MdCancel, MdInfo, MdFileUpload, MdClear, MdContentCopy
+    MdCheckCircle, MdCancel, MdInfo, MdFileUpload, MdClear, MdContentCopy,
+    MdArrowForward, MdArrowBack
 } from "react-icons/md";
 import { FaIdCard, FaChalkboardTeacher, FaUniversity, FaFileContract, FaWhatsapp } from "react-icons/fa";
 import { IoMdPersonAdd } from "react-icons/io";
@@ -13,6 +14,393 @@ import Api from "../../service/api";
 import Table from '../../components/global/Table';
 
 const API_TIMEOUT = 30000;
+
+// COMPONENTE INDICADOR DE ETAPAS
+const IndicadorEtapas = ({ etapaAtual, total }) => (
+    <div className="d-flex justify-content-between align-items-center mb-4 px-3">
+        {[1, 2, 3].map((etapa) => (
+            <div key={etapa} className="d-flex align-items-center flex-grow-1">
+                <div className="d-flex align-items-center">
+                    <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center"
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: etapa <= etapaAtual ? '#1a237e' : '#e9ecef',
+                            color: etapa <= etapaAtual ? 'white' : '#6c757d',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            transition: 'all 0.3s ease',
+                            border: etapa === etapaAtual ? '3px solid #ffd700' : 'none'
+                        }}
+                    >
+                        {etapa < etapaAtual ? <MdCheckCircle size={20} /> : etapa}
+                    </div>
+                    <div className="ms-2 d-none d-md-block">
+                        <small className="text-muted d-block" style={{ fontSize: '10px' }}>
+                            Etapa {etapa}
+                        </small>
+                        <span style={{ 
+                            fontSize: '12px', 
+                            fontWeight: etapa === etapaAtual ? 'bold' : 'normal',
+                            color: etapa === etapaAtual ? '#1a237e' : '#6c757d'
+                        }}>
+                            {etapa === 1 && 'Dados Pessoais'}
+                            {etapa === 2 && 'Dados Profissionais'}
+                            {etapa === 3 && 'Documentos'}
+                        </span>
+                    </div>
+                </div>
+                {etapa < total && (
+                    <div 
+                        className="flex-grow-1 mx-2"
+                        style={{
+                            height: '3px',
+                            backgroundColor: etapa < etapaAtual ? '#1a237e' : '#e9ecef',
+                            transition: 'all 0.3s ease',
+                            flex: 1
+                        }}
+                    />
+                )}
+            </div>
+        ))}
+    </div>
+);
+
+// ETAPA 1: DADOS PESSOAIS
+const Etapa1DadosPessoais = ({ dados, setDados }) => {
+    const handleChange = (campo, valor) => {
+        setDados(prev => ({ ...prev, [campo]: valor }));
+    };
+
+    return (
+        <div className="row">
+            <div className="col-md-12 mb-3">
+                <div className="alert alert-info d-flex align-items-center">
+                    <MdInfo size={20} className="me-2" />
+                    <small>Preencha os dados pessoais do professor. Campos com * são obrigatórios.</small>
+                </div>
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Nome completo *</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.nome || ''} 
+                    onChange={(e) => handleChange('nome', e.target.value)} 
+                    required 
+                    placeholder="Digite o nome completo"
+                />
+            </div>
+            <div className="col-md-3 mb-3">
+                <label className="form-label">Gênero *</label>
+                <select 
+                    className="form-control" 
+                    value={dados.genero || ''} 
+                    onChange={(e) => handleChange('genero', e.target.value)} 
+                    required
+                >
+                    <option value="">Selecione</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+            <div className="col-md-3 mb-3">
+                <label className="form-label">Estado Civil</label>
+                <select 
+                    className="form-control" 
+                    value={dados.estadocivil || ''} 
+                    onChange={(e) => handleChange('estadocivil', e.target.value)}
+                >
+                    <option value="">Selecione</option>
+                    <option value="Solteiro">Solteiro</option>
+                    <option value="Casado">Casado</option>
+                    <option value="Divorciado">Divorciado</option>
+                    <option value="Viúvo">Viúvo</option>
+                    <option value="União Estável">União Estável</option>
+                </select>
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Nacionalidade</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.nacionalidade || ''} 
+                    onChange={(e) => handleChange('nacionalidade', e.target.value)} 
+                    placeholder="Ex: Angolana"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Nome do Pai</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.nomepai || ''} 
+                    onChange={(e) => handleChange('nomepai', e.target.value)} 
+                    placeholder="Nome completo do pai"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Nome da Mãe</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.nomemae || ''} 
+                    onChange={(e) => handleChange('nomemae', e.target.value)} 
+                    placeholder="Nome completo da mãe"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">BI *</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.bi || ''} 
+                    onChange={(e) => handleChange('bi', e.target.value)} 
+                    required 
+                    placeholder="Número do BI"
+                />
+            </div>
+            <div className="col-md-4 mb-3">
+                <label className="form-label">Contacto *</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.contacto || ''} 
+                    onChange={(e) => handleChange('contacto', e.target.value)} 
+                    required 
+                    placeholder="+244 900 000 000"
+                />
+            </div>
+            <div className="col-md-4 mb-3">
+                <label className="form-label">WhatsApp</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.whatsapp || ''} 
+                    onChange={(e) => handleChange('whatsapp', e.target.value)} 
+                    placeholder="+244 900 000 000"
+                />
+            </div>
+            <div className="col-md-4 mb-3">
+                <label className="form-label">Contacto Emergência</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.contactoemergencia || ''} 
+                    onChange={(e) => handleChange('contactoemergencia', e.target.value)} 
+                    placeholder="Contacto de emergência"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Email *</label>
+                <input 
+                    type="email" 
+                    className="form-control" 
+                    value={dados.email || ''} 
+                    onChange={(e) => handleChange('email', e.target.value)} 
+                    required 
+                    placeholder="email@exemplo.com"
+                />
+            </div>
+            <div className="col-md-3 mb-3">
+                <label className="form-label">Data Nascimento *</label>
+                <input 
+                    type="date" 
+                    className="form-control" 
+                    value={dados.data_nascimento || ''} 
+                    onChange={(e) => handleChange('data_nascimento', e.target.value)} 
+                    required 
+                />
+            </div>
+            <div className="col-md-3 mb-3">
+                <label className="form-label">Tipo Sanguíneo</label>
+                <select 
+                    className="form-control" 
+                    value={dados.tiposangue || ''} 
+                    onChange={(e) => handleChange('tiposangue', e.target.value)}
+                >
+                    <option value="">Selecione</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+            </div>
+        </div>
+    );
+};
+
+// ETAPA 2: DADOS PROFISSIONAIS
+const Etapa2DadosProfissionais = ({ dados, setDados, contratos, fotoPreview, handleFotoChange }) => {
+    const handleChange = (campo, valor) => {
+        setDados(prev => ({ ...prev, [campo]: valor }));
+    };
+
+    return (
+        <div className="row">
+            <div className="col-md-12 mb-3">
+                <div className="alert alert-info d-flex align-items-center">
+                    <MdInfo size={20} className="me-2" />
+                    <small>Preencha os dados profissionais e acadêmicos do professor.</small>
+                </div>
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Titulação</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    value={dados.titulacao || ''} 
+                    onChange={(e) => handleChange('titulacao', e.target.value)} 
+                    placeholder="Ex: Mestre, Doutor, Licenciado"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Anos de Experiência</label>
+                <input 
+                    type="number" 
+                    className="form-control" 
+                    value={dados.anoexperienca || ''} 
+                    onChange={(e) => handleChange('anoexperienca', e.target.value)} 
+                    placeholder="0"
+                    min="0"
+                />
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Tipo de Contrato *</label>
+                <select 
+                    className="form-control" 
+                    value={dados.id_contrato || ''} 
+                    onChange={(e) => handleChange('id_contrato', e.target.value)} 
+                    required
+                >
+                    <option value="">Selecione</option>
+                    {contratos.map(contrato => (
+                        <option key={contrato.id_contrato} value={contrato.id_contrato}>{contrato.contrato}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="col-md-6 mb-3">
+                <label className="form-label">Data Admissão *</label>
+                <input 
+                    type="date" 
+                    className="form-control" 
+                    value={dados.data_admissao || ''} 
+                    onChange={(e) => handleChange('data_admissao', e.target.value)} 
+                    required 
+                />
+            </div>
+            <div className="col-md-12 mb-3">
+                <label className="form-label">IBAN</label>
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="AO06000600000052757230254" 
+                    value={dados.iban || ''} 
+                    onChange={(e) => handleChange('iban', e.target.value)} 
+                />
+                <small className="text-muted">Número de conta bancária internacional</small>
+            </div>
+            <div className="col-md-12 mb-3">
+                <label className="form-label">Foto do Professor</label>
+                <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="form-control" 
+                    onChange={handleFotoChange} 
+                />
+                <small className="text-muted">Formatos: JPG, PNG. Máximo 5MB</small>
+                {fotoPreview && (
+                    <div className="mt-3 text-center">
+                        <img 
+                            src={fotoPreview} 
+                            alt="Preview da foto" 
+                            style={{ 
+                                width: '150px', 
+                                height: '150px', 
+                                borderRadius: '50%', 
+                                objectFit: 'cover',
+                                border: '3px solid #1a237e'
+                            }} 
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ETAPA 3: DOCUMENTOS
+const Etapa3Documentos = ({ 
+    documentosPreview, 
+    titulosDocumentos, 
+    handleDocumentosChange, 
+    handleTituloDocumentoChange, 
+    removerDocumento 
+}) => {
+    return (
+        <div>
+            <div className="row">
+                <div className="col-md-12 mb-3">
+                    <div className="alert alert-info d-flex align-items-center">
+                        <MdInfo size={20} className="me-2" />
+                        <small>Adicione os documentos do professor.</small>
+                    </div>
+                </div>
+                <div className="col-md-12">
+                    <label className="form-label fw-bold">Documentos (PDF/Imagem)</label>
+                    <input 
+                        type="file" 
+                        multiple 
+                        accept=".pdf,.jpg,.jpeg,.png" 
+                        className="form-control" 
+                        onChange={handleDocumentosChange} 
+                    />
+                    <small className="text-muted d-block mt-1">
+                        Formatos: PDF, JPG, PNG. Máximo 10MB por arquivo
+                    </small>
+                    
+                    {documentosPreview.length > 0 ? (
+                        <div className="mt-3">
+                            <h6 className="mb-3">Documentos selecionados ({documentosPreview.length})</h6>
+                            {documentosPreview.map((doc, i) => (
+                                <div key={i} className="d-flex gap-2 mb-2 align-items-center">
+                                    <div className="flex-grow-1">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Título do documento" 
+                                            className="form-control" 
+                                            value={titulosDocumentos[i] || ''} 
+                                            onChange={(e) => handleTituloDocumentoChange(i, e.target.value)} 
+                                        />
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-danger" 
+                                        onClick={() => removerDocumento(i)}
+                                    >
+                                        <MdDeleteForever />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-4 text-muted border rounded-3 bg-light mt-3">
+                            <MdAttachFile size={40} className="mb-2 text-secondary" />
+                            <p className="mb-0">Nenhum documento selecionado</p>
+                            <small>Adicione documentos como currículo, certificados, etc.</small>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 function ProfessorEdit() {
     const [lista, setLista] = useState([]);
@@ -40,6 +428,9 @@ function ProfessorEdit() {
     const [novosDocumentosPreview, setNovosDocumentosPreview] = useState([]);
     const [novosDocumentosTitulos, setNovosDocumentosTitulos] = useState([]);
     const [abaAtiva, setAbaAtiva] = useState('dados');
+    
+    const [etapaRegistro, setEtapaRegistro] = useState(1);
+    const totalEtapas = 3;
     
     const [senhaGerada, setSenhaGerada] = useState('');
     const [professorSenhaGerada, setProfessorSenhaGerada] = useState(null);
@@ -98,7 +489,6 @@ function ProfessorEdit() {
             const dia = String(dataObj.getDate()).padStart(2, '0');
             return `${ano}-${mes}-${dia}`;
         } catch (error) {
-            console.warn('Erro ao formatar data:', data, error);
             return '';
         }
     }, []);
@@ -108,7 +498,7 @@ function ProfessorEdit() {
             const response = await apiClient.get('/contratos');
             setContratos(response.data || []);
         } catch (error) {
-            console.error("Erro ao buscar contratos:", error);
+            // erro silencioso
         }
     }, [apiClient]);
 
@@ -149,7 +539,6 @@ function ProfessorEdit() {
                 showSuccessToast("Sucesso", `${dados.length} professores carregados`);
             }
         } catch (error) {
-            console.error("Erro ao buscar professores:", error);
             showErrorToast("Erro", "Não foi possível carregar os professores");
         } finally {
             setLoading(false);
@@ -174,7 +563,6 @@ function ProfessorEdit() {
                         await fetchProfessores(false);
                     }
                 } catch (error) {
-                    console.error("Erro ao gerar senha:", error);
                     if (error.response?.status === 404) {
                         showErrorToast("Erro", "Rota não encontrada. Verifique a URL da API.");
                     } else if (error.response?.status === 401) {
@@ -222,7 +610,7 @@ function ProfessorEdit() {
         setDocumentos([]);
         setDocumentosPreview([]);
         setTitulosDocumentos([]);
-        setAbaAtiva('dados');
+        setEtapaRegistro(1);
         setModalAdicionarAberto(true);
     }, [user]);
 
@@ -240,8 +628,55 @@ function ProfessorEdit() {
             setDocumentos([]);
             setDocumentosPreview([]);
             setTitulosDocumentos([]);
+            setEtapaRegistro(1);
         }
     }, [salvando]);
+
+    const proximaEtapa = useCallback(() => {
+        if (etapaRegistro === 1) {
+            if (!dadosNovoProfessor.nome?.trim()) {
+                showErrorToast("Validação", "Preencha o nome do professor");
+                return;
+            }
+            if (!dadosNovoProfessor.bi?.trim()) {
+                showErrorToast("Validação", "Preencha o BI do professor");
+                return;
+            }
+            if (!dadosNovoProfessor.contacto?.trim()) {
+                showErrorToast("Validação", "Preencha o contacto do professor");
+                return;
+            }
+            if (!dadosNovoProfessor.email?.trim()) {
+                showErrorToast("Validação", "Preencha o email do professor");
+                return;
+            }
+            if (!dadosNovoProfessor.data_nascimento) {
+                showErrorToast("Validação", "Preencha a data de nascimento");
+                return;
+            }
+        }
+        
+        if (etapaRegistro === 2) {
+            if (!dadosNovoProfessor.id_contrato) {
+                showErrorToast("Validação", "Selecione o tipo de contrato");
+                return;
+            }
+            if (!dadosNovoProfessor.data_admissao) {
+                showErrorToast("Validação", "Preencha a data de admissão");
+                return;
+            }
+        }
+        
+        if (etapaRegistro < totalEtapas) {
+            setEtapaRegistro(prev => prev + 1);
+        }
+    }, [etapaRegistro, dadosNovoProfessor]);
+
+    const etapaAnterior = useCallback(() => {
+        if (etapaRegistro > 1) {
+            setEtapaRegistro(prev => prev - 1);
+        }
+    }, [etapaRegistro]);
 
     const handleFotoChange = useCallback((e) => {
         const file = e.target.files[0];
@@ -279,7 +714,11 @@ function ProfessorEdit() {
     }, []);
 
     const handleTituloDocumentoChange = useCallback((index, titulo) => {
-        setTitulosDocumentos(prev => { const novos = [...prev]; novos[index] = titulo; return novos; });
+        setTitulosDocumentos(prev => { 
+            const novos = [...prev]; 
+            novos[index] = titulo; 
+            return novos; 
+        });
     }, []);
 
     const removerDocumento = useCallback((index) => {
@@ -295,6 +734,7 @@ function ProfessorEdit() {
 
     const adicionarProfessor = useCallback(async (e) => {
         e.preventDefault();
+        
         if (!dadosNovoProfessor.nome?.trim()) {
             showErrorToast("Validação", "Preencha o nome do professor");
             return;
@@ -303,6 +743,7 @@ function ProfessorEdit() {
             showErrorToast("Validação", "Selecione o tipo de contrato");
             return;
         }
+        
         setSalvando(true);
         try {
             const formData = new FormData();
@@ -329,7 +770,6 @@ function ProfessorEdit() {
                 showErrorToast("Erro", response.data.mensagem || "Não foi possível registrar");
             }
         } catch (error) {
-            console.error("Erro ao registrar professor:", error);
             showErrorToast("Erro", error.response?.data?.mensagem || "Não foi possível registrar o professor");
         } finally {
             setSalvando(false);
@@ -351,13 +791,11 @@ function ProfessorEdit() {
                         setDocumentosProfessor([]);
                     }
                 } catch (error) {
-                    console.error("❌ Erro ao buscar documentos:", error);
                     setDocumentosProfessor([]);
                 }
             }
             setModalVisualizarAberto(true);
         } catch (error) {
-            console.error("❌ Erro ao carregar dados do professor:", error);
             showErrorToast("Erro", "Não foi possível carregar os dados");
         } finally {
             setCarregandoDocumentos(false);
@@ -404,7 +842,6 @@ function ProfessorEdit() {
                     setDocumentosExistentes([]);
                 }
             } catch (error) {
-                console.error("❌ Erro ao buscar documentos:", error);
                 setDocumentosExistentes([]);
             }
             
@@ -415,7 +852,6 @@ function ProfessorEdit() {
             setAbaAtiva('dados');
             setModalEditarAberto(true);
         } catch (error) {
-            console.error("❌ Erro ao carregar dados para edição:", error);
             showErrorToast("Erro", "Não foi possível carregar os dados para edição");
             setModalEditarAberto(true);
         } finally {
@@ -460,7 +896,6 @@ function ProfessorEdit() {
         showSuccessToast("Sucesso", "Documento marcado para remoção");
     }, []);
 
-    // ✅ FUNÇÃO CORRIGIDA - sem colchetes nos campos do FormData
     const salvarEdicao = useCallback(async (e) => {
         e.preventDefault();
         
@@ -483,14 +918,12 @@ function ProfessorEdit() {
                 formData.append('foto', fotoArquivo);
             }
             
-            // ✅ CORRIGIDO: sem [] no nome do campo
             documentosParaRemover.forEach(docId => {
                 if (docId) {
                     formData.append('documentos_remover', docId);
                 }
             });
             
-            // ✅ CORRIGIDO: sem [] no nome do campo
             novosDocumentos.forEach((doc, i) => {
                 formData.append('documentos', doc);
                 formData.append('documentos_titulo', novosDocumentosTitulos[i] || doc.name);
@@ -516,7 +949,6 @@ function ProfessorEdit() {
                 showErrorToast("Erro", response.data.message || "Não foi possível atualizar");
             }
         } catch (error) {
-            console.error("❌ Erro ao salvar edição:", error);
             showErrorToast("Erro", error.response?.data?.message || "Não foi possível atualizar o professor");
         } finally {
             setSalvando(false);
@@ -534,7 +966,6 @@ function ProfessorEdit() {
                     showSuccessToast("Sucesso", `Professor ${nome} desativado`);
                 }
             } catch (error) {
-                console.error("❌ Erro ao desativar professor:", error);
                 showErrorToast("Erro", "Não foi possível desativar o professor");
             }
         }, null, "Confirmar Desativação");
@@ -597,17 +1028,6 @@ function ProfessorEdit() {
         </tr>
     ), [loading, salvando, isConfirming, abrirModalVisualizar, abrirModalEditar, desativarProfessor, copiarCodigo, gerarSenhaProfessor]);
 
-    const Abas = ({ abaAtiva, setAbaAtiva }) => (
-        <div className="d-flex border-bottom mb-4">
-            <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'dados' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('dados')} style={{ borderBottomColor: abaAtiva === 'dados' ? 'var(--dourado)' : 'transparent' }}>
-                <MdPerson className="me-2" /> Dados Pessoais
-            </button>
-            <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'documentos' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('documentos')} style={{ borderBottomColor: abaAtiva === 'documentos' ? 'var(--dourado)' : 'transparent' }}>
-                <MdAttachFile className="me-2" /> Documentos
-            </button>
-        </div>
-    );
-
     return (
         <div className="row mb-4">
             <div className="col-12">
@@ -665,18 +1085,19 @@ function ProfessorEdit() {
                 )}
             </div>
 
+            {/* MODAL VISUALIZAR */}
             {modalVisualizarAberto && professorSelecionado && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-lg">
                         <div className="modal-content">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                            <div className="modal-header" style={{ backgroundColor: '#1a237e', color: '#ffd700' }}>
                                 <h5><MdPerson className="me-2" />Informações do Professor</h5>
                                 <button className="btn-close btn-close-white" onClick={() => { setModalVisualizarAberto(false); setDocumentosProfessor([]); }} />
                             </div>
                             <div className="modal-body">
                                 {carregandoDocumentos ? (
                                     <div className="text-center py-5">
-                                        <div className="spinner-border text-primary"></div>
+                                        <div className="spinner-border text-primary" role="status"></div>
                                         <p>Carregando...</p>
                                     </div>
                                 ) : (
@@ -763,7 +1184,7 @@ function ProfessorEdit() {
                                                                                 <MdVisibility className="me-1" /> Visualizar
                                                                             </a>
                                                                         ) : (
-                                                                            <span className="text-muted small"><MdVisibility className="me-1" /> URL não disponível</span>
+                                                                            <span className="text-muted small">URL não disponível</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -784,155 +1205,85 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* MODAL ADICIONAR - COM 3 ETAPAS */}
             {modalAdicionarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                            <div className="modal-header" style={{ backgroundColor: '#1a237e', color: '#ffd700' }}>
                                 <h5><IoMdPersonAdd className="me-2" />Registrar Professor</h5>
                                 <button className="btn-close btn-close-white" onClick={fecharModalAdicionar} />
                             </div>
                             <form onSubmit={adicionarProfessor}>
                                 <div className="modal-body">
-                                    <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
-                                    {abaAtiva === 'dados' && (
-                                        <div className="row">
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">Nome completo *</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.nome} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nome: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label">Gênero *</label>
-                                                <select className="form-control" value={dadosNovoProfessor.genero} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, genero: e.target.value })} required>
-                                                    <option value="">Selecione</option>
-                                                    <option value="Masculino">Masculino</option>
-                                                    <option value="Feminino">Feminino</option>
-                                                    <option value="Outro">Outro</option>
-                                                </select>
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label">Estado Civil</label>
-                                                <select className="form-control" value={dadosNovoProfessor.estadocivil} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, estadocivil: e.target.value })}>
-                                                    <option value="">Selecione</option>
-                                                    <option value="Solteiro">Solteiro</option>
-                                                    <option value="Casado">Casado</option>
-                                                    <option value="Divorciado">Divorciado</option>
-                                                    <option value="Viúvo">Viúvo</option>
-                                                    <option value="União Estável">União Estável</option>
-                                                </select>
-                                            </div>
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">Nacionalidade</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.nacionalidade} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nacionalidade: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">Nome do Pai</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.nomepai} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nomepai: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">Nome da Mãe</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.nomemae} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, nomemae: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">BI *</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.bi} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, bi: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Contacto *</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.contacto} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, contacto: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">WhatsApp</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.whatsapp} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, whatsapp: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Contacto Emergência</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.contactoemergencia} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, contactoemergencia: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-6 mb-3">
-                                                <label className="form-label">Email *</label>
-                                                <input type="email" className="form-control" value={dadosNovoProfessor.email} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, email: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label">Anos Experiência</label>
-                                                <input type="number" className="form-control" value={dadosNovoProfessor.anoexperienca} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, anoexperienca: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-3 mb-3">
-                                                <label className="form-label">Titulação</label>
-                                                <input type="text" className="form-control" value={dadosNovoProfessor.titulacao} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, titulacao: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">IBAN</label>
-                                                <input type="text" placeholder="AO06000600000052757230254" className="form-control" value={dadosNovoProfessor.iban} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, iban: e.target.value })} />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Tipo Sanguíneo</label>
-                                                <select className="form-control" value={dadosNovoProfessor.tiposangue} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, tiposangue: e.target.value })}>
-                                                    <option value="">Selecione</option>
-                                                    <option value="A+">A+</option>
-                                                    <option value="A-">A-</option>
-                                                    <option value="B+">B+</option>
-                                                    <option value="B-">B-</option>
-                                                    <option value="AB+">AB+</option>
-                                                    <option value="AB-">AB-</option>
-                                                    <option value="O+">O+</option>
-                                                    <option value="O-">O-</option>
-                                                </select>
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Data Nascimento *</label>
-                                                <input type="date" className="form-control" value={dadosNovoProfessor.data_nascimento} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, data_nascimento: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Data Admissão *</label>
-                                                <input type="date" className="form-control" value={dadosNovoProfessor.data_admissao} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, data_admissao: e.target.value })} required />
-                                            </div>
-                                            <div className="col-md-4 mb-3">
-                                                <label className="form-label">Tipo de Contrato *</label>
-                                                <select className="form-control" value={dadosNovoProfessor.id_contrato} onChange={(e) => setDadosNovoProfessor({ ...dadosNovoProfessor, id_contrato: e.target.value })} required>
-                                                    <option value="">Selecione</option>
-                                                    {contratos.map(contrato => (
-                                                        <option key={contrato.id_contrato} value={contrato.id_contrato}>{contrato.contrato}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="col-md-12 mb-3">
-                                                <label className="form-label">Foto do Professor</label>
-                                                <input type="file" accept="image/*" className="form-control" onChange={handleFotoChange} />
-                                                <small className="text-muted d-block">Formatos: JPG, PNG. Máximo 5MB</small>
-                                            </div>
-                                            {fotoPreview && (
-                                                <div className="col-md-12 mb-3 text-center">
-                                                    <img src={fotoPreview} alt="Preview" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {abaAtiva === 'documentos' && (
+                                    <IndicadorEtapas etapaAtual={etapaRegistro} total={totalEtapas} />
+                                    
+                                    <div className="mt-4">
+                                        {etapaRegistro === 1 && (
+                                            <Etapa1DadosPessoais 
+                                                dados={dadosNovoProfessor} 
+                                                setDados={setDadosNovoProfessor} 
+                                            />
+                                        )}
+                                        {etapaRegistro === 2 && (
+                                            <Etapa2DadosProfissionais 
+                                                dados={dadosNovoProfessor} 
+                                                setDados={setDadosNovoProfessor}
+                                                contratos={contratos}
+                                                fotoPreview={fotoPreview}
+                                                handleFotoChange={handleFotoChange}
+                                            />
+                                        )}
+                                        {etapaRegistro === 3 && (
+                                            <Etapa3Documentos 
+                                                documentosPreview={documentosPreview}
+                                                titulosDocumentos={titulosDocumentos}
+                                                handleDocumentosChange={handleDocumentosChange}
+                                                handleTituloDocumentoChange={handleTituloDocumentoChange}
+                                                removerDocumento={removerDocumento}
+                                            />
+                                        )}
+                                    </div>
+                                    
+                                    <div className="d-flex justify-content-between mt-4 pt-3 border-top">
+                                        <button 
+                                            type="button" 
+                                            className={`btn ${Style.btnCancelar}`}
+                                            onClick={etapaAnterior}
+                                            disabled={etapaRegistro === 1}
+                                        >
+                                            <MdArrowBack className="me-1" /> Voltar
+                                        </button>
+                                        
                                         <div>
-                                            <div className="mb-3">
-                                                <label className="form-label">Documentos (PDF/Imagem)</label>
-                                                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="form-control" onChange={handleDocumentosChange} />
-                                                <small className="text-muted">Formatos: PDF, JPG, PNG. Máximo 10MB por arquivo</small>
-                                            </div>
-                                            {documentosPreview.map((doc, i) => (
-                                                <div key={i} className="d-flex gap-2 mb-2">
-                                                    <input type="text" placeholder="Título do documento" className="form-control" value={titulosDocumentos[i] || ''} onChange={(e) => handleTituloDocumentoChange(i, e.target.value)} required />
-                                                    <button type="button" className="btn btn-danger" onClick={() => removerDocumento(i)}>Remover</button>
-                                                </div>
-                                            ))}
-                                            {documentosPreview.length === 0 && (
-                                                <div className="text-center py-4 text-muted">
-                                                    <MdAttachFile size={32} />
-                                                    <p className="mt-2">Nenhum documento selecionado</p>
-                                                </div>
+                                            <button 
+                                                type="button" 
+                                                className={`btn ${Style.btnCancelar} me-2`}
+                                                onClick={fecharModalAdicionar}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            
+                                            {etapaRegistro < totalEtapas ? (
+                                                <button 
+                                                    type="button" 
+                                                    className={`btn ${Style.btnSubmit}`}
+                                                    onClick={proximaEtapa}
+                                                >
+                                                    Próximo <MdArrowForward className="ms-1" />
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    type="submit" 
+                                                    className={`btn ${Style.btnSubmit}`}
+                                                    disabled={salvando}
+                                                    style={{ backgroundColor: '#28a745', borderColor: '#28a745' }}
+                                                >
+                                                    {salvando ? "Registrando..." : "Registrar Professor"}
+                                                </button>
                                             )}
                                         </div>
-                                    )}
-                                </div>
-                                <div className="modal-footer">
-                                    <button type="button" className={`btn ${Style.btnCancelar}`} onClick={fecharModalAdicionar}>Cancelar</button>
-                                    <button type="submit" className={`btn ${Style.btnSubmit}`} disabled={salvando}>{salvando ? "Registrando..." : "Registrar"}</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -940,17 +1291,26 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* MODAL EDITAR */}
             {modalEditarAberto && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered modal-xl">
                         <div className="modal-content">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                            <div className="modal-header" style={{ backgroundColor: '#1a237e', color: '#ffd700' }}>
                                 <h5><MdEdit className="me-2" />Editar Professor</h5>
                                 <button className="btn-close btn-close-white" onClick={() => setModalEditarAberto(false)} disabled={salvando} />
                             </div>
                             <form onSubmit={salvarEdicao}>
                                 <div className="modal-body">
-                                    <Abas abaAtiva={abaAtiva} setAbaAtiva={setAbaAtiva} />
+                                    <div className="d-flex border-bottom mb-4">
+                                        <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'dados' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('dados')} style={{ borderBottomColor: abaAtiva === 'dados' ? '#ffd700' : 'transparent' }}>
+                                            <MdPerson className="me-2" /> Dados Pessoais
+                                        </button>
+                                        <button type="button" className={`btn btn-link text-decoration-none px-3 py-2 ${abaAtiva === 'documentos' ? 'fw-bold border-bottom border-2' : 'text-muted'}`} onClick={() => setAbaAtiva('documentos')} style={{ borderBottomColor: abaAtiva === 'documentos' ? '#ffd700' : 'transparent' }}>
+                                            <MdAttachFile className="me-2" /> Documentos
+                                        </button>
+                                    </div>
+                                    
                                     {abaAtiva === 'dados' && (
                                         <div className="row">
                                             <div className="col-md-6 mb-3">
@@ -1074,6 +1434,7 @@ function ProfessorEdit() {
                                             )}
                                         </div>
                                     )}
+                                    
                                     {abaAtiva === 'documentos' && (
                                         <div>
                                             <div className="mb-4">
@@ -1132,7 +1493,7 @@ function ProfessorEdit() {
                                                     <div className="mb-3">
                                                         <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="form-control" onChange={handleNovosDocumentosChange} id="novosDocumentos" />
                                                         <label htmlFor="novosDocumentos" className="form-label mt-2">
-                                                            <small className="text-muted"><MdFileUpload className="me-1" />Formatos: PDF, JPG, JPEG, PNG | Máximo 10MB por arquivo</small>
+                                                            <small className="text-muted">Formatos: PDF, JPG, JPEG, PNG | Máximo 10MB por arquivo</small>
                                                         </label>
                                                     </div>
                                                     {novosDocumentosPreview.length > 0 && (
@@ -1140,7 +1501,7 @@ function ProfessorEdit() {
                                                             <h6 className="mb-2">Novos Documentos Selecionados ({novosDocumentosPreview.length})</h6>
                                                             {novosDocumentosPreview.map((doc, i) => (
                                                                 <div key={i} className="d-flex gap-2 mb-2">
-                                                                    <input type="text" placeholder="Título do documento *" className="form-control" value={novosDocumentosTitulos[i] || ''} onChange={(e) => { const novos = [...novosDocumentosTitulos]; novos[i] = e.target.value; setNovosDocumentosTitulos(novos); }} required />
+                                                                    <input type="text" placeholder="Título do documento" className="form-control" value={novosDocumentosTitulos[i] || ''} onChange={(e) => { const novos = [...novosDocumentosTitulos]; novos[i] = e.target.value; setNovosDocumentosTitulos(novos); }} />
                                                                     <button type="button" className="btn btn-danger" onClick={() => removerNovoDocumento(i)} title="Remover este documento">
                                                                         <MdClear />
                                                                     </button>
@@ -1163,11 +1524,12 @@ function ProfessorEdit() {
                 </div>
             )}
 
+            {/* MODAL SENHA GERADA */}
             {modalSenhaGeradaAberto && professorSenhaGerada && (
                 <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
-                            <div className="modal-header" style={{ backgroundColor: 'var(--azul-escuro)', color: 'var(--dourado)' }}>
+                            <div className="modal-header" style={{ backgroundColor: '#1a237e', color: '#ffd700' }}>
                                 <h5><MdLock className="me-2" />Senha Gerada com Sucesso</h5>
                                 <button className="btn-close btn-close-white" onClick={() => setModalSenhaGeradaAberto(false)} />
                             </div>

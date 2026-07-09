@@ -5,6 +5,7 @@ const os = require('os');
 const path = require("path");
 const fs = require("fs")
 const login = require('./routes/home/login');
+const registrer = require('./routes/home/registrer');
 const getAdmin = require('./routes/admin/Get');
 const postAdmin = require('./routes/admin/Post');
 const putAdmin = require('./routes/admin/Put');
@@ -31,7 +32,7 @@ const LOCAL_IP = getLocalIP();
 
 const allowedOrigins = [
     'http://localhost:3000',
-    'http://localhost:3001',
+    'http://192.168.100.215:3000',
     'https://portal-imetro.vercel.app',
     `http://${LOCAL_IP}:3000`,
     `http://localhost:${PORT}`,
@@ -82,6 +83,7 @@ app.use('/', getAdmin);
 app.use('/', postAdmin);
 app.use('/', putAdmin);
 app.use('/', deleteAdmin);
+app.use('/', registrer);
 
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
