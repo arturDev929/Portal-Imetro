@@ -154,6 +154,10 @@ function Home() {
                     <Link to="/recuperar-senha" className={Style.forgotLink}>
                       Esqueceu a senha?
                     </Link>
+
+                    <Link to="/cadastro" className={Style.registerLink}>
+                      Fazer inscrição
+                    </Link>
                   </div>
 
                   <button

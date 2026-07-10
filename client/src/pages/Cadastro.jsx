@@ -5,7 +5,8 @@ import Style from "./Cadastro.module.css";
 import { 
   FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, 
   FaArrowRight, FaArrowLeft, FaCheckCircle, FaFileUpload,
-  FaTimes, FaFilePdf, FaFileImage, FaFileAlt
+  FaTimes, FaFilePdf, FaFileImage, FaFileAlt, FaGraduationCap,
+  FaUserCheck, FaShieldAlt
 } from "react-icons/fa";
 import { IoPartlySunny } from "react-icons/io5";
 import { PiGenderIntersexBold } from "react-icons/pi";
@@ -15,6 +16,7 @@ import SelectCursoPeriodo from "./components/selectCursoPeriodo";
 import Api from "../service/api"
 
 function Cadastro() {
+    // ETAPAS: 1-Dados Pessoais, 2-Documento, 3-Curso, 4-Documentos Upload, 5-Senha
     const [etapa, setEtapa] = useState(1);
     const [etapaVerificacao, setEtapaVerificacao] = useState(false);
     const [valores, setValores] = useState({
@@ -65,7 +67,6 @@ function Cadastro() {
         if (files && files.length > 0) {
             const novosArquivos = Array.from(files);
             
-            // Validar tamanho
             const arquivosInvalidos = novosArquivos.filter(file => file.size > 10 * 1024 * 1024);
             if (arquivosInvalidos.length > 0) {
                 showErrorToast("Erro", "Cada arquivo deve ter no máximo 10MB");
@@ -73,7 +74,6 @@ function Cadastro() {
                 return;
             }
 
-            // Validar extensões
             const extensoesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
             const arquivosInvalidosExt = novosArquivos.filter(file => {
                 const ext = file.name.split('.').pop().toLowerCase();
@@ -91,7 +91,6 @@ function Cadastro() {
                 documentosEstudante: [...prev.documentosEstudante, ...novosArquivos]
             }));
             
-            // Limpar o input para permitir selecionar o mesmo arquivo novamente
             e.target.value = '';
         }
     };
@@ -108,14 +107,12 @@ function Cadastro() {
         if (files && files[0]) {
             const file = files[0];
             
-            // Validar tamanho
             if (file.size > 5 * 1024 * 1024) {
                 showErrorToast("Erro", "A foto deve ter no máximo 5MB");
                 e.target.value = '';
                 return;
             }
             
-            // Validar extensões
             const extensoesPermitidas = ['jpg', 'jpeg', 'png'];
             const ext = file.name.split('.').pop().toLowerCase();
             if (!extensoesPermitidas.includes(ext)) {
@@ -129,7 +126,6 @@ function Cadastro() {
                 fotoEstudante: file
             }));
             
-            // Limpar o input
             e.target.value = '';
         }
     };
@@ -163,6 +159,7 @@ function Cadastro() {
         }
     };
 
+    // Validações por etapa
     const validarEtapa1 = () => {
         if (!valores.nomeEstudante || !valores.contactoEstudante || !valores.emailEstudante) {
             showErrorToast("Erro", "Preencha todos os campos obrigatórios!");
@@ -199,6 +196,20 @@ function Cadastro() {
     };
 
     const validarEtapa4 = () => {
+        if (arquivos.documentosEstudante.length === 0) {
+            showErrorToast("Erro", "Por favor, selecione pelo menos um documento!");
+            return false;
+        }
+
+        if (!arquivos.fotoEstudante) {
+            showErrorToast("Erro", "Por favor, selecione uma foto!");
+            return false;
+        }
+
+        return true;
+    };
+
+    const validarEtapa5 = () => {
         if (!valores.senhaEstudante || !valores.confirmarSenha) {
             showErrorToast("Erro", "Preencha todos os campos de senha!");
             return false;
@@ -214,16 +225,6 @@ function Cadastro() {
             return false;
         }
 
-        if (arquivos.documentosEstudante.length === 0) {
-            showErrorToast("Erro", "Por favor, selecione pelo menos um documento!");
-            return false;
-        }
-
-        if (!arquivos.fotoEstudante) {
-            showErrorToast("Erro", "Por favor, selecione uma foto!");
-            return false;
-        }
-
         return true;
     };
 
@@ -235,6 +236,8 @@ function Cadastro() {
         } else if (etapa === 3 && validarEtapa3()) {
             setEtapa(4);
         } else if (etapa === 4 && validarEtapa4()) {
+            setEtapa(5);
+        } else if (etapa === 5 && validarEtapa5()) {
             handleEnviarCodigo();
         }
     };
@@ -290,7 +293,6 @@ function Cadastro() {
             return;
         }
 
-        // LOG DE DEBUG
         console.log("=== VALORES DO FORMULÁRIO ===");
         console.log("Nome:", valores.nomeEstudante);
         console.log("Contacto:", valores.contactoEstudante);
@@ -307,7 +309,6 @@ function Cadastro() {
         try {
             const formData = new FormData();
             
-            // Adicionar campos de texto
             formData.append('nomeEstudante', valores.nomeEstudante);
             formData.append('contactoEstudante', valores.contactoEstudante);
             formData.append('emailEstudante', valores.emailEstudante);
@@ -320,28 +321,12 @@ function Cadastro() {
             formData.append('codigo', codigoCompleto);
             formData.append('email', valores.emailEstudante);
             
-            // IMPORTANTE: Adicionar FOTO com o nome "foto" (não "fotoEstudante")
             if (arquivos.fotoEstudante) {
                 formData.append('foto', arquivos.fotoEstudante);
             }
             
-            // IMPORTANTE: Adicionar DOCUMENTOS com o nome "documentos" (não "documentosEstudante")
             arquivos.documentosEstudante.forEach((file) => {
                 formData.append('documentos', file);
-            });
-
-            // Mostrar o que está sendo enviado para debug
-            console.log('Enviando dados:', {
-                nomeEstudante: valores.nomeEstudante,
-                contactoEstudante: valores.contactoEstudante,
-                emailEstudante: valores.emailEstudante,
-                biEstudante: valores.biEstudante,
-                sexoEstudante: valores.sexoEstudante,
-                idcurso: valores.idcurso,
-                id_periodo: valores.id_periodo,
-                codigo: codigoCompleto,
-                foto: arquivos.fotoEstudante?.name || 'Nenhuma foto',
-                documentos: arquivos.documentosEstudante.length + ' documentos'
             });
 
             const response = await Api.post(
@@ -386,17 +371,10 @@ function Cadastro() {
             }
         } catch (error) {
             console.error("Erro ao verificar código:", error);
-            console.error("Detalhes do erro:", {
-                status: error.response?.status,
-                data: error.response?.data,
-                headers: error.response?.headers
-            });
-            
-            const errorData = error.response?.data;
             setTentativas(prev => prev + 1);
             showErrorToast(
-                errorData?.titulo || "Erro",
-                errorData?.mensagem || "Erro na verificação. Verifique os dados e tente novamente."
+                error.response?.data?.titulo || "Erro",
+                error.response?.data?.mensagem || "Erro na verificação. Tente novamente."
             );
             
             setCodigoVerificacao(['', '', '', '', '', '']);
@@ -451,6 +429,42 @@ function Cadastro() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    // Função para obter o ícone da etapa
+    const getStepIcon = (step) => {
+        switch(step) {
+            case 1: return <FaUser />;
+            case 2: return <FaIdCard />;
+            case 3: return <FaGraduationCap />;
+            case 4: return <FaFileUpload />;
+            case 5: return <FaShieldAlt />;
+            default: return null;
+        }
+    };
+
+    // Função para obter o título da etapa
+    const getStepTitle = (step) => {
+        switch(step) {
+            case 1: return "Dados Pessoais";
+            case 2: return "Documento de Identificação";
+            case 3: return "Curso e Período";
+            case 4: return "Documentos e Foto";
+            case 5: return "Criar Senha";
+            default: return "";
+        }
+    };
+
+    // Função para obter a descrição da etapa
+    const getStepDescription = (step) => {
+        switch(step) {
+            case 1: return "Preencha suas informações pessoais";
+            case 2: return "Informe seu BI e sexo";
+            case 3: return "Selecione seu curso e período";
+            case 4: return "Envie seus documentos e foto";
+            case 5: return "Crie uma senha segura";
+            default: return "";
+        }
+    };
+
     return (
         <div className={Style.cadastroWrapper}>
             <div className={Style.sobrepo}></div>
@@ -473,22 +487,26 @@ function Cadastro() {
                             {!etapaVerificacao ? (
                                 <>
                                     <div className={Style.cardHeader}>
-                                        <h2>Criar conta</h2>
-                                        <p>Preencha os dados abaixo para se cadastrar</p>
+                                        <h2>{getStepTitle(etapa)}</h2>
+                                        <p>{getStepDescription(etapa)}</p>
+                                        <div className={Style.stepCounter}>
+                                            Passo {etapa} de 5
+                                        </div>
                                     </div>
 
                                     <div className={Style.progressContainer}>
                                         <div className={Style.steps}>
-                                            {[1, 2, 3, 4].map((step) => (
+                                            {[1, 2, 3, 4, 5].map((step) => (
                                                 <div key={step} className={Style.stepWrapper}>
                                                     <div className={`${Style.step} ${etapa >= step ? Style.active : ''}`}>
-                                                        {etapa > step ? <FaCheckCircle /> : step}
+                                                        {etapa > step ? <FaCheckCircle /> : getStepIcon(step)}
                                                     </div>
                                                     <span className={Style.stepLabel}>
                                                         {step === 1 && "Dados"}
-                                                        {step === 2 && "Documento"}
+                                                        {step === 2 && "BI"}
                                                         {step === 3 && "Curso"}
-                                                        {step === 4 && "Segurança"}
+                                                        {step === 4 && "Arquivos"}
+                                                        {step === 5 && "Senha"}
                                                     </span>
                                                 </div>
                                             ))}
@@ -496,6 +514,7 @@ function Cadastro() {
                                     </div>
 
                                     <form onSubmit={(e) => e.preventDefault()} className={Style.cadastroForm}>
+                                        {/* ETAPA 1: Dados Pessoais */}
                                         {etapa === 1 && (
                                             <div className={Style.formSection}>
                                                 <div className={Style.inputGroup}>
@@ -536,9 +555,14 @@ function Cadastro() {
                                                         disabled={loading}
                                                     />
                                                 </div>
+
+                                                <div className={Style.fieldHint}>
+                                                    <small>Estes dados serão usados para contato</small>
+                                                </div>
                                             </div>
                                         )}
 
+                                        {/* ETAPA 2: Documento de Identificação */}
                                         {etapa === 2 && (
                                             <div className={Style.formSection}>
                                                 <div className={Style.inputGroup}>
@@ -568,9 +592,14 @@ function Cadastro() {
                                                         <option value="Feminino">Feminino</option>
                                                     </select>
                                                 </div>
+
+                                                <div className={Style.fieldHint}>
+                                                    <small>O BI será usado para identificação única</small>
+                                                </div>
                                             </div>
                                         )}
 
+                                        {/* ETAPA 3: Curso e Período */}
                                         {etapa === 3 && (
                                             <div className={Style.formSection}>
                                                 <div className={Style.inputGroup} style={{ width: '100%' }}>
@@ -585,38 +614,16 @@ function Cadastro() {
                                                         showLabels={false}
                                                     />
                                                 </div>
+
+                                                <div className={Style.fieldHint}>
+                                                    <small>Selecione o curso e período desejado</small>
+                                                </div>
                                             </div>
                                         )}
 
+                                        {/* ETAPA 4: Upload de Documentos e Foto */}
                                         {etapa === 4 && (
                                             <div className={Style.formSection}>
-                                                <div className={Style.inputGroup}>
-                                                    <FaLock className={Style.inputIcon} />
-                                                    <input 
-                                                        type="password" 
-                                                        name="senhaEstudante"
-                                                        placeholder="Crie uma senha (mínimo 6 caracteres)"
-                                                        value={valores.senhaEstudante}
-                                                        onChange={handleChangeInput}
-                                                        required
-                                                        disabled={loading}
-                                                        minLength="6"
-                                                    />
-                                                </div>
-                                                
-                                                <div className={Style.inputGroup}>
-                                                    <FaLock className={Style.inputIcon} />
-                                                    <input 
-                                                        type="password" 
-                                                        name="confirmarSenha"
-                                                        placeholder="Confirme a senha"
-                                                        value={valores.confirmarSenha}
-                                                        onChange={handleChangeInput}
-                                                        required
-                                                        disabled={loading}
-                                                    />
-                                                </div>
-
                                                 <div className={Style.fileUploadContainer}>
                                                     <div className={Style.fileInputGroup}>
                                                         <label className={Style.fileLabel}>
@@ -699,6 +706,59 @@ function Cadastro() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* ETAPA 5: Senha */}
+                                        {etapa === 5 && (
+                                            <div className={Style.formSection}>
+                                                <div className={Style.passwordHeader}>
+                                                    <FaShieldAlt className={Style.passwordIcon} />
+                                                    <p className={Style.passwordHint}>
+                                                        Crie uma senha forte com pelo menos 6 caracteres
+                                                    </p>
+                                                </div>
+
+                                                <div className={Style.inputGroup}>
+                                                    <FaLock className={Style.inputIcon} />
+                                                    <input 
+                                                        type="password" 
+                                                        name="senhaEstudante"
+                                                        placeholder="Crie uma senha (mínimo 6 caracteres)"
+                                                        value={valores.senhaEstudante}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                        minLength="6"
+                                                    />
+                                                </div>
+                                                
+                                                <div className={Style.inputGroup}>
+                                                    <FaLock className={Style.inputIcon} />
+                                                    <input 
+                                                        type="password" 
+                                                        name="confirmarSenha"
+                                                        placeholder="Confirme a senha"
+                                                        value={valores.confirmarSenha}
+                                                        onChange={handleChangeInput}
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+
+                                                {valores.senhaEstudante && valores.confirmarSenha && (
+                                                    <div className={Style.passwordStrength}>
+                                                        {valores.senhaEstudante === valores.confirmarSenha ? (
+                                                            <span className={Style.passwordMatch}>
+                                                                <FaCheckCircle /> Senhas coincidem
+                                                            </span>
+                                                        ) : (
+                                                            <span className={Style.passwordMismatch}>
+                                                                <FaTimes /> Senhas não coincidem
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                         
                                         <div className={Style.formActions}>
                                             {etapa > 1 && (
@@ -723,8 +783,8 @@ function Cadastro() {
                                                     <div className={Style.spinner}></div>
                                                 ) : (
                                                     <>
-                                                        {etapa === 4 ? 'Enviar código' : 'Continuar'}
-                                                        <FaArrowRight />
+                                                        {etapa === 5 ? 'Finalizar Cadastro' : 'Continuar'}
+                                                        {etapa !== 5 && <FaArrowRight />}
                                                     </>
                                                 )}
                                             </button>

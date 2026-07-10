@@ -1824,7 +1824,7 @@ router.get('/turmaEditar/:id_periodo', async (req, res) => {
     });
 });
 
-router.get('/cursosSelectInscricoesAbertas', verificarToken, async (req, res) => {
+router.get('/cursosSelectInscricoesAbertas', async (req, res) => {
     const sql = `
         SELECT DISTINCT
             c.id_curso,
@@ -1871,7 +1871,7 @@ router.get('/cursosSelectInscricoesAbertas', verificarToken, async (req, res) =>
     });
 });
 
-router.get('/periodosPorCurso/:id_curso', verificarToken, async (req, res) => {
+router.get('/periodosPorCurso/:id_curso', async (req, res) => {
     const { id_curso } = req.params;
 
     if (!id_curso) {
