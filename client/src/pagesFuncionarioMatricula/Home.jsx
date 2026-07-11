@@ -10,6 +10,7 @@ function HomeAdm() {
     const [user, setUser] = useState(null);
     const [secaoAtiva, setSecaoAtiva] = useState("Pendente");
     const [inscritos, setInscritos] = useState([]);
+    const [estatisticas, setEstatisticas] = useState(null);
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
@@ -20,15 +21,25 @@ function HomeAdm() {
 
     useEffect(() => {
         RequestData();
-    }, []); // Removeu a dependência de inscritos para evitar loop infinito
+        carregarEstatisticas();
+    }, []);
 
     async function RequestData() {
         try {
             const data = await api.get("/EstudantesInscritos");
-            console.log(data.data);
+            console.log("Dados recebidos:", data.data);
             setInscritos(data.data);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
+        }
+    }
+
+    async function carregarEstatisticas() {
+        try {
+            const response = await api.get("/EstatisticasInscricoes");
+            setEstatisticas(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar estatísticas:", error);
         }
     }
 
@@ -37,19 +48,22 @@ function HomeAdm() {
             cor: "#003366",
             titulo: "Estudantes Inscritos",
             icone: FaUserPlus,
-            status: "Pendente"
+            status: "Pendente",
+            count: estatisticas?.pendentes || 0
         },
         {
             cor: "#28a745",
-            titulo: "Estudantes Aprovados",
+            titulo: "Estudantes Admitidos",
             icone: FaUserCheck,
-            status: "Aprovado"
+            status: "Admitido",
+            count: estatisticas?.admitidos || 0
         },
         {
             cor: "#dc3545",
-            titulo: "Estudantes Reprovados",
+            titulo: "Estudantes Não Admitidos",
             icone: FaUserTimes,
-            status: "Reprovado"
+            status: "Não Admitido",
+            count: estatisticas?.naoAdmitidos || 0
         }
     ];
 
@@ -75,37 +89,73 @@ function HomeAdm() {
                 </div>
             </div>
 
+            {/* Cards de estatísticas */}
+            {estatisticas && (
+                <div className="row mb-4 g-3">
+                    <div className="col-md-3">
+                        <div className="card bg-light border-0 shadow-sm">
+                            <div className="card-body text-center">
+                                <h5 className="text-muted">Total</h5>
+                                <h2 className="fw-bold" style={{ color: 'var(--azul-escuro)' }}>
+                                    {estatisticas.total || 0}
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="card bg-light border-0 shadow-sm">
+                            <div className="card-body text-center">
+                                <h5 className="text-muted">Admitidos</h5>
+                                <h2 className="fw-bold text-success">
+                                    {estatisticas.admitidos || 0}
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="card bg-light border-0 shadow-sm">
+                            <div className="card-body text-center">
+                                <h5 className="text-muted">Matriculados</h5>
+                                <h2 className="fw-bold text-primary">
+                                    {estatisticas.matriculados || 0}
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="card bg-light border-0 shadow-sm">
+                            <div className="card-body text-center">
+                                <h5 className="text-muted">Não Admitidos</h5>
+                                <h2 className="fw-bold text-danger">
+                                    {estatisticas.nao_admitidos || 0}
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Botões de navegação */}
             <div className="row mb-4 g-2">
-                <div className="col-md-2">
-                    <button 
-                        className={`btn w-100 ${secaoAtiva === "Pendente" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                        onClick={() => setSecaoAtiva("Pendente")}
-                    >
-                        <FaUserPlus className="me-2 mb-1" />
-                        E. Inscritos
-                    </button>
-                </div>
-                <div className="col-md-2">
-                    <button
-                        className={`btn w-100 ${secaoAtiva === "Aprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                        onClick={() => setSecaoAtiva("Aprovado")}
-                    >
-                        <FaUserCheck className="me-2 mb-1" />
-                        E. Aprovados
-                    </button>
-                </div>
-                <div className="col-md-2">
-                    <button
-                        className={`btn w-100 ${secaoAtiva === "Reprovado" ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
-                        onClick={() => setSecaoAtiva("Reprovado")}
-                    >
-                        <FaUserTimes className="me-2 mb-1" />
-                        E. Reprovados
-                    </button>
-                </div>
+                {secoes.map((secao) => (
+                    <div className="col-md-2" key={secao.status}>
+                        <button
+                            className={`btn w-100 position-relative ${secaoAtiva === secao.status ? Style.botoesGestaoCurso : Style.botoesGestaoCursoD}`}
+                            onClick={() => setSecaoAtiva(secao.status)}
+                        >
+                            <secao.icone className="me-2 mb-1" />
+                            {secao.titulo}
+                            {secao.count > 0 && (
+                                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {secao.count}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                ))}
             </div>
 
-            {/* Seções condicionais */}
+            {/* Lista de estudantes */}
             <div className="row">
                 <div className="col-12">
                     {secoes.map((secao) => (
@@ -114,7 +164,7 @@ function HomeAdm() {
                                 <div className="d-flex align-items-center gap-2 mb-3">
                                     <secao.icone size={20} color={secao.cor} className="me-2" />
                                     <h4 className="mb-0" style={{ color: 'var(--azul-escuro)' }}>
-                                        {secao.titulo}
+                                        {secao.titulo} ({secao.count})
                                     </h4>
                                 </div>
                                 <Inscricoes filtroStatus={secao.status} />

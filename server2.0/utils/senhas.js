@@ -68,7 +68,52 @@ function gerarSenhaTemporaria() {
     return senha;
 }
 
+// ========== NOVAS FUNÇÕES SOLICITADAS ==========
+
+/**
+ * Função 1: Gera código de 10 dígitos onde os 4 primeiros são o ano atual
+ * @param {number} tamanho - Tamanho do código (padrão: 10)
+ * @returns {string} Código com ano atual + dígitos aleatórios
+ */
+function gerarCodigoComAno(tamanho = 10) {
+    if (tamanho < 4) throw new Error('O tamanho deve ser pelo menos 4 para incluir o ano');
+    
+    const anoAtual = new Date().getFullYear().toString();
+    const caracteres = '0123456789';
+    let codigo = anoAtual;
+    
+    // Gera os dígitos restantes aleatórios
+    for (let i = codigo.length; i < tamanho; i++) {
+        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    
+    return codigo;
+}
+
+/**
+ * Função 2: Gera código de 8 dígitos onde os 4 primeiros são o ano atual
+ * @returns {string} Código de 8 dígitos com ano atual + 4 dígitos aleatórios
+ */
+function gerarCodigoOitoDigitos() {
+    const anoAtual = new Date().getFullYear().toString();
+    const caracteres = '0123456789';
+    let codigo = anoAtual;
+    
+    // Gera 4 dígitos aleatórios (totalizando 8)
+    for (let i = 0; i < 4; i++) {
+        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    
+    return codigo;
+}
+
+// Versão mais específica para 10 dígitos (mantendo compatibilidade)
+function gerarCodigoDezDigitos() {
+    return gerarCodigoComAno(10);
+}
+
 module.exports = {
+    // Funções originais
     criptografarSenha,
     compararSenhas,
     gerarSenhaForte,
@@ -76,5 +121,10 @@ module.exports = {
     compararSenhasSync,
     gerarId,
     gerarCodigo,
-    gerarSenhaTemporaria
+    gerarSenhaTemporaria,
+    
+    // Novas funções
+    gerarCodigoComAno,
+    gerarCodigoOitoDigitos,
+    gerarCodigoDezDigitos
 };

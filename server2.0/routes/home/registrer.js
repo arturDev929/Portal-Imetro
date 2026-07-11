@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const conexao = require('../../infra/conexao'); // ✅ CORRIGIDO - Importação direta
 const { uploadCombinadoAluno } = require('../../utils/upload');
-const { gerarId, gerarCodigo, criptografarSenha } = require('../../utils/senhas');
+const { gerarId, gerarCodigo, criptografarSenha, gerarCodigoDezDigitos } = require('../../utils/senhas');
 const { enviarEmail } = require('../../utils/email');
 
 // Cache em memória para códigos de verificação
@@ -486,7 +486,7 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
 
             // Gerar ID e criptografar senha
             const id_est = gerarId();
-            const codigoEstudante = gerarCodigo();
+            const codigoEstudante = gerarCodigoDezDigitos();
             const senhaCriptografada = await criptografarSenha(senhaEstudante);
 
             // Inserir estudante

@@ -6,10 +6,16 @@ const path = require("path");
 const fs = require("fs")
 const login = require('./routes/home/login');
 const registrer = require('./routes/home/registrer');
+
 const getAdmin = require('./routes/admin/Get');
 const postAdmin = require('./routes/admin/Post');
 const putAdmin = require('./routes/admin/Put');
 const deleteAdmin = require('./routes/admin/Delete');
+
+const getFr = require('./routes/fr/get');
+const postFr = require('./routes/fr/post');
+const putFr = require('./routes/fr/put');
+const deleteFr = require('./routes/fr/delete');
 
 dotenv.config();
 
@@ -84,6 +90,10 @@ app.use('/', postAdmin);
 app.use('/', putAdmin);
 app.use('/', deleteAdmin);
 app.use('/', registrer);
+app.use('/', getFr);
+app.use('/', postFr);
+app.use('/', putFr);
+app.use('/', deleteFr);
 
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);

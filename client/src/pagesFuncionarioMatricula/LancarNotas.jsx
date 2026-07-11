@@ -1,7 +1,8 @@
 import FuncionarioLayout from "../layouts/FuncionarioLayout";
 import { useEffect, useState } from "react";
-import { FaSave, FaEdit, FaCheckCircle, FaChartLine } from 'react-icons/fa';
+import { FaSave, FaEdit, FaChartLine, FaCheckCircle } from 'react-icons/fa';
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
+import api from "../service/api";
 
 function LancarNotasM() {
     const [user, setUser] = useState(null);
@@ -18,19 +19,41 @@ function LancarNotasM() {
         if (usuarioSalvo) {
             setUser(JSON.parse(usuarioSalvo));
         }
-        // Sem requisição - cursos vazio
+        carregarCursos();
     }, []);
 
     async function carregarCursos() {
-        // Sem requisição
+        try {
+            const response = await api.get("/cursos");
+            setCursos(response.data);
+        } catch (error) {
+            console.error("Erro ao carregar cursos:", error);
+            setMensagem({ texto: "Erro ao carregar cursos", tipo: "error" });
+            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+        }
     }
 
     async function carregarEstudantes(cursoId) {
-        // Sem requisição - apenas simulando loading
         setLoading(true);
-        setTimeout(() => {
+        try {
+            const response = await api.get(`/EstudantesByCurso/${cursoId}`);
+            setEstudantes(response.data);
+
+            const notasIniciais = {};
+            response.data.forEach(est => {
+                const notaValue = est.nota_estudanteInscricao || est.nota;
+                if (notaValue !== undefined && notaValue !== null) {
+                    notasIniciais[est.id_estudanteInscricao || est.id_est] = notaValue.toString();
+                }
+            });
+            setNotas(notasIniciais);
+        } catch (error) {
+            console.error("Erro ao carregar estudantes:", error);
+            setMensagem({ texto: "Erro ao carregar estudantes", tipo: "error" });
+            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     }
 
     const handleCursoChange = (e) => {
@@ -40,16 +63,16 @@ function LancarNotasM() {
             carregarEstudantes(cursoId);
         } else {
             setEstudantes([]);
+            setNotas({});
         }
     };
 
     const handleNotaChange = (estudanteId, value) => {
-        // Validar nota entre 0 e 10
         let notaValida = value;
         if (value !== "") {
             const num = parseFloat(value);
             if (num < 0) notaValida = "0";
-            if (num > 10) notaValida = "10";
+            if (num > 20) notaValida = "20";
         }
         setNotas(prev => ({ ...prev, [estudanteId]: notaValida }));
     };
@@ -60,36 +83,62 @@ function LancarNotasM() {
 
     const salvarNota = async (estudanteId) => {
         const nota = notas[estudanteId];
-        
-        if (nota === "" || nota === null) {
-            setMensagem({ texto: "Por favor, insira uma nota válida (0 a 10)", tipo: "error" });
+
+        if (nota === "" || nota === null || nota === undefined) {
+            setMensagem({ texto: "Por favor, insira uma nota válida (0 a 20)", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             return;
         }
 
         const notaNum = parseFloat(nota);
-        if (isNaN(notaNum) || notaNum < 0 || notaNum > 10) {
-            setMensagem({ texto: "Nota inválida. Use valores entre 0 e 10", tipo: "error" });
+        if (isNaN(notaNum) || notaNum < 0 || notaNum > 20) {
+            setMensagem({ texto: "Nota inválida. Use valores entre 0 e 20", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             return;
         }
 
         setLoading(true);
-        
-        // Simular salvamento
-        setTimeout(() => {
-            setModoEdicao(prev => ({ ...prev, [estudanteId]: false }));
-            setMensagem({ texto: "Nota lançada com sucesso!", tipo: "success" });
+
+        try {
+            const estudante = estudantes.find(est =>
+                (est.id_estudanteInscricao || est.id_est) === estudanteId
+            );
+            const codigo = estudante?.numeroInscricao_estudanteInscricao || estudante?.codigo;
+
+            if (!codigo) {
+                setMensagem({ texto: "Código do estudante não encontrado", tipo: "error" });
+                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+                setLoading(false);
+                return;
+            }
+
+            const response = await api.put(`/estudanteInscritoNota/${codigo}`, { nota: notaNum });
+
+            if (response.data.success) {
+                setModoEdicao(prev => ({ ...prev, [estudanteId]: false }));
+                setMensagem({ texto: response.data.message || "Nota lançada com sucesso!", tipo: "success" });
+                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+                carregarEstudantes(cursoSelecionado);
+            } else {
+                setMensagem({ texto: response.data.error || "Erro ao salvar nota", tipo: "error" });
+                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+            }
+        } catch (error) {
+            console.error("Erro ao salvar nota:", error);
+            setMensagem({ texto: error.response?.data?.error || "Erro ao processar solicitação", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     const getStatusNota = (nota) => {
-        if (nota === "" || nota === null) return { texto: "Não lançada", cor: "#dc3545" };
+        if (nota === "" || nota === null || nota === undefined) {
+            return { texto: "Não lançada", cor: "#dc3545" };
+        }
         const notaNum = parseFloat(nota);
-        if (notaNum >= 7) return { texto: "Aprovado", cor: "#28a745" };
-        if (notaNum >= 5) return { texto: "Recuperação", cor: "#ffc107" };
+        if (notaNum >= 14) return { texto: "Aprovado", cor: "#28a745" };
+        if (notaNum >= 10) return { texto: "Recuperação", cor: "#ffc107" };
         return { texto: "Reprovado", cor: "#dc3545" };
     };
 
@@ -115,7 +164,6 @@ function LancarNotasM() {
                 </div>
             </div>
 
-            {/* Mensagem de feedback */}
             {mensagem.texto && (
                 <div className="row mb-3">
                     <div className="col-12">
@@ -126,13 +174,12 @@ function LancarNotasM() {
                 </div>
             )}
 
-            {/* Seleção de Curso */}
             <div className="row mb-4">
                 <div className="col-md-6">
                     <label className="form-label fw-bold" style={{ color: 'var(--azul-escuro)' }}>
                         Selecione o Curso
                     </label>
-                    <select 
+                    <select
                         className="form-select"
                         value={cursoSelecionado}
                         onChange={handleCursoChange}
@@ -140,15 +187,14 @@ function LancarNotasM() {
                     >
                         <option value="">-- Selecione um curso --</option>
                         {cursos.map(curso => (
-                            <option key={curso.id} value={curso.id}>
-                                {curso.nome}
+                            <option key={curso.id_curso} value={curso.id_curso}>
+                                {curso.curso}
                             </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            {/* Lista de Estudantes */}
             {cursoSelecionado && (
                 <div className="row">
                     <div className="col-12">
@@ -167,7 +213,8 @@ function LancarNotasM() {
                             </div>
                         ) : estudantes.length === 0 ? (
                             <div className="alert alert-info text-center">
-                                Nenhum estudante encontrado para este curso.
+                                <FaCheckCircle className="me-2" />
+                                Nenhum estudante admitido ou aprovado encontrado para este curso.
                             </div>
                         ) : (
                             <div className="table-responsive">
@@ -176,6 +223,7 @@ function LancarNotasM() {
                                         <tr>
                                             <th>#</th>
                                             <th>Nome do Estudante</th>
+                                            <th>Código</th>
                                             <th>Nota Atual</th>
                                             <th>Status</th>
                                             <th>Ações</th>
@@ -183,27 +231,30 @@ function LancarNotasM() {
                                     </thead>
                                     <tbody>
                                         {estudantes.map((estudante, index) => {
-                                            const status = getStatusNota(notas[estudante.id]);
+                                            const id = estudante.id_estudanteInscricao || estudante.id_est;
+                                            const notaAtual = notas[id];
+                                            const status = getStatusNota(notaAtual);
                                             return (
-                                                <tr key={estudante.id}>
+                                                <tr key={id}>
                                                     <td>{index + 1}</td>
-                                                    <td className="fw-bold">{estudante.nome}</td>
+                                                    <td className="fw-bold">{estudante.nome_estudanteInscricao || estudante.nome}</td>
+                                                    <td>{estudante.numeroInscricao_estudanteInscricao || estudante.codigo}</td>
                                                     <td style={{ width: "150px" }}>
-                                                        {modoEdicao[estudante.id] ? (
+                                                        {modoEdicao[id] ? (
                                                             <input
                                                                 type="number"
                                                                 className="form-control"
                                                                 step="0.1"
                                                                 min="0"
-                                                                max="10"
-                                                                value={notas[estudante.id] || ""}
-                                                                onChange={(e) => handleNotaChange(estudante.id, e.target.value)}
-                                                                placeholder="0 a 10"
+                                                                max="20"
+                                                                value={notaAtual || ""}
+                                                                onChange={(e) => handleNotaChange(id, e.target.value)}
+                                                                placeholder="0 a 20"
                                                                 style={{ width: "100px" }}
                                                             />
                                                         ) : (
                                                             <span className="fw-bold">
-                                                                {notas[estudante.id] ? parseFloat(notas[estudante.id]).toFixed(1) : "—"}
+                                                                {notaAtual ? parseFloat(notaAtual).toFixed(1) : "—"}
                                                             </span>
                                                         )}
                                                     </td>
@@ -213,17 +264,18 @@ function LancarNotasM() {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        {!modoEdicao[estudante.id] ? (
+                                                        {!modoEdicao[id] ? (
                                                             <button
                                                                 className={`btn btn-sm ${Style.botoesGestaoCurso}`}
-                                                                onClick={() => habilitarEdicao(estudante.id)}
+                                                                onClick={() => habilitarEdicao(id)}
+                                                                disabled={loading}
                                                             >
                                                                 <FaEdit className="me-1" /> Editar
                                                             </button>
                                                         ) : (
                                                             <button
                                                                 className={`btn btn-sm ${Style.botoesGestaoCurso}`}
-                                                                onClick={() => salvarNota(estudante.id)}
+                                                                onClick={() => salvarNota(id)}
                                                                 disabled={loading}
                                                             >
                                                                 <FaSave className="me-1" /> Salvar
@@ -241,12 +293,11 @@ function LancarNotasM() {
                 </div>
             )}
 
-            {/* Instruções */}
             {!cursoSelecionado && (
                 <div className="row">
                     <div className="col-12">
                         <div className="alert alert-info text-center">
-                            <FaCheckCircle size={20} className="me-2" />
+                            <FaChartLine size={20} className="me-2" />
                             Selecione um curso para começar a lançar as notas
                         </div>
                     </div>
