@@ -61,9 +61,6 @@ function Sidebar(){
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
                             </Link>
                             <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/>Alunos Admitidos
-                            </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
                                 <MdTopic className="mb-2 me-2"/>Add. Tópicos
                             </Link>
                         </div>
@@ -106,9 +103,6 @@ function Sidebar(){
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
-                            </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/>Alunos Admitidos
                             </Link>
                             <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
                                 <MdTopic className="mb-2 me-2"/>Add. Tópicos

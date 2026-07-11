@@ -62,7 +62,7 @@ router.post("/enviarCodigoVerificacao", async (req, res) => {
         if (contactoEstudante) {
             const verificarContacto = await new Promise((resolve, reject) => {
                 conexao.query(
-                    "SELECT id_est FROM estudante_inscricao WHERE conatcto = ?",
+                    "SELECT id_est FROM estudante_inscricao WHERE contacto = ?",
                     [contactoEstudante.trim()],
                     (erro, resultados) => {
                         if (erro) reject(erro);
@@ -428,7 +428,7 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
 
             const verificarContacto = await new Promise((resolve, reject) => {
                 conexao.query(
-                    "SELECT id_est FROM estudante_inscricao WHERE conatcto = ?",
+                    "SELECT id_est FROM estudante_inscricao WHERE contacto = ?",
                     [contactoEstudante.trim()],
                     (erro, resultados) => {
                         if (erro) reject(erro);
@@ -445,10 +445,10 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
                 });
             }
 
-            // Verificar curso e período
+            // Verificar curso e período - BUSCANDO O CAMPO 'curso' (não 'nome_curso')
             const verificarCurso = await new Promise((resolve, reject) => {
                 conexao.query(
-                    "SELECT id_curso FROM curso WHERE id_curso = ? AND status = 'Ativo'",
+                    "SELECT id_curso, curso FROM curso WHERE id_curso = ? AND status = 'Ativo'",
                     [idcurso],
                     (erro, resultados) => {
                         if (erro) reject(erro);
@@ -464,6 +464,9 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
                     mensagem: "Curso inválido ou inativo"
                 });
             }
+
+            // Armazenar o nome do curso para usar no email
+            const nomeCurso = verificarCurso[0].curso;
 
             const verificarPeriodo = await new Promise((resolve, reject) => {
                 conexao.query(
@@ -488,11 +491,12 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
             const id_est = gerarId();
             const codigoEstudante = gerarCodigoDezDigitos();
             const senhaCriptografada = await criptografarSenha(senhaEstudante);
+            const nota = '--';
 
             // Inserir estudante
             await new Promise((resolve, reject) => {
                 const sql = `INSERT INTO estudante_inscricao (
-                    id_est, nome, conatcto, genero, email, bi, 
+                    id_est, nome, contacto, genero, email, bi, 
                     status, id_curso, id_periodo, codigo, nota, 
                     senha, foto
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -508,7 +512,7 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
                     idcurso,
                     id_periodo,
                     codigoEstudante,
-                    0,
+                    nota,
                     senhaCriptografada,
                     foto
                 ], (erro, resultado) => {
@@ -543,7 +547,7 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
             // Remover código do cache
             codigosVerificacao.delete(emailKey);
 
-            // Enviar email de confirmação
+            // Enviar email de confirmação - USANDO O NOME DO CURSO
             const htmlConfirmacao = `
                 <!DOCTYPE html>
                 <html>
@@ -551,38 +555,81 @@ router.post("/verificarCodigoECompletarCadastro", async (req, res) => {
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Cadastro Realizado - IMETRO</title>
+                    <style>
+                        @media only screen and (max-width: 600px) {
+                            .container { width: 100% !important; }
+                            .padding { padding: 20px !important; }
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                        }
+                        .header {
+                            background: #003366;
+                            padding: 30px;
+                            text-align: center;
+                        }
+                        .content {
+                            padding: 35px 30px;
+                            background: #ffffff;
+                        }
+                        .footer {
+                            background: #002244;
+                            padding: 25px;
+                            text-align: center;
+                        }
+                        .info-box {
+                            background-color: #f8f9fa;
+                            padding: 20px;
+                            border-radius: 6px;
+                            margin: 0 0 20px 0;
+                            border-left: 4px solid #B8860B;
+                        }
+                        .info-box p {
+                            margin: 0 0 12px 0;
+                            font-size: 14px;
+                        }
+                        .info-box p:last-child {
+                            margin-bottom: 0;
+                        }
+                        .label {
+                            color: #003366;
+                            font-weight: bold;
+                        }
+                        .value {
+                            color: #B8860B;
+                            font-weight: bold;
+                        }
+                    </style>
                 </head>
                 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div class="container">
                         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             <tr>
-                                <td style="background: #003366; padding: 30px; text-align: center;">
+                                <td class="header">
                                     <h1 style="color: #B8860B; margin: 0; font-size: 22px; font-weight: 600;">IMETRO</h1>
                                     <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 12px;">Instituto Politécnico Superior Metropolitano de Angola</p>
                                 </td>
                             </tr>
                             <tr>
-                                <td style="padding: 35px 30px;">
+                                <td class="content">
                                     <h2 style="color: #003366; margin: 0 0 20px 0;">Cadastro Realizado com Sucesso!</h2>
                                     <p style="color: #333333; font-size: 15px; line-height: 1.6; margin: 0 0 15px 0;">Olá <strong style="color: #003366;">${nomeEstudante}</strong>,</p>
                                     <p style="color: #333333; font-size: 14px; line-height: 1.6; margin: 0 0 25px 0;">Seu cadastro no IMETRO foi realizado com sucesso!</p>
                                     
-                                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 0 0 20px 0; border-left: 4px solid #B8860B;">
-                                        <tr>
-                                            <td>
-                                                <p style="margin: 0 0 12px 0; font-size: 14px;"><strong style="color: #003366;">Seu código de estudante:</strong> <span style="font-weight: bold; color: #B8860B;">${codigoEstudante}</span></p>
-                                                <p style="margin: 0 0 12px 0; font-size: 14px;"><strong style="color: #003366;">Status:</strong> Pendente</p>
-                                                <p style="margin: 0; font-size: 14px;"><strong style="color: #003366;">Curso:</strong> ${idcurso}</p>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                    <div class="info-box">
+                                        <p><span class="label">Seu código de estudante:</span> <span class="value">${codigoEstudante}</span></p>
+                                        <p><span class="label">Status:</span> <span class="value">Pendente</span></p>
+                                        <p><span class="label">Curso:</span> <span class="value">${nomeCurso}</span></p>
+                                    </div>
                                     
                                     <p style="color: #333333; font-size: 14px; line-height: 1.6; margin: 0 0 10px 0;">Sua inscrição está sendo analisada pela coordenação.</p>
                                     <p style="color: #666666; font-size: 13px; margin: 0;">Você será notificado quando seu status for atualizado.</p>
                                 </td>
                             </tr>
                             <tr>
-                                <td style="background-color: #002244; padding: 25px; text-align: center;">
+                                <td class="footer">
                                     <p style="color: #B8860B; margin: 0 0 10px 0; font-size: 12px;">Instituto Politécnico Superior Metropolitano de Angola</p>
                                     <p style="color: #ffffff; margin: 0; font-size: 11px;">Este é um email automático, por favor não responda.</p>
                                 </td>

@@ -24,7 +24,7 @@ router.get('/EstudantesInscritos', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.status = 'Pendente'
+        WHERE ei.status = 'Pendente' AND ei.pagamento_inscricao IS NOT NULL
         ORDER BY ei.nome ASC
     `;
 
@@ -144,7 +144,7 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.status = ?
+        WHERE ei.status = ? AND ei.pagamento_inscricao IS NOT NULL
         ORDER BY ei.nome ASC
     `;
 
@@ -258,7 +258,7 @@ router.get('/EstudantesByCurso/:cursoId', (req, res) => {
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
         WHERE ei.id_curso = ? 
-        AND ei.status IN ('Admitido', 'Aprovado', 'Matriculado', 'Reprovado')
+        AND ei.status IN ('Admitido', 'Aprovado', 'Matriculado', 'Reprovado') AND ei.pagamento_inscricao IS NOT NULL
         ORDER BY ei.nome ASC
     `;
 
@@ -311,7 +311,7 @@ router.get('/EstatisticasInscricoes', (req, res) => {
             SUM(CASE WHEN status = 'Admitido' THEN 1 ELSE 0 END) as admitidos,
             SUM(CASE WHEN status = 'Não Admitido' THEN 1 ELSE 0 END) as nao_admitidos,
             SUM(CASE WHEN status = 'Matriculado' THEN 1 ELSE 0 END) as matriculados
-        FROM estudante_inscricao
+        FROM estudante_inscricao WHERE pagamento_inscricao IS NOT NULL
     `;
 
     conexao.query(sql, (error, result) => {
@@ -346,6 +346,7 @@ router.get('/EstatisticasPorCurso', (req, res) => {
             SUM(CASE WHEN ei.status = 'Matriculado' THEN 1 ELSE 0 END) as matriculados
         FROM curso c
         LEFT JOIN estudante_inscricao ei ON c.id_curso = ei.id_curso
+        Where ei.pagamento_inscricao IS NOT NULL
         GROUP BY c.id_curso, c.curso
         ORDER BY c.curso ASC
     `;
@@ -387,7 +388,7 @@ router.get('/Estudante/:id', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.id_est = ?
+        WHERE ei.id_est = ? AND ei.pagamento_inscricao IS NOT NULL
     `;
 
     conexao.query(sql, [id], (error, result) => {
