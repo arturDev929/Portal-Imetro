@@ -16,7 +16,9 @@
   "main": "app.js",
   "scripts": {
     "test": "npm test",
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "vercel-build": "echo Hello"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

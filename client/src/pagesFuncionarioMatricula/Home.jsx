@@ -1,3 +1,4 @@
+// src/pagesFuncionarioMatricula/Home.jsx
 import FuncionarioLayout from "../layouts/FuncionarioLayout";
 import { useEffect, useState } from "react";
 import Inscricoes from "./components/Inscricoes";
@@ -6,8 +7,9 @@ import { IoMdPerson } from "react-icons/io";
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
 import api from "../service/api";
 
-function HomeAdm() {
+function HomeFuncionarioM() {
     const [user, setUser] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [secaoAtiva, setSecaoAtiva] = useState("Pendente");
     const [inscritos, setInscritos] = useState([]);
     const [estatisticas, setEstatisticas] = useState(null);
@@ -15,7 +17,15 @@ function HomeAdm() {
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
+            try {
+                const userData = JSON.parse(usuarioSalvo);
+                setUser(userData);
+                const id = userData.id || userData.id_user || userData.userId || userData.id_usuario;
+                setUserId(id);
+                console.log("User ID no Home:", id);
+            } catch (e) {
+                console.error("Erro ao parsear usuário:", e);
+            }
         }
     }, []);
 
@@ -63,7 +73,7 @@ function HomeAdm() {
             titulo: "Estudantes Não Admitidos",
             icone: FaUserTimes,
             status: "Não Admitido",
-            count: estatisticas?.naoAdmitidos || 0
+            count: estatisticas?.nao_admitidos || 0
         }
     ];
 
@@ -78,7 +88,8 @@ function HomeAdm() {
                             </h2>
                             {user && (
                                 <p className="text-muted mb-0">
-                                    Bem-vindo, {user.nome} | Gestão de inscrições e matrículas
+                                    Bem-vindo, {user.nome || user.name} | Gestão de inscrições e matrículas
+                                    {userId && <span className="ms-2 text-primary">(ID: {userId})</span>}
                                 </p>
                             )}
                         </div>
@@ -177,4 +188,4 @@ function HomeAdm() {
     );
 }
 
-export default HomeAdm;
+export default HomeFuncionarioM;

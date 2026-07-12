@@ -207,4 +207,43 @@ router.delete('/Topico', async (req, res) => {
     });
 });
 
+router.delete('/topico/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({ error: "ID do tópico é obrigatório" });
+    }
+
+    // Buscar arquivo para deletar
+    const checkSql = "SELECT arquivo FROM topicoexamiinscricao WHERE id_topicoexame = ?";
+    conexao.query(checkSql, [id], (checkError, checkResult) => {
+        if (checkError) {
+            console.error("Erro ao buscar tópico:", checkError);
+            return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+
+        if (checkResult.length === 0) {
+            return res.status(404).json({ error: "Tópico não encontrado" });
+        }
+
+        const deleteSql = "DELETE FROM topicoexamiinscricao WHERE id_topicoexame = ?";
+        conexao.query(deleteSql, [id], (deleteError, deleteResult) => {
+            if (deleteError) {
+                console.error("Erro ao deletar tópico:", deleteError);
+                return res.status(500).json({ error: "Erro ao deletar tópico" });
+            }
+
+            // Deletar arquivo físico
+            if (checkResult[0].arquivo) {
+                deletarTopicoArquivo(checkResult[0].arquivo);
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Tópico deletado com sucesso"
+            });
+        });
+    });
+});
+
 module.exports = router;

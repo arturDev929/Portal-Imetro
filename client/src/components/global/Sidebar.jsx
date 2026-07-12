@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import imetro from "../../img/logoFundo.png";
@@ -5,9 +6,10 @@ import Style from "./Sidebar.module.css";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { IoSettingsOutline } from "react-icons/io5";
 import { MdTopic } from "react-icons/md";
-import { PiStudentDuotone,PiNotePencilLight  } from "react-icons/pi";
+import { PiStudentDuotone, PiNotePencilLight } from "react-icons/pi";
 import { GrSecure } from "react-icons/gr";
-function Sidebar(){
+
+function Sidebar() {
     const [user, setUser] = useState(null);
     const location = useLocation();
 
@@ -33,7 +35,14 @@ function Sidebar(){
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
         if (usuarioSalvo) {
-            setUser(JSON.parse(usuarioSalvo));
+            try {
+                const userData = JSON.parse(usuarioSalvo);
+                console.log("Usuário logado:", userData); // Debug
+                console.log("ID do usuário:", userData.id || userData.id_user || userData.userId); // Debug
+                setUser(userData);
+            } catch (e) {
+                console.error("Erro ao parsear usuário:", e);
+            }
         }
     }, []);
 
@@ -41,56 +50,65 @@ function Sidebar(){
         closeMobileSidebar();
     }, [location.pathname]);
 
-    return(
+    // Função para obter o ID do usuário
+    const getUserId = () => {
+        if (!user) return null;
+        return user.id || user.id_user || user.userId || user.id_usuario;
+    };
+
+    return (
         <div className="container-fluid">
             <div className="row">
                 <div className={`${Style.containerFluid} col-md-3 col-lg-2 d-none d-md-block vh-100 position-fixed`}>
                     <div className="text-center py-3">
                         <h5 className="mb-0">
-                            <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro}/>
+                            <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} />
                             <span className="ms-2 fw-bold text-light">Portal Imetro</span>
                         </h5>
                     </div>
                     <nav className="nav flex-column p-3">
                         <div className="mb-3">
-                            {/* <h6 className="text-uppercase text-muted small fw-bold mb-2">Gestão</h6> */}
-                            <Link to="/homefuncionarioM" className={`nav-link active ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
+                            <Link to="/homefuncionarioM" className={`nav-link ${location.pathname === '/homefuncionarioM' ? 'active' : ''} ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2" /> Estudantes Inscritos
                             </Link>
-                            <Link to="/lancarNotasM" className={`nav-link ${Style.Link}`}>
-                                <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
+                            <Link to="/lancarNotasM" className={`nav-link ${location.pathname === '/lancarNotasM' ? 'active' : ''} ${Style.Link}`}>
+                                <PiNotePencilLight className="mb-2 me-2" /> Lançamento de Notas
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <MdTopic className="mb-2 me-2"/>Add. Tópicos
+                            <Link to="/gerenciarTopicos" className={`nav-link ${location.pathname === '/gerenciarTopicos' ? 'active' : ''} ${Style.Link}`}>
+                                <MdTopic className="mb-2 me-2" /> Gerenciar Tópicos
                             </Link>
                         </div>
                         <div className="mb-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Configurações</h6>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <IoSettingsOutline className="me-2"/>Configurações
+                            <Link to="/configuracoesFR" className={`nav-link ${location.pathname === '/configuracoesFR' ? 'active' : ''} ${Style.Link}`}>
+                                <IoSettingsOutline className="me-2" /> Configurações
                             </Link>
-                            <Link to="#" className={`nav-link ${Style.Link}`}>
-                                <GrSecure className="me-2"/>Segurança
+                            <Link to="/segurancaFR" className={`nav-link ${location.pathname === '/segurancaFR' ? 'active' : ''} ${Style.Link}`}>
+                                <GrSecure className="me-2" /> Segurança
                             </Link>
                         </div>
                     </nav>
-                    <div className=" p-3 mt-auto position-absolute bottom-0 w-100">
-                        <hr/>
+                    <div className="p-3 mt-auto position-absolute bottom-0 w-100">
+                        <hr />
                         <div className="d-flex align-items-center text-light">
-                            <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
+                            <IoPersonCircleOutline className="rounded-circle me-2" size={32} />
                             <div>
-                                {user && <h6 className="mb-0">{user.nome}</h6>}
+                                {user && (
+                                    <>
+                                        <h6 className="mb-0">{user.nome || user.name || 'Usuário'}</h6>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
-                </div>                
+                </div>
             </div>
 
-            {/* Sidebar Mobile com Offcanvas do Bootstrap */}
+            {/* Sidebar Mobile */}
             <div className={`offcanvas offcanvas-start d-md-none ${Style.containerFluid}`} tabIndex="-1" id="sidebarMobile">
                 <div className="offcanvas-header border-bottom">
                     <h5 className="mb-0">
-                        <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} to="/homeAdm"/>
+                        <img src={imetro} alt="Logo do IMETRO" className={Style.logoImetro} />
                         <span className="ms-2 fw-bold text-light">Portal Imetro</span>
                     </h5>
                     <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
@@ -98,39 +116,45 @@ function Sidebar(){
                 <div className="offcanvas-body p-0">
                     <nav className="nav flex-column">
                         <div className="p-3 border-bottom">
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link active ${Style.Link}`}>
-                                <PiStudentDuotone className="mb-2 me-2"/> Estudantes Inscritos
+                            <Link to="/homefuncionarioM" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/homefuncionarioM' ? 'active' : ''} ${Style.Link}`}>
+                                <PiStudentDuotone className="mb-2 me-2" /> Estudantes Inscritos
                             </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <PiNotePencilLight className="mb-2 me-2"/>Lançamento de Notas
+                            <Link to="/lancarNotasM" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/lancarNotasM' ? 'active' : ''} ${Style.Link}`}>
+                                <PiNotePencilLight className="mb-2 me-2" /> Lançamento de Notas
                             </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <MdTopic className="mb-2 me-2"/>Add. Tópicos
+                            <Link to="/gerenciarTopicos" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/gerenciarTopicos' ? 'active' : ''} ${Style.Link}`}>
+                                <MdTopic className="mb-2 me-2" /> Gerenciar Tópicos
                             </Link>
                         </div>
-
-                        {/* Menu Configurações */}
                         <div className="p-3">
                             <h6 className="text-uppercase text-muted small fw-bold mb-2">Configurações</h6>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <IoSettingsOutline className="me-2"/>Configurações
+                            <Link to="/configuracoesFR" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/configuracoesFR' ? 'active' : ''} ${Style.Link}`}>
+                                <IoSettingsOutline className="me-2" /> Configurações
                             </Link>
-                            <Link to="#" onClick={closeMobileSidebar} className={`nav-link ${Style.Link}`}>
-                                <GrSecure className="me-2"/>Segurança
+                            <Link to="/segurancaFR" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/segurancaFR' ? 'active' : ''} ${Style.Link}`}>
+                                <GrSecure className="me-2" /> Segurança
                             </Link>
                         </div>
                     </nav>
                 </div>
                 <div className="border-top p-3">
                     <div className="d-flex align-items-center text-light">
-                        <IoPersonCircleOutline className="rounded-circle me-2" alt="Usuário"/>
+                        <IoPersonCircleOutline className="rounded-circle me-2" size={32} />
                         <div>
-                            {user && <h6 className="mb-0">{user.nome}</h6>}
+                            {user && (
+                                <>
+                                    <h6 className="mb-0">{user.nome || user.name || 'Usuário'}</h6>
+                                    <small className="text-muted" style={{ fontSize: '10px' }}>
+                                        ID: {getUserId() || 'N/A'}
+                                    </small>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    )
+    );
 }
-export default Sidebar
+
+export default Sidebar;

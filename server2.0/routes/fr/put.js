@@ -373,4 +373,42 @@ router.put('/estudanteAtualizar/:id', (req, res) => {
     });
 });
 
+router.put('/topico/:id', async (req, res) => {
+    const { id } = req.params;
+    const { topico, id_user } = req.body;
+
+    if (!id) {
+        return res.status(400).json({ error: "ID do tópico é obrigatório" });
+    }
+
+    if (!topico || topico.trim() === '') {
+        return res.status(400).json({ error: "Tópico é obrigatório" });
+    }
+
+    const checkSql = "SELECT * FROM topicoexamiinscricao WHERE id_topicoexame = ?";
+    conexao.query(checkSql, [id], (checkError, checkResult) => {
+        if (checkError) {
+            console.error("Erro ao verificar tópico:", checkError);
+            return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+
+        if (checkResult.length === 0) {
+            return res.status(404).json({ error: "Tópico não encontrado" });
+        }
+
+        const updateSql = "UPDATE topicoexamiinscricao SET topico = ? WHERE id_topicoexame = ?";
+        conexao.query(updateSql, [topico.trim(), id], (updateError, updateResult) => {
+            if (updateError) {
+                console.error("Erro ao atualizar tópico:", updateError);
+                return res.status(500).json({ error: "Erro ao atualizar tópico" });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Tópico atualizado com sucesso"
+            });
+        });
+    });
+});
+
 module.exports = router;

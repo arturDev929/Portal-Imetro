@@ -1,3 +1,4 @@
+// src/App.jsx
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,6 +9,7 @@ import { lazy, Suspense } from "react";
 import Layout from "./layouts/Layout";
 import { useAuth } from "./hooks/global/useAuth";
 import LancarNotasM from "./pagesFuncionarioMatricula/LancarNotas";
+import GerenciarTopicos from "./pagesFuncionarioMatricula/GerenciarTopicos";
 import EstudentIsncription from "./pagesEstudentInscrition/index.jsx";
 import TurmasTeacher from "./pagesTeacher/TurmasTeacher.jsx";
 import AvaliacoesNotas from "./pagesTeacher/AvaliacoesNotas.jsx";
@@ -15,7 +17,9 @@ import ChatDelegado from "./pagesTeacher/ChatDelgado.jsx";
 import ConteudosTopicos from "./pagesTeacher/ConteudosTopicos.jsx";
 import Horarios from "./pagesTeacher/Horarios.jsx";
 import Configuracoes from "./pagesTeacher/Configuracoes.jsx";
+import ConfiguracoesFR from "./pagesFuncionarioMatricula/Configuracoes.jsx";
 import Seguranca from "./pagesTeacher/Seguranca.jsx";
+import SegurancaFR from "./pagesFuncionarioMatricula/Seguranca.jsx";
 import MinhaAgenda from "./pagesTeacher/MinhaAgenda.jsx";
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
@@ -64,6 +68,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/cadastro" element={<Cadastro />} />
 
+            {/* Rotas Admin */}
             <Route
               path="/homeAdm"
               element={
@@ -104,6 +109,8 @@ function App() {
                 </RotaPrivada>
               }
             />
+
+            {/* Rotas Funcionário Matrícula */}
             <Route
               path="/homefuncionarioM"
               element={
@@ -129,6 +136,32 @@ function App() {
               }
             />
             <Route
+              path="/configuracoesFR"
+              element={
+                <RotaPrivada>
+                  <ConfiguracoesFR />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/segurancaFR"
+              element={
+                <RotaPrivada>
+                  <SegurancaFR />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/gerenciarTopicos"
+              element={
+                <RotaPrivada>
+                  <GerenciarTopicos />
+                </RotaPrivada>
+              }
+            />
+
+            {/* Rotas Teacher */}
+            <Route
               path="/hometeacher"
               element={
                 <RotaPrivada>
@@ -136,20 +169,88 @@ function App() {
                 </RotaPrivada>
               }
             />
-            {/* <Route path="/definicoesTeacher" element={<RotaPrivada><DefinicoesTeacher/></RotaPrivada>}/>
-            <Route path="/segurancaTeacher" element={<RotaPrivada><SegurancaTeacher/></RotaPrivada>}/> */}
+            <Route
+              path="/turmasTeacher"
+              element={
+                <RotaPrivada>
+                  <TurmasTeacher />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/painelGeralTeacher"
+              element={
+                <RotaPrivada>
+                  <PainelGeral />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/avaliacoesNotas"
+              element={
+                <RotaPrivada>
+                  <AvaliacoesNotas />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <RotaPrivada>
+                  <ChatDelegado />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/topicos"
+              element={
+                <RotaPrivada>
+                  <ConteudosTopicos />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/horario"
+              element={
+                <RotaPrivada>
+                  <Horarios />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/agenda"
+              element={
+                <RotaPrivada>
+                  <MinhaAgenda />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/configuracoes"
+              element={
+                <RotaPrivada>
+                  <Configuracoes />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/seguranca"
+              element={
+                <RotaPrivada>
+                  <Seguranca />
+                </RotaPrivada>
+              }
+            />
 
-            <Route path="/inscricao" element={<RotaPrivada><EstudentIsncription /></RotaPrivada>} />
-            <Route path="/turmasTeacher" element={<RotaPrivada><TurmasTeacher /></RotaPrivada>} />
-            <Route path="/painelGeralTeacher" element={<RotaPrivada><PainelGeral /></RotaPrivada>} />
-            <Route path="/avaliacoesNotas" element ={<RotaPrivada><AvaliacoesNotas /></RotaPrivada>} />
-            <Route path="/chat" element={<RotaPrivada><ChatDelegado /></RotaPrivada>} />
-            <Route path="/topicos" element={<RotaPrivada><ConteudosTopicos /></RotaPrivada>} />
-            <Route path="/horario" element={<RotaPrivada><Horarios /></RotaPrivada>} />
-            <Route path="/agenda" element={<RotaPrivada><MinhaAgenda /></RotaPrivada>} />
-            <Route path="/configura" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
-            <Route path="/segura" element={<RotaPrivada><Seguranca /></RotaPrivada>} />
-    
+            {/* Rotas Estudante */}
+            <Route
+              path="/inscricao"
+              element={
+                <RotaPrivada>
+                  <EstudentIsncription />
+                </RotaPrivada>
+              }
+            />
           </Routes>
         </Suspense>
       </Layout>

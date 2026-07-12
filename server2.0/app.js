@@ -94,8 +94,9 @@ app.use('/', getFr);
 app.use('/', postFr);
 app.use('/', putFr);
 app.use('/', deleteFr);
+app.use('/', topico);   
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
     console.log(`Servidor rodando na porta ${PORT}`);
     console.log(`Local: http://localhost:${PORT}`);
     console.log(`Rede: http://${LOCAL_IP}:${PORT}`);

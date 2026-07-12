@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const { uploadTopico, deletarTopicoArquivo } = require("../../infra/upload");
 require("dotenv").config({ quiet: true });
 
 // ==================== POST - Criar Nova Inscrição ====================
@@ -172,39 +173,69 @@ router.post('/estudanteDocumento', async (req, res) => {
 });
 
 // ==================== POST - Tópico ====================
-router.post('/Topico', async (req, res) => {
-    const { topico } = req.body;
-
-    if (!topico || topico.trim() === '') {
-        return res.status(400).json({ error: "Tópico é obrigatório" });
-    }
-
-    // ID do funcionário (do dump: Artur Paulo)
-    const id_func = '01ec45fe-1362-4f18-85d4-81902ab57fe7';
-
-    const deleteSql = "DELETE FROM topicoexamiinscricao";
-
-    conexao.query(deleteSql, (deleteError) => {
-        if (deleteError) {
-            console.error("Erro ao deletar tópicos antigos:", deleteError);
-            return res.status(500).json({ error: "Erro ao processar" });
+router.post('/topico', (req, res) => {
+    uploadTopico(req, res, async (err) => {
+        if (err) {
+            console.error("Erro no upload:", err);
+            return res.status(400).json({ error: err.message || "Erro no upload do arquivo" });
         }
 
-        const insertSql = "INSERT INTO topicoexamiinscricao (topico, id_func, status) VALUES (?, ?, 'Ativo')";
+        // O multer coloca os campos de texto no req.body
+        // O arquivo fica no req.file
+        const { topico, id_user } = req.body;
 
-        conexao.query(insertSql, [topico.trim(), id_func], (insertError, insertResult) => {
-            if (insertError) {
-                console.error("Erro ao salvar tópico:", insertError);
-                return res.status(500).json({ error: "Erro ao salvar tópico" });
+        // Validação
+        if (!topico || topico.trim() === '') {
+            if (req.file) {
+                deletarTopicoArquivo(req.file.filename);
+            }
+            return res.status(400).json({ error: "Tópico é obrigatório" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: "Arquivo PDF é obrigatório" });
+        }
+
+        // ID do funcionário (do dump ou do usuário logado)
+        const id_func = id_user || '01ec45fe-1362-4f18-85d4-81902ab57fe7';
+
+        // Deletar tópicos antigos
+        const deleteSql = "DELETE FROM topicoexamiinscricao";
+
+        conexao.query(deleteSql, (deleteError) => {
+            if (deleteError) {
+                console.error("Erro ao deletar tópicos antigos:", deleteError);
+                if (req.file) {
+                    deletarTopicoArquivo(req.file.filename);
+                }
+                return res.status(500).json({ error: "Erro ao processar" });
             }
 
-            res.status(200).json({
-                success: true,
-                message: "Tópico salvo com sucesso",
-                data: {
-                    id_topicoexame: insertResult.insertId,
-                    topico: topico.trim()
+            const id_topicoexame = `top_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+            const nomeArquivo = req.file.filename;
+
+            const insertSql = `INSERT INTO topicoexamiinscricao 
+                (id_topicoexame, topico, arquivo, id_func, status, data_criacao) 
+                VALUES (?, ?, ?, ?, 'Ativo', CURDATE())`;
+
+            conexao.query(insertSql, [id_topicoexame, topico.trim(), nomeArquivo, id_func], (insertError, insertResult) => {
+                if (insertError) {
+                    console.error("Erro ao salvar tópico:", insertError);
+                    if (req.file) {
+                        deletarTopicoArquivo(req.file.filename);
+                    }
+                    return res.status(500).json({ error: "Erro ao salvar tópico" });
                 }
+
+                res.status(200).json({
+                    success: true,
+                    message: "Tópico salvo com sucesso",
+                    data: {
+                        id_topicoexame: id_topicoexame,
+                        topico: topico.trim(),
+                        arquivo: nomeArquivo
+                    }
+                });
             });
         });
     });
@@ -212,8 +243,6 @@ router.post('/Topico', async (req, res) => {
 
 // ==================== POST - Upload de Foto ====================
 router.post('/uploadFoto', (req, res) => {
-    // Esta rota seria para upload de arquivos
-    // Implementação depende do middleware de upload (multer, etc)
     res.status(501).json({ error: "Funcionalidade em desenvolvimento" });
 });
 

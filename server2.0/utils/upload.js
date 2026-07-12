@@ -1,8 +1,9 @@
+// src/infra/upload.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Diretórios de destino - CORRIGIDOS (removido "../" extra)
+// ========== DIRETÓRIOS EXISTENTES ==========
 const DIR_FOTOS_FUNCIONARIO = path.join(__dirname, "../../client/src/img/funcionarios");
 const DIR_DOCS_FUNCIONARIO = path.join(__dirname, "../../client/src/img/funcionarios/documentos");
 const DIR_FOTOS_PROFESSOR = path.join(__dirname, "../../client/src/img/professores");
@@ -10,14 +11,18 @@ const DIR_DOCS_PROFESSOR = path.join(__dirname, "../../client/src/img/professore
 const DIR_FOTOS_ALUNO = path.join(__dirname, "../../client/src/img/alunos");
 const DIR_DOCS_ALUNO = path.join(__dirname, "../../client/src/img/alunos/documentos");
 
-// Garantir que os diretórios existem
+// ========== NOVO DIRETÓRIO PARA TÓPICOS ==========
+const DIR_TOPICOS = path.join(__dirname, "../../client/src/img/topicos");
+
+// Garantir que todos os diretórios existem
 const diretorios = [
     DIR_FOTOS_FUNCIONARIO,
     DIR_DOCS_FUNCIONARIO,
     DIR_FOTOS_PROFESSOR,
     DIR_DOCS_PROFESSOR,
     DIR_FOTOS_ALUNO,
-    DIR_DOCS_ALUNO
+    DIR_DOCS_ALUNO,
+    DIR_TOPICOS // Adicionado
 ];
 
 diretorios.forEach((dir) => {
@@ -35,6 +40,7 @@ console.log("Fotos Professores:", DIR_FOTOS_PROFESSOR);
 console.log("Docs Professores:", DIR_DOCS_PROFESSOR);
 console.log("Fotos Alunos:", DIR_FOTOS_ALUNO);
 console.log("Docs Alunos:", DIR_DOCS_ALUNO);
+console.log("Tópicos:", DIR_TOPICOS); // Novo log
 
 const gerarNomeUnico = (arquivo) => {
     const ext = path.extname(arquivo.originalname);
@@ -45,7 +51,7 @@ const gerarNomeUnico = (arquivo) => {
     return nomeFinal;
 };
 
-// Configurações para Funcionários
+// ========== CONFIGURAÇÕES PARA FUNCIONÁRIOS ==========
 const storageFuncionario = multer.diskStorage({
     destination: (req, file, cb) => {
         let dest = DIR_DOCS_FUNCIONARIO;
@@ -54,7 +60,6 @@ const storageFuncionario = multer.diskStorage({
         }
         console.log(`[FUNCIONÁRIO] Salvando ${file.fieldname} em: ${dest}`);
         
-        // Verificar se o diretório existe antes de salvar
         if (!fs.existsSync(dest)) {
             fs.mkdirSync(dest, { recursive: true });
             console.log(`Diretório criado: ${dest}`);
@@ -70,7 +75,7 @@ const storageFuncionario = multer.diskStorage({
 
 const uploadCombinado = multer({ storage: storageFuncionario });
 
-// Configurações para Professores
+// ========== CONFIGURAÇÕES PARA PROFESSORES ==========
 const storageProfessor = multer.diskStorage({
     destination: (req, file, cb) => {
         let dest = DIR_DOCS_PROFESSOR;
@@ -79,7 +84,6 @@ const storageProfessor = multer.diskStorage({
         }
         console.log(`[PROFESSOR] Salvando ${file.fieldname} em: ${dest}`);
         
-        // Verificar se o diretório existe antes de salvar
         if (!fs.existsSync(dest)) {
             fs.mkdirSync(dest, { recursive: true });
             console.log(`Diretório criado: ${dest}`);
@@ -98,8 +102,7 @@ const uploadCombinadoProfessor = multer({ storage: storageProfessor }).fields([
     { name: "documentos", maxCount: 10 },
 ]);
 
-// ========== NOVAS CONFIGURAÇÕES PARA ALUNOS ==========
-// Configurações para Alunos (mesma estrutura de funcionários e professores)
+// ========== CONFIGURAÇÕES PARA ALUNOS ==========
 const storageAluno = multer.diskStorage({
     destination: (req, file, cb) => {
         let dest = DIR_DOCS_ALUNO;
@@ -108,7 +111,6 @@ const storageAluno = multer.diskStorage({
         }
         console.log(`[ALUNO] Salvando ${file.fieldname} em: ${dest}`);
         
-        // Verificar se o diretório existe antes de salvar
         if (!fs.existsSync(dest)) {
             fs.mkdirSync(dest, { recursive: true });
             console.log(`Diretório criado: ${dest}`);
@@ -122,17 +124,59 @@ const storageAluno = multer.diskStorage({
     },
 });
 
-// Upload combinado para alunos (foto + documentos)
 const uploadCombinadoAluno = multer({ storage: storageAluno }).fields([
     { name: "foto", maxCount: 1 },
     { name: "documentos", maxCount: 10 },
 ]);
 
-// Upload apenas de foto para aluno (para compatibilidade)
 const uploadFotoAluno = multer({ storage: storageAluno }).single("foto");
 
+// ========== NOVA CONFIGURAÇÃO PARA TÓPICOS ==========
+const storageTopico = multer.diskStorage({
+    destination: (req, file, cb) => {
+        console.log(`[TÓPICO] Salvando ${file.fieldname} em: ${DIR_TOPICOS}`);
+        
+        if (!fs.existsSync(DIR_TOPICOS)) {
+            fs.mkdirSync(DIR_TOPICOS, { recursive: true });
+            console.log(`Diretório criado: ${DIR_TOPICOS}`);
+        }
+        
+        cb(null, DIR_TOPICOS);
+    },
+    filename: (req, file, cb) => {
+        const nomeUnico = gerarNomeUnico(file);
+        cb(null, nomeUnico);
+    },
+});
+
+// Upload para tópicos (apenas PDF)
+const uploadTopico = multer({
+    storage: storageTopico,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        // Aceitar apenas PDF
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Apenas arquivos PDF são permitidos'), false);
+        }
+    }
+}).single('arquivo');
+
+// Upload para tópicos com múltiplos arquivos (caso necessário)
+const uploadTopicoMultiple = multer({
+    storage: storageTopico,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Apenas arquivos PDF são permitidos'), false);
+        }
+    }
+}).array('arquivos', 5);
+
 // ========== HELPERS DE EXCLUSÃO ==========
-// Helpers de exclusão física de arquivos
 const deletarArquivo = (caminho) => {
     if (!caminho) return;
     try {
@@ -147,10 +191,10 @@ const deletarArquivo = (caminho) => {
     }
 };
 
+// Deletar arquivos de funcionários
 const deletarFotoFuncionario = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_FOTOS_FUNCIONARIO, nomeArquivo);
-        console.log(`Deletando foto de funcionário: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
@@ -158,15 +202,14 @@ const deletarFotoFuncionario = (nomeArquivo) => {
 const deletarDocumentoFuncionario = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_DOCS_FUNCIONARIO, nomeArquivo);
-        console.log(`Deletando documento de funcionário: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
 
+// Deletar arquivos de professores
 const deletarFotoProfessor = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_FOTOS_PROFESSOR, nomeArquivo);
-        console.log(`Deletando foto de professor: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
@@ -174,16 +217,14 @@ const deletarFotoProfessor = (nomeArquivo) => {
 const deletarDocumentoProfessor = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_DOCS_PROFESSOR, nomeArquivo);
-        console.log(`Deletando documento de professor: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
 
-// ========== NOVOS HELPERS PARA ALUNOS ==========
+// Deletar arquivos de alunos
 const deletarFotoAluno = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_FOTOS_ALUNO, nomeArquivo);
-        console.log(`Deletando foto de aluno: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
@@ -191,12 +232,10 @@ const deletarFotoAluno = (nomeArquivo) => {
 const deletarDocumentoAluno = (nomeArquivo) => {
     if (nomeArquivo) {
         const caminho = path.join(DIR_DOCS_ALUNO, nomeArquivo);
-        console.log(`Deletando documento de aluno: ${caminho}`);
         deletarArquivo(caminho);
     }
 };
 
-// Função para deletar todos os arquivos de um aluno
 const deletarArquivosAluno = (fotoNome, documentosNomes = []) => {
     if (fotoNome) {
         deletarFotoAluno(fotoNome);
@@ -210,35 +249,58 @@ const deletarArquivosAluno = (fotoNome, documentosNomes = []) => {
     }
 };
 
+// ========== NOVOS HELPERS PARA TÓPICOS ==========
+const deletarTopicoArquivo = (nomeArquivo) => {
+    if (nomeArquivo) {
+        const caminho = path.join(DIR_TOPICOS, nomeArquivo);
+        deletarArquivo(caminho);
+    }
+};
+
+const deletarTopicosArquivos = (arquivosNomes = []) => {
+    if (Array.isArray(arquivosNomes)) {
+        arquivosNomes.forEach(arquivo => {
+            if (arquivo) {
+                deletarTopicoArquivo(arquivo);
+            }
+        });
+    }
+};
+
 module.exports = {
     // Uploads existentes
     uploadCombinado,
     uploadCombinadoProfessor,
-    
-    // Uploads novos para alunos
     uploadCombinadoAluno,
     uploadFotoAluno,
+    
+    // Uploads novos para tópicos
+    uploadTopico,
+    uploadTopicoMultiple,
     
     // Helpers existentes
     deletarFotoFuncionario,
     deletarDocumentoFuncionario,
     deletarFotoProfessor,
     deletarDocumentoProfessor,
-    
-    // Helpers novos para alunos
     deletarFotoAluno,
     deletarDocumentoAluno,
     deletarArquivosAluno,
+    
+    // Helpers novos para tópicos
+    deletarTopicoArquivo,
+    deletarTopicosArquivos,
     
     // Helpers genéricos
     deletarArquivo,
     gerarNomeUnico,
     
-    // Exportar diretórios para uso externo
+    // Diretórios
     DIR_FOTOS_ALUNO,
     DIR_DOCS_ALUNO,
     DIR_FOTOS_FUNCIONARIO,
     DIR_DOCS_FUNCIONARIO,
     DIR_FOTOS_PROFESSOR,
-    DIR_DOCS_PROFESSOR
+    DIR_DOCS_PROFESSOR,
+    DIR_TOPICOS // Exportar diretório de tópicos
 };

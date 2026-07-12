@@ -520,7 +520,7 @@ router.get('/periodos', (req, res) => {
 
 // ==================== GET - Tópico ====================
 router.get('/Topico', async (req, res) => {
-    const sql = "SELECT id_topicoexame, topico, status, id_func, data_criacao FROM topicoexamiinscricao WHERE status = 'Ativo' ORDER BY data_criacao DESC LIMIT 1";
+    const sql = "SELECT id_topicoexame, topico, arquivo, status, id_func, data_criacao FROM topicoexamiinscricao WHERE status = 'Ativo' ORDER BY data_criacao DESC LIMIT 1";
 
     conexao.query(sql, (error, result) => {
         if (error) {
@@ -537,6 +537,7 @@ router.get('/Topico', async (req, res) => {
             data: {
                 id_topicoexame: result[0].id_topicoexame,
                 topico: result[0].topico,
+                arquivo: result[0].arquivo || null,
                 status: result[0].status,
                 data_criacao: result[0].data_criacao
             }
