@@ -93,8 +93,7 @@ app.use('/', registrer);
 app.use('/', getFr);
 app.use('/', postFr);
 app.use('/', putFr);
-app.use('/', deleteFr);
-app.use('/', topico);   
+app.use('/', deleteFr); 
 
 app.listen(PORT, '0.0.0.0',() => {
     console.log(`Servidor rodando na porta ${PORT}`);

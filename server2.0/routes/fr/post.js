@@ -5,7 +5,8 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
-const { uploadTopico, deletarTopicoArquivo } = require("../../infra/upload");
+const {gerarId} = require("../../utils/senhas");
+const { uploadTopico, deletarTopicoArquivo } = require("../../utils/upload");
 require("dotenv").config({ quiet: true });
 
 // ==================== POST - Criar Nova Inscrição ====================
@@ -180,11 +181,8 @@ router.post('/topico', (req, res) => {
             return res.status(400).json({ error: err.message || "Erro no upload do arquivo" });
         }
 
-        // O multer coloca os campos de texto no req.body
-        // O arquivo fica no req.file
         const { topico, id_user } = req.body;
 
-        // Validação
         if (!topico || topico.trim() === '') {
             if (req.file) {
                 deletarTopicoArquivo(req.file.filename);
@@ -196,10 +194,10 @@ router.post('/topico', (req, res) => {
             return res.status(400).json({ error: "Arquivo PDF é obrigatório" });
         }
 
-        // ID do funcionário (do dump ou do usuário logado)
-        const id_func = id_user || '01ec45fe-1362-4f18-85d4-81902ab57fe7';
+        const id_func = id_user;
+        const nomeOriginal = req.file.originalname; // Nome original do arquivo
+        const nomeUnico = req.file.filename; // Nome único gerado pelo multer
 
-        // Deletar tópicos antigos
         const deleteSql = "DELETE FROM topicoexamiinscricao";
 
         conexao.query(deleteSql, (deleteError) => {
@@ -211,14 +209,13 @@ router.post('/topico', (req, res) => {
                 return res.status(500).json({ error: "Erro ao processar" });
             }
 
-            const id_topicoexame = `top_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-            const nomeArquivo = req.file.filename;
+            const id_topicoexame = gerarId();
 
             const insertSql = `INSERT INTO topicoexamiinscricao 
-                (id_topicoexame, topico, arquivo, id_func, status, data_criacao) 
-                VALUES (?, ?, ?, ?, 'Ativo', CURDATE())`;
+                (id_topicoexame, topico, arquivo, id_func, status) 
+                VALUES (?, ?, ?, ?, 'Ativo')`;
 
-            conexao.query(insertSql, [id_topicoexame, topico.trim(), nomeArquivo, id_func], (insertError, insertResult) => {
+            conexao.query(insertSql, [id_topicoexame, topico.trim(), nomeUnico, id_func], (insertError, insertResult) => {
                 if (insertError) {
                     console.error("Erro ao salvar tópico:", insertError);
                     if (req.file) {
@@ -233,12 +230,25 @@ router.post('/topico', (req, res) => {
                     data: {
                         id_topicoexame: id_topicoexame,
                         topico: topico.trim(),
-                        arquivo: nomeArquivo
+                        arquivo: nomeUnico,
+                        nome_original: nomeOriginal
                     }
                 });
             });
         });
     });
+});
+
+// Rota para baixar o arquivo
+router.get('/topico/arquivo/:nomeArquivo', (req, res) => {
+    const nomeArquivo = req.params.nomeArquivo;
+    const caminho = path.join(__dirname, '../uploads/topicos', nomeArquivo);
+    
+    if (fs.existsSync(caminho)) {
+        res.sendFile(caminho);
+    } else {
+        res.status(404).json({ error: "Arquivo não encontrado" });
+    }
 });
 
 // ==================== POST - Upload de Foto ====================

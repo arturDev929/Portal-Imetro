@@ -2,6 +2,9 @@ const { Router } = require("express");
 const router = Router();
 const conexao = require("../../infra/conexao");
 
+// Ano atual em JavaScript
+const anoAtual = new Date().getFullYear();
+
 // ==================== GET - Estudantes Inscritos (Pendentes) com Documentos ====================
 router.get('/EstudantesInscritos', (req, res) => {
     const sql = `
@@ -17,6 +20,7 @@ router.get('/EstudantesInscritos', (req, res) => {
             ei.nota,
             ei.senha,
             ei.foto,
+            ei.data_inscricao,
             c.curso,
             c.id_curso AS curso_id,
             p.periodo,
@@ -24,7 +28,9 @@ router.get('/EstudantesInscritos', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.status = 'Pendente' AND ei.pagamento_inscricao IS NOT NULL
+        WHERE ei.status = 'Pendente' 
+        AND ei.pagamento_inscricao IS NOT NULL
+        AND YEAR(ei.data_inscricao) = ${anoAtual}
         ORDER BY ei.nome ASC
     `;
 
@@ -74,7 +80,6 @@ router.get('/EstudantesInscritos', (req, res) => {
         Promise.all(estudantesComDocs)
             .then(estudantesFormatados => {
                 const response = estudantesFormatados.map(estudante => ({
-                    // Campos originais da tabela
                     id_est: estudante.id_est,
                     nome: estudante.nome,
                     contacto: estudante.contacto,
@@ -85,13 +90,12 @@ router.get('/EstudantesInscritos', (req, res) => {
                     codigo: estudante.codigo,
                     nota: estudante.nota,
                     foto: estudante.foto,
+                    data_inscricao: estudante.data_inscricao,
                     curso: estudante.curso,
                     curso_id: estudante.curso_id,
                     periodo: estudante.periodo,
                     periodo_id: estudante.periodo_id,
-                    // Documentos
                     documentos: estudante.documentos || [],
-                    // Campos formatados para o frontend (compatibilidade)
                     id_estudanteInscricao: estudante.id_est,
                     nome_estudanteInscricao: estudante.nome,
                     contacto_estudanteInscricao: estudante.contacto,
@@ -137,6 +141,7 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
             ei.nota,
             ei.senha,
             ei.foto,
+            ei.data_inscricao,
             c.curso,
             c.id_curso AS curso_id,
             p.periodo,
@@ -144,11 +149,13 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.status = ? AND ei.pagamento_inscricao IS NOT NULL
+        WHERE ei.status = '${status}'
+        AND ei.pagamento_inscricao IS NOT NULL
+        AND YEAR(ei.data_inscricao) = ${anoAtual}
         ORDER BY ei.nome ASC
     `;
 
-    conexao.query(sql, [status], (error, result) => {
+    conexao.query(sql, (error, result) => {
         if (error) {
             console.error(`Erro ao buscar ${status}:`, error);
             return res.status(500).json({ error: "Erro interno do servidor" });
@@ -156,7 +163,6 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
 
         const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-        // Buscar documentos para cada estudante
         const estudantesComDocs = result.map(estudante => {
             return new Promise((resolve, reject) => {
                 const docSql = `
@@ -191,7 +197,6 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
         Promise.all(estudantesComDocs)
             .then(estudantesFormatados => {
                 const response = estudantesFormatados.map(estudante => ({
-                    // Campos originais
                     id_est: estudante.id_est,
                     nome: estudante.nome,
                     contacto: estudante.contacto,
@@ -202,13 +207,12 @@ router.get('/EstudantesByStatus/:status', (req, res) => {
                     codigo: estudante.codigo,
                     nota: estudante.nota,
                     foto: estudante.foto,
+                    data_inscricao: estudante.data_inscricao,
                     curso: estudante.curso,
                     curso_id: estudante.curso_id,
                     periodo: estudante.periodo,
                     periodo_id: estudante.periodo_id,
-                    // Documentos
                     documentos: estudante.documentos || [],
-                    // Compatibilidade frontend
                     id_estudanteInscricao: estudante.id_est,
                     nome_estudanteInscricao: estudante.nome,
                     contacto_estudanteInscricao: estudante.contacto,
@@ -252,13 +256,16 @@ router.get('/EstudantesByCurso/:cursoId', (req, res) => {
             ei.codigo,
             ei.nota,
             ei.foto,
+            ei.data_inscricao,
             c.curso,
             p.periodo
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.id_curso = ? 
-        AND ei.status IN ('Admitido', 'Aprovado', 'Matriculado', 'Reprovado') AND ei.pagamento_inscricao IS NOT NULL
+        WHERE ei.id_curso = ?
+        AND ei.status IN ('Admitido', 'Aprovado', 'Matriculado', 'Reprovado') 
+        AND ei.pagamento_inscricao IS NOT NULL
+        AND YEAR(ei.data_inscricao) = ${anoAtual}
         ORDER BY ei.nome ASC
     `;
 
@@ -280,6 +287,7 @@ router.get('/EstudantesByCurso/:cursoId', (req, res) => {
             codigo: estudante.codigo,
             nota: estudante.nota,
             foto: estudante.foto,
+            data_inscricao: estudante.data_inscricao,
             curso: estudante.curso,
             periodo: estudante.periodo,
             id_estudanteInscricao: estudante.id_est,
@@ -311,7 +319,9 @@ router.get('/EstatisticasInscricoes', (req, res) => {
             SUM(CASE WHEN status = 'Admitido' THEN 1 ELSE 0 END) as admitidos,
             SUM(CASE WHEN status = 'Não Admitido' THEN 1 ELSE 0 END) as nao_admitidos,
             SUM(CASE WHEN status = 'Matriculado' THEN 1 ELSE 0 END) as matriculados
-        FROM estudante_inscricao WHERE pagamento_inscricao IS NOT NULL
+        FROM estudante_inscricao 
+        WHERE pagamento_inscricao IS NOT NULL
+        AND YEAR(data_inscricao) = ${anoAtual}
     `;
 
     conexao.query(sql, (error, result) => {
@@ -321,6 +331,7 @@ router.get('/EstatisticasInscricoes', (req, res) => {
         }
 
         res.status(200).json({
+            ano: anoAtual,
             total: result[0].total || 0,
             pendentes: result[0].pendentes || 0,
             aprovados: result[0].aprovados || 0,
@@ -346,7 +357,8 @@ router.get('/EstatisticasPorCurso', (req, res) => {
             SUM(CASE WHEN ei.status = 'Matriculado' THEN 1 ELSE 0 END) as matriculados
         FROM curso c
         LEFT JOIN estudante_inscricao ei ON c.id_curso = ei.id_curso
-        Where ei.pagamento_inscricao IS NOT NULL
+        WHERE ei.pagamento_inscricao IS NOT NULL
+        AND YEAR(ei.data_inscricao) = ${anoAtual}
         GROUP BY c.id_curso, c.curso
         ORDER BY c.curso ASC
     `;
@@ -357,7 +369,10 @@ router.get('/EstatisticasPorCurso', (req, res) => {
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
 
-        res.status(200).json(result);
+        res.status(200).json({
+            ano: anoAtual,
+            dados: result
+        });
     });
 });
 
@@ -381,6 +396,7 @@ router.get('/Estudante/:id', (req, res) => {
             ei.codigo,
             ei.nota,
             ei.foto,
+            ei.data_inscricao,
             c.curso,
             c.id_curso AS curso_id,
             p.periodo,
@@ -388,30 +404,31 @@ router.get('/Estudante/:id', (req, res) => {
         FROM estudante_inscricao ei
         INNER JOIN curso c ON ei.id_curso = c.id_curso
         INNER JOIN periodo p ON ei.id_periodo = p.id_periodo
-        WHERE ei.id_est = ? AND ei.pagamento_inscricao IS NOT NULL
+        WHERE ei.id_est = ${id}
+        AND ei.pagamento_inscricao IS NOT NULL
+        AND YEAR(ei.data_inscricao) = ${anoAtual}
     `;
 
-    conexao.query(sql, [id], (error, result) => {
+    conexao.query(sql, (error, result) => {
         if (error) {
             console.error("Erro ao buscar estudante:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
         }
 
         if (result.length === 0) {
-            return res.status(404).json({ error: "Estudante não encontrado" });
+            return res.status(404).json({ error: "Estudante não encontrado para o ano atual" });
         }
 
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const estudante = result[0];
 
-        // Buscar documentos do estudante
         const docSql = `
             SELECT id_fei, titulo, doc 
             FROM ficheiro_estudante_inscricao 
-            WHERE id_est = ?
+            WHERE id_est = ${id}
         `;
 
-        conexao.query(docSql, [id], (docError, docResult) => {
+        conexao.query(docSql, (docError, docResult) => {
             if (docError) {
                 console.error("Erro ao buscar documentos:", docError);
                 return res.status(500).json({ error: "Erro ao buscar documentos" });
@@ -434,6 +451,7 @@ router.get('/Estudante/:id', (req, res) => {
                 codigo: estudante.codigo,
                 nota: estudante.nota,
                 foto: estudante.foto,
+                data_inscricao: estudante.data_inscricao,
                 curso: estudante.curso,
                 curso_id: estudante.curso_id,
                 periodo: estudante.periodo,
@@ -458,10 +476,10 @@ router.get('/EstudanteDocumentos/:id', (req, res) => {
     const sql = `
         SELECT id_fei, titulo, doc 
         FROM ficheiro_estudante_inscricao 
-        WHERE id_est = ?
+        WHERE id_est = ${id}
     `;
 
-    conexao.query(sql, [id], (error, result) => {
+    conexao.query(sql, (error, result) => {
         if (error) {
             console.error("Erro ao buscar documentos:", error);
             return res.status(500).json({ error: "Erro interno do servidor" });
@@ -519,6 +537,7 @@ router.get('/periodos', (req, res) => {
 });
 
 // ==================== GET - Tópico ====================
+// Rota para buscar o tópico ativo
 router.get('/Topico', async (req, res) => {
     const sql = "SELECT id_topicoexame, topico, arquivo, status, id_func, data_criacao FROM topicoexamiinscricao WHERE status = 'Ativo' ORDER BY data_criacao DESC LIMIT 1";
 
@@ -532,17 +551,33 @@ router.get('/Topico', async (req, res) => {
             return res.status(404).json({ error: "Nenhum tópico encontrado" });
         }
 
+        const topico = result[0];
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+
         res.status(200).json({
             success: true,
             data: {
-                id_topicoexame: result[0].id_topicoexame,
-                topico: result[0].topico,
-                arquivo: result[0].arquivo || null,
-                status: result[0].status,
-                data_criacao: result[0].data_criacao
+                id_topicoexame: topico.id_topicoexame,
+                topico: topico.topico,
+                arquivo: topico.arquivo || null,
+                nome_original: topico.nome_original || null,
+                arquivo_url: topico.arquivo ? `${baseUrl}/api/topico/arquivo/${topico.arquivo}` : null,
+                status: topico.status,
+                data_criacao: topico.data_criacao
             }
         });
     });
 });
 
+// Rota para baixar o arquivo
+router.get('/topico/arquivo/:nomeArquivo', (req, res) => {
+    const nomeArquivo = req.params.nomeArquivo;
+    const caminho = path.join(__dirname, '../uploads/topicos', nomeArquivo);
+    
+    if (fs.existsSync(caminho)) {
+        res.sendFile(caminho);
+    } else {
+        res.status(404).json({ error: "Arquivo não encontrado" });
+    }
+});
 module.exports = router;

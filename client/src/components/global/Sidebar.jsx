@@ -8,6 +8,7 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { MdTopic } from "react-icons/md";
 import { PiStudentDuotone, PiNotePencilLight } from "react-icons/pi";
 import { GrSecure } from "react-icons/gr";
+import { CiCirclePlus } from "react-icons/ci"
 
 function Sidebar() {
     const [user, setUser] = useState(null);
@@ -37,8 +38,6 @@ function Sidebar() {
         if (usuarioSalvo) {
             try {
                 const userData = JSON.parse(usuarioSalvo);
-                console.log("Usuário logado:", userData); // Debug
-                console.log("ID do usuário:", userData.id || userData.id_user || userData.userId); // Debug
                 setUser(userData);
             } catch (e) {
                 console.error("Erro ao parsear usuário:", e);
@@ -70,6 +69,9 @@ function Sidebar() {
                         <div className="mb-3">
                             <Link to="/homefuncionarioM" className={`nav-link ${location.pathname === '/homefuncionarioM' ? 'active' : ''} ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2" /> Estudantes Inscritos
+                            </Link>
+                            <Link to="/registrarEstudante" className={`nav-link ${location.pathname === '/registrarEstudante' ? 'active' : ''} ${Style.Link}`}>
+                                <CiCirclePlus className="mb-2 me-2" /> Novo Registro
                             </Link>
                             <Link to="/lancarNotasM" className={`nav-link ${location.pathname === '/lancarNotasM' ? 'active' : ''} ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2" /> Lançamento de Notas
@@ -118,6 +120,9 @@ function Sidebar() {
                         <div className="p-3 border-bottom">
                             <Link to="/homefuncionarioM" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/homefuncionarioM' ? 'active' : ''} ${Style.Link}`}>
                                 <PiStudentDuotone className="mb-2 me-2" /> Estudantes Inscritos
+                            </Link>
+                            <Link to="/registrarEstudante" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/registrarEstudante' ? 'active' : ''} ${Style.Link}`}>
+                                <CiCirclePlus className="mb-2 me-2" /> Novo Registro
                             </Link>
                             <Link to="/lancarNotasM" onClick={closeMobileSidebar} className={`nav-link ${location.pathname === '/lancarNotasM' ? 'active' : ''} ${Style.Link}`}>
                                 <PiNotePencilLight className="mb-2 me-2" /> Lançamento de Notas

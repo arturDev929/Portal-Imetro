@@ -1,3 +1,4 @@
+// src/pagesFuncionarioMatricula/components/ModalAlert.jsx
 import Style from "../../pagesAdm/components/DepartamentosEdit.module.css";
 import { VscError } from "react-icons/vsc";
 import { GrStatusGood } from "react-icons/gr";

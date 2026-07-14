@@ -44,7 +44,7 @@ function Configuracoes() {
                     setFotoPreview(`${window.location.origin}/api/img/usuarios/${userData.foto}`);
                 }
             } catch (e) {
-                console.error("Erro ao parsear usuário:", e);
+                // Erro ao parsear usuário
             }
         }
     }, []);
@@ -159,7 +159,6 @@ function Configuracoes() {
                 showErrorToast(response.data.error || "Erro ao atualizar dados");
             }
         } catch (error) {
-            console.error("Erro ao atualizar dados:", error);
             showErrorToast(error.response?.data?.mensagem || "Erro ao processar solicitação");
         } finally {
             setLoading(false);

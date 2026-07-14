@@ -211,11 +211,9 @@ router.put('/estudanteInscritoNota/:codigoEstudante', (req, res) => {
 
         // Determinar novo status baseado na nota
         let novoStatus;
-        if (nota >= 14) {
+        if (nota >= 10) {
             novoStatus = 'Aprovado';
-        } else if (nota >= 10) {
-            novoStatus = checkResult[0].status;
-        } else {
+        }else {
             novoStatus = 'Reprovado';
         }
 

@@ -1,3 +1,4 @@
+// src/pagesFuncionarioMatricula/components/ModalDetail.jsx
 import { RiContactsBook3Line } from "react-icons/ri";
 import Style from "../../pagesAdm/components/DepartamentosEdit.module.css";
 import { VscError } from "react-icons/vsc";

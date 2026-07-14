@@ -1,3 +1,4 @@
+// src/pagesFuncionarioMatricula/components/Inscricoes.jsx
 import api from "../../service/api";
 import { useState, useEffect } from "react";
 import Style from "../../pagesAdm/components/DepartamentosEdit.module.css";
@@ -21,11 +22,9 @@ function Inscricoes({ filtroStatus }) {
         const fetchdados = () => {
             api.get(`/EstudantesByStatus/${filtroStatus}`)
                 .then((response) => {
-                    console.log("Dados recebidos:", response.data);
                     setEstudantesInscritos(response.data);
                 })
                 .catch(error => {
-                    console.error("Erro ao buscar estudantes:", error);
                     showErrorToast("Erro ao carregar lista de inscrições");
                 });
         };
@@ -70,7 +69,6 @@ function Inscricoes({ filtroStatus }) {
                 showErrorToast(response.data.error || "Erro ao aceitar inscrição");
             }
         } catch (error) {
-            console.error("Erro ao aceitar estudante:", error);
             showErrorToast(error.response?.data?.error || "Erro ao processar solicitação");
         } finally {
             setLoading(false);
@@ -92,7 +90,6 @@ function Inscricoes({ filtroStatus }) {
                 showErrorToast(response.data.error || "Erro ao reverter inscrição");
             }
         } catch (error) {
-            console.error("Erro ao reverter estudante:", error);
             showErrorToast(error.response?.data?.error || "Erro ao processar solicitação");
         } finally {
             setLoading(false);
@@ -114,7 +111,6 @@ function Inscricoes({ filtroStatus }) {
                 showErrorToast(response.data.error || "Erro ao recusar inscrição");
             }
         } catch (error) {
-            console.error("Erro ao recusar estudante:", error);
             showErrorToast(error.response?.data?.error || "Erro ao processar solicitação");
         } finally {
             setLoading(false);

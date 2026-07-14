@@ -28,7 +28,7 @@ function GerenciarTopicos() {
                 const id = userData.id || userData.id_user || userData.userId || userData.id_usuario;
                 setUserId(id);
             } catch (e) {
-                console.error("Erro ao parsear usuário:", e);
+                // Erro ao parsear usuário
             }
         }
         carregarTopicos();
@@ -39,12 +39,20 @@ function GerenciarTopicos() {
         try {
             const response = await api.get("/topico");
             if (response.data.success) {
-                setTopicos(response.data.data ? [response.data.data] : []);
+                // Se a API retornar um array, use response.data.data
+                // Se retornar um único objeto, coloque em um array
+                const dados = response.data.data;
+                if (Array.isArray(dados)) {
+                    setTopicos(dados);
+                } else if (dados) {
+                    setTopicos([dados]);
+                } else {
+                    setTopicos([]);
+                }
             } else {
                 setTopicos([]);
             }
         } catch (error) {
-            console.error("Erro ao carregar tópicos:", error);
             setTopicos([]);
         } finally {
             setLoading(false);
@@ -54,13 +62,11 @@ function GerenciarTopicos() {
     const handleArquivoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validar se é PDF
             if (file.type !== 'application/pdf') {
                 showErrorToast("Por favor, selecione um arquivo PDF");
                 e.target.value = '';
                 return;
             }
-            // Validar tamanho (máx 10MB)
             if (file.size > 10 * 1024 * 1024) {
                 showErrorToast("O arquivo deve ter no máximo 10MB");
                 e.target.value = '';
@@ -117,7 +123,6 @@ function GerenciarTopicos() {
                 setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             }
         } catch (error) {
-            console.error("Erro ao salvar tópico:", error);
             showErrorToast("Erro ao processar solicitação");
             setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
@@ -153,7 +158,6 @@ function GerenciarTopicos() {
                 setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             }
         } catch (error) {
-            console.error("Erro ao atualizar tópico:", error);
             showErrorToast("Erro ao processar solicitação");
             setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
@@ -180,7 +184,6 @@ function GerenciarTopicos() {
                 setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             }
         } catch (error) {
-            console.error("Erro ao deletar tópico:", error);
             showErrorToast("Erro ao processar solicitação");
             setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
             setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
@@ -199,7 +202,25 @@ function GerenciarTopicos() {
         setTopicoEditando("");
     };
 
-    const baseUrl = window.location.origin;
+    // Função para baixar o arquivo
+    const baixarArquivo = (nomeArquivo) => {
+        if (!nomeArquivo) return;
+        window.open(`${api.defaults.baseURL}/topico/arquivo/${nomeArquivo}`, '_blank');
+    };
+
+    // Função para mostrar o nome do arquivo
+    const getNomeExibicao = (topico) => {
+        // Se tiver nome_original, mostra ele
+        if (topico.nome_original) {
+            return topico.nome_original;
+        }
+        // Senão, mostra o nome do arquivo (pode ser o nome único)
+        if (topico.arquivo) {
+            // Tenta extrair o nome original do caminho
+            return topico.arquivo;
+        }
+        return "Sem arquivo";
+    };
 
     return (
         <FuncionarioLayout>
@@ -360,16 +381,19 @@ function GerenciarTopicos() {
                                                     </td>
                                                     <td>
                                                         {topico.arquivo ? (
-                                                            <a
-                                                                href={`${baseUrl}/api/img/topicos/${topico.arquivo}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="btn btn-sm btn-outline-primary"
-                                                            >
-                                                                <FaFilePdf className="me-1" />
-                                                                <FaDownload className="me-1" />
-                                                                Ver PDF
-                                                            </a>
+                                                            <div className="d-flex align-items-center gap-2">
+                                                                <FaFilePdf className="text-danger" />
+                                                                <span className="text-truncate" style={{ maxWidth: "150px" }}>
+                                                                    {getNomeExibicao(topico)}
+                                                                </span>
+                                                                <button
+                                                                    className="btn btn-sm btn-outline-primary"
+                                                                    onClick={() => baixarArquivo(topico.arquivo)}
+                                                                    title="Baixar arquivo"
+                                                                >
+                                                                    <FaDownload />
+                                                                </button>
+                                                            </div>
                                                         ) : (
                                                             <span className="text-muted">Nenhum arquivo</span>
                                                         )}

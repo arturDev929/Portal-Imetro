@@ -20,6 +20,7 @@ import Configuracoes from "./pagesTeacher/Configuracoes.jsx";
 import ConfiguracoesFR from "./pagesFuncionarioMatricula/Configuracoes.jsx";
 import Seguranca from "./pagesTeacher/Seguranca.jsx";
 import SegurancaFR from "./pagesFuncionarioMatricula/Seguranca.jsx";
+import RegistrarEstudante from './pagesFuncionarioMatricula/RegistrarEstudante.jsx';
 import MinhaAgenda from "./pagesTeacher/MinhaAgenda.jsx";
 
 const Cadastro = lazy(() => import("./pages/Cadastro"));
@@ -132,6 +133,14 @@ function App() {
               element={
                 <RotaPrivada>
                   <LancarNotasM />
+                </RotaPrivada>
+              }
+            />
+            <Route
+              path="/registrarEstudante"
+              element={
+                <RotaPrivada>
+                  <RegistrarEstudante />
                 </RotaPrivada>
               }
             />

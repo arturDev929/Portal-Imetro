@@ -30,7 +30,7 @@ function Seguranca() {
                 const id = userData.id || userData.id_user || userData.userId || userData.id_usuario;
                 setUserId(id);
             } catch (e) {
-                console.error("Erro ao parsear usuário:", e);
+                // Erro ao parsear usuário
             }
         }
     }, []);
@@ -105,7 +105,6 @@ function Seguranca() {
                 showErrorToast(response.data.error || "Erro ao alterar senha");
             }
         } catch (error) {
-            console.error("Erro ao alterar senha:", error);
             showErrorToast(error.response?.data?.mensagem || "Erro ao processar solicitação");
         } finally {
             setLoading(false);
