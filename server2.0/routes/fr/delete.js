@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const router = Router();
 const conexao = require("../../infra/conexao");
+const { deletarTopicoArquivo } = require("../../utils/upload");
 
 // ==================== DELETE - Deletar Inscrição ====================
 router.delete('/estudanteInscricao/:id', async (req, res) => {
@@ -187,26 +188,6 @@ router.delete('/estudantesInscricao', async (req, res) => {
 });
 
 // ==================== DELETE - Deletar Tópico ====================
-router.delete('/Topico', async (req, res) => {
-    const sql = "DELETE FROM topicoexamiinscricao";
-
-    conexao.query(sql, (error, result) => {
-        if (error) {
-            console.error("Erro ao deletar tópico:", error);
-            return res.status(500).json({ error: "Erro interno do servidor" });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Nenhum tópico encontrado para deletar" });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Tópico(s) deletado(s) com sucesso"
-        });
-    });
-});
-
 router.delete('/topico/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -214,36 +195,43 @@ router.delete('/topico/:id', async (req, res) => {
         return res.status(400).json({ error: "ID do tópico é obrigatório" });
     }
 
-    // Buscar arquivo para deletar
-    const checkSql = "SELECT arquivo FROM topicoexamiinscricao WHERE id_topicoexame = ?";
-    conexao.query(checkSql, [id], (checkError, checkResult) => {
-        if (checkError) {
-            console.error("Erro ao buscar tópico:", checkError);
-            return res.status(500).json({ error: "Erro interno do servidor" });
-        }
+    try {
+        // Verificar se o tópico existe e buscar o arquivo
+        const checkSql = "SELECT arquivo FROM topicoexamiinscricao WHERE id_topicoexame = ?";
+        const checkResult = await new Promise((resolve, reject) => {
+            conexao.query(checkSql, [id], (error, result) => {
+                if (error) reject(error);
+                resolve(result);
+            });
+        });
 
         if (checkResult.length === 0) {
             return res.status(404).json({ error: "Tópico não encontrado" });
         }
 
+        // Deletar o registro do banco de dados
         const deleteSql = "DELETE FROM topicoexamiinscricao WHERE id_topicoexame = ?";
-        conexao.query(deleteSql, [id], (deleteError, deleteResult) => {
-            if (deleteError) {
-                console.error("Erro ao deletar tópico:", deleteError);
-                return res.status(500).json({ error: "Erro ao deletar tópico" });
-            }
-
-            // Deletar arquivo físico
-            if (checkResult[0].arquivo) {
-                deletarTopicoArquivo(checkResult[0].arquivo);
-            }
-
-            res.status(200).json({
-                success: true,
-                message: "Tópico deletado com sucesso"
+        const deleteResult = await new Promise((resolve, reject) => {
+            conexao.query(deleteSql, [id], (error, result) => {
+                if (error) reject(error);
+                resolve(result);
             });
         });
-    });
+
+        // Deletar o arquivo físico se existir
+        if (checkResult[0].arquivo) {
+            deletarTopicoArquivo(checkResult[0].arquivo);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Tópico deletado com sucesso"
+        });
+
+    } catch (error) {
+        console.error("Erro ao deletar tópico:", error);
+        res.status(500).json({ error: "Erro ao deletar tópico" });
+    }
 });
 
 module.exports = router;

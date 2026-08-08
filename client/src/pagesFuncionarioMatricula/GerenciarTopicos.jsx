@@ -5,7 +5,7 @@ import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaFilePdf, FaUpload, FaDownlo
 import { MdTopic } from 'react-icons/md';
 import Style from "../pagesAdm/GestaoCursoAdm.module.css";
 import api from "../service/api";
-import { showSuccessToast, showErrorToast } from "../components/global/CustomToast";
+import { showSuccessToast, showErrorToast, showConfirmToast } from "../components/global/CustomToast";
 
 function GerenciarTopicos() {
     const [user, setUser] = useState(null);
@@ -17,7 +17,7 @@ function GerenciarTopicos() {
     const [arquivoTopico, setArquivoTopico] = useState(null);
     const [nomeArquivo, setNomeArquivo] = useState("");
     const [topicoEditando, setTopicoEditando] = useState("");
-    const [mensagem, setMensagem] = useState({ texto: "", tipo: "" });
+    const [topicoParaDeletar, setTopicoParaDeletar] = useState(null);
 
     useEffect(() => {
         const usuarioSalvo = localStorage.getItem("usuarioLogado");
@@ -28,7 +28,7 @@ function GerenciarTopicos() {
                 const id = userData.id || userData.id_user || userData.userId || userData.id_usuario;
                 setUserId(id);
             } catch (e) {
-                // Erro ao parsear usuário
+                console.error("Erro ao parsear usuário:", e);
             }
         }
         carregarTopicos();
@@ -39,20 +39,13 @@ function GerenciarTopicos() {
         try {
             const response = await api.get("/topico");
             if (response.data.success) {
-                // Se a API retornar um array, use response.data.data
-                // Se retornar um único objeto, coloque em um array
                 const dados = response.data.data;
-                if (Array.isArray(dados)) {
-                    setTopicos(dados);
-                } else if (dados) {
-                    setTopicos([dados]);
-                } else {
-                    setTopicos([]);
-                }
+                setTopicos(Array.isArray(dados) ? dados : dados ? [dados] : []);
             } else {
                 setTopicos([]);
             }
         } catch (error) {
+            console.error("Erro ao carregar tópicos:", error);
             setTopicos([]);
         } finally {
             setLoading(false);
@@ -63,12 +56,12 @@ function GerenciarTopicos() {
         const file = e.target.files[0];
         if (file) {
             if (file.type !== 'application/pdf') {
-                showErrorToast("Por favor, selecione um arquivo PDF");
+                showErrorToast("Arquivo inválido", "Por favor, selecione um arquivo PDF");
                 e.target.value = '';
                 return;
             }
             if (file.size > 10 * 1024 * 1024) {
-                showErrorToast("O arquivo deve ter no máximo 10MB");
+                showErrorToast("Arquivo muito grande", "O arquivo deve ter no máximo 10MB");
                 e.target.value = '';
                 return;
             }
@@ -78,20 +71,18 @@ function GerenciarTopicos() {
     };
 
     async function handleSalvarTopico() {
-        if (!novoTopico || novoTopico.trim() === "") {
-            setMensagem({ texto: "Digite um tópico válido", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+        if (!novoTopico?.trim()) {
+            showErrorToast("Campo vazio", "Digite um tópico válido");
             return;
         }
 
         if (!arquivoTopico) {
-            setMensagem({ texto: "Selecione um arquivo PDF para o tópico", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+            showErrorToast("Arquivo necessário", "Selecione um arquivo PDF para o tópico");
             return;
         }
 
         if (!userId) {
-            showErrorToast("Usuário não identificado. Faça login novamente.");
+            showErrorToast("Erro de autenticação", "Usuário não identificado. Faça login novamente.");
             return;
         }
 
@@ -102,39 +93,29 @@ function GerenciarTopicos() {
             formData.append("id_user", userId);
             formData.append("arquivo", arquivoTopico);
 
-            const response = await api.post("/topico", formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const response = await api.post("/topico", formData);
 
             if (response.data.success) {
-                showSuccessToast(response.data.message || "Tópico salvo com sucesso!");
+                showSuccessToast("Tópico salvo!", response.data.message || "Tópico salvo com sucesso!");
                 setNovoTopico("");
                 setArquivoTopico(null);
                 setNomeArquivo("");
                 document.getElementById('arquivoInput').value = '';
                 await carregarTopicos();
-                setMensagem({ texto: response.data.message || "Tópico salvo com sucesso!", tipo: "success" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             } else {
-                showErrorToast(response.data.error || "Erro ao salvar tópico");
-                setMensagem({ texto: response.data.error || "Erro ao salvar tópico", tipo: "error" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+                showErrorToast("Erro ao salvar", response.data.error || "Erro ao salvar tópico");
             }
         } catch (error) {
-            showErrorToast("Erro ao processar solicitação");
-            setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+            console.error("Erro ao salvar tópico:", error);
+            showErrorToast("Erro", "Erro ao processar solicitação");
         } finally {
             setLoading(false);
         }
     }
 
     async function handleAtualizarTopico(id) {
-        if (!topicoEditando || topicoEditando.trim() === "") {
-            setMensagem({ texto: "Digite um tópico válido", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+        if (!topicoEditando?.trim()) {
+            showErrorToast("Campo vazio", "Digite um tópico válido");
             return;
         }
 
@@ -146,78 +127,88 @@ function GerenciarTopicos() {
             });
 
             if (response.data.success) {
-                showSuccessToast(response.data.message || "Tópico atualizado com sucesso!");
+                showSuccessToast("Tópico atualizado!", response.data.message || "Tópico atualizado com sucesso!");
                 setModoEdicao(null);
                 setTopicoEditando("");
                 await carregarTopicos();
-                setMensagem({ texto: response.data.message || "Tópico atualizado com sucesso!", tipo: "success" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             } else {
-                showErrorToast(response.data.error || "Erro ao atualizar tópico");
-                setMensagem({ texto: response.data.error || "Erro ao atualizar tópico", tipo: "error" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+                showErrorToast("Erro ao atualizar", response.data.error || "Erro ao atualizar tópico");
             }
         } catch (error) {
-            showErrorToast("Erro ao processar solicitação");
-            setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+            console.error("Erro ao atualizar tópico:", error);
+            showErrorToast("Erro", "Erro ao processar solicitação");
         } finally {
             setLoading(false);
         }
     }
 
-    async function handleDeletarTopico(id) {
-        if (!window.confirm("Tem certeza que deseja deletar este tópico?")) return;
+    // Função que confirma a exclusão via toast
+    const confirmarDelecao = (id, nomeTopico) => {
+        showConfirmToast(
+            `Tem certeza que deseja deletar o tópico "${nomeTopico}"? Esta ação não pode ser desfeita.`,
+            () => handleDeletarTopico(id), // Callback de confirmação
+            () => {
+                // Callback de cancelamento (opcional)
+                console.log("Exclusão cancelada");
+            },
+            "Confirmar Exclusão" // Título personalizado
+        );
+    };
 
+    async function handleDeletarTopico(id) {
         setLoading(true);
         try {
             const response = await api.delete(`/topico/${id}`);
 
             if (response.data.success) {
-                showSuccessToast(response.data.message || "Tópico deletado com sucesso!");
+                showSuccessToast("Tópico deletado!", response.data.message || "Tópico deletado com sucesso!");
                 await carregarTopicos();
-                setMensagem({ texto: response.data.message || "Tópico deletado com sucesso!", tipo: "success" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
             } else {
-                showErrorToast(response.data.error || "Erro ao deletar tópico");
-                setMensagem({ texto: response.data.error || "Erro ao deletar tópico", tipo: "error" });
-                setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+                showErrorToast("Erro ao deletar", response.data.error || "Erro ao deletar tópico");
             }
         } catch (error) {
-            showErrorToast("Erro ao processar solicitação");
-            setMensagem({ texto: "Erro ao processar solicitação", tipo: "error" });
-            setTimeout(() => setMensagem({ texto: "", tipo: "" }), 3000);
+            console.error("Erro ao deletar tópico:", error);
+            showErrorToast("Erro", "Erro ao processar solicitação");
         } finally {
             setLoading(false);
+            setTopicoParaDeletar(null);
         }
     }
 
-    const iniciarEdicao = (topico) => {
-        setModoEdicao(topico.id_topicoexame);
-        setTopicoEditando(topico.topico);
-    };
+    async function baixarArquivo(idTopico, nomeArquivo) {
+        if (!idTopico) {
+            showErrorToast("Erro", "ID do tópico não fornecido");
+            return;
+        }
 
-    const cancelarEdicao = () => {
-        setModoEdicao(null);
-        setTopicoEditando("");
-    };
+        try {
+            const response = await api.get(`/topico/${idTopico}/arquivo`, {
+                responseType: 'blob'
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', nomeArquivo || 'documento.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            showSuccessToast("Download iniciado", `Baixando: ${nomeArquivo || 'documento.pdf'}`);
+        } catch (error) {
+            console.error("Erro ao baixar arquivo:", error);
+            showErrorToast("Erro", "Não foi possível baixar o arquivo");
+        }
+    }
 
-    // Função para baixar o arquivo
-    const baixarArquivo = (nomeArquivo) => {
-        if (!nomeArquivo) return;
-        window.open(`${api.defaults.baseURL}/topico/arquivo/${nomeArquivo}`, '_blank');
-    };
-
-    // Função para mostrar o nome do arquivo
     const getNomeExibicao = (topico) => {
-        // Se tiver nome_original, mostra ele
         if (topico.nome_original) {
             return topico.nome_original;
         }
-        // Senão, mostra o nome do arquivo (pode ser o nome único)
         if (topico.arquivo) {
-            // Tenta extrair o nome original do caminho
-            return topico.arquivo;
+            const partes = topico.arquivo.split('/');
+            return partes[partes.length - 1];
         }
         return "Sem arquivo";
     };
@@ -245,21 +236,10 @@ function GerenciarTopicos() {
                 </div>
             </div>
 
-            {mensagem.texto && (
-                <div className="row mb-3">
-                    <div className="col-12">
-                        <div className={`alert alert-${mensagem.tipo === "success" ? "success" : "danger"} text-center`}>
-                            {mensagem.texto}
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="row">
                 <div className="col-12">
                     <div className="card shadow-sm border-0">
                         <div className="card-body p-4">
-                            {/* Formulário para criar novo tópico */}
                             <div className="row g-3 align-items-end">
                                 <div className="col-md-4">
                                     <label className="form-label fw-bold" style={{ color: 'var(--azul-escuro)' }}>
@@ -303,10 +283,10 @@ function GerenciarTopicos() {
                                             <FaUpload />
                                         </button>
                                     </div>
-                                    {nomeArquivo && (
+                                    {nomeArquivo && arquivoTopico && (
                                         <small className="text-success">
                                             <FaFilePdf className="me-1" />
-                                            {nomeArquivo} ({(arquivoTopico?.size / 1024).toFixed(1)} KB)
+                                            {nomeArquivo} ({(arquivoTopico.size / 1024).toFixed(1)} KB)
                                         </small>
                                     )}
                                 </div>
@@ -333,7 +313,6 @@ function GerenciarTopicos() {
 
                             <hr className="my-4" />
 
-                            {/* Lista de tópicos */}
                             <h5 className="mb-3" style={{ color: 'var(--azul-escuro)' }}>
                                 Tópicos Ativos
                             </h5>
@@ -388,8 +367,9 @@ function GerenciarTopicos() {
                                                                 </span>
                                                                 <button
                                                                     className="btn btn-sm btn-outline-primary"
-                                                                    onClick={() => baixarArquivo(topico.arquivo)}
+                                                                    onClick={() => baixarArquivo(topico.id_topicoexame, getNomeExibicao(topico))}
                                                                     title="Baixar arquivo"
+                                                                    disabled={loading}
                                                                 >
                                                                     <FaDownload />
                                                                 </button>
@@ -421,7 +401,10 @@ function GerenciarTopicos() {
                                                                 </button>
                                                                 <button
                                                                     className={`btn btn-sm ${Style.btnCancelar}`}
-                                                                    onClick={cancelarEdicao}
+                                                                    onClick={() => {
+                                                                        setModoEdicao(null);
+                                                                        setTopicoEditando("");
+                                                                    }}
                                                                     disabled={loading}
                                                                     title="Cancelar"
                                                                 >
@@ -432,7 +415,10 @@ function GerenciarTopicos() {
                                                             <div className="d-flex gap-1 justify-content-center">
                                                                 <button
                                                                     className={`btn btn-sm ${Style.btnOutros}`}
-                                                                    onClick={() => iniciarEdicao(topico)}
+                                                                    onClick={() => {
+                                                                        setModoEdicao(topico.id_topicoexame);
+                                                                        setTopicoEditando(topico.topico);
+                                                                    }}
                                                                     disabled={loading}
                                                                     title="Editar"
                                                                 >
@@ -440,7 +426,7 @@ function GerenciarTopicos() {
                                                                 </button>
                                                                 <button
                                                                     className={`btn btn-sm ${Style.btnDeletar}`}
-                                                                    onClick={() => handleDeletarTopico(topico.id_topicoexame)}
+                                                                    onClick={() => confirmarDelecao(topico.id_topicoexame, topico.topico)}
                                                                     disabled={loading}
                                                                     title="Deletar"
                                                                 >

@@ -371,42 +371,55 @@ router.put('/estudanteAtualizar/:id', (req, res) => {
     });
 });
 
+// ==================== PUT - Editar Tópico ====================
 router.put('/topico/:id', async (req, res) => {
     const { id } = req.params;
-    const { topico, id_user } = req.body;
+    const { topico } = req.body;
 
     if (!id) {
         return res.status(400).json({ error: "ID do tópico é obrigatório" });
     }
 
     if (!topico || topico.trim() === '') {
-        return res.status(400).json({ error: "Tópico é obrigatório" });
+        return res.status(400).json({ error: "O campo tópico é obrigatório" });
     }
 
-    const checkSql = "SELECT * FROM topicoexamiinscricao WHERE id_topicoexame = ?";
-    conexao.query(checkSql, [id], (checkError, checkResult) => {
-        if (checkError) {
-            console.error("Erro ao verificar tópico:", checkError);
-            return res.status(500).json({ error: "Erro interno do servidor" });
-        }
+    try {
+        // Verificar se o tópico existe
+        const checkSql = "SELECT * FROM topicoexamiinscricao WHERE id_topicoexame = ?";
+        const checkResult = await new Promise((resolve, reject) => {
+            conexao.query(checkSql, [id], (error, result) => {
+                if (error) reject(error);
+                resolve(result);
+            });
+        });
 
         if (checkResult.length === 0) {
             return res.status(404).json({ error: "Tópico não encontrado" });
         }
 
+        // Atualizar o tópico
         const updateSql = "UPDATE topicoexamiinscricao SET topico = ? WHERE id_topicoexame = ?";
-        conexao.query(updateSql, [topico.trim(), id], (updateError, updateResult) => {
-            if (updateError) {
-                console.error("Erro ao atualizar tópico:", updateError);
-                return res.status(500).json({ error: "Erro ao atualizar tópico" });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: "Tópico atualizado com sucesso"
+        const updateResult = await new Promise((resolve, reject) => {
+            conexao.query(updateSql, [topico.trim(), id], (error, result) => {
+                if (error) reject(error);
+                resolve(result);
             });
         });
-    });
+
+        res.status(200).json({
+            success: true,
+            message: "Tópico atualizado com sucesso",
+            data: {
+                id_topicoexame: id,
+                topico: topico.trim()
+            }
+        });
+
+    } catch (error) {
+        console.error("Erro ao atualizar tópico:", error);
+        res.status(500).json({ error: "Erro ao atualizar tópico" });
+    }
 });
 
 module.exports = router;
