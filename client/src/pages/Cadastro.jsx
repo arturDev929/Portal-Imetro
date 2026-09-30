@@ -1,5 +1,4 @@
 // RegistrarEstudante.jsx
-import FuncionarioLayout from "../layouts/FuncionarioLayout";
 import { useEffect, useState } from "react";
 import { 
   FaUser, FaEnvelope, FaPhone, FaLock, FaIdCard, 
@@ -476,7 +475,7 @@ function RegistrarEstudante() {
     };
 
     return (
-        <FuncionarioLayout>
+        <div>
             <div className={Style.cadastroWrapper}>
                 <div className={Style.sobrepo}></div>
                 <div className={Style.cadastroContainer}>
@@ -873,7 +872,7 @@ function RegistrarEstudante() {
                     </div>
                 </div>
             </div>
-        </FuncionarioLayout>
+        </div>
     );
 }
 
