@@ -40,7 +40,7 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://192.168.100.215:3000',
     'https://portal-imetro.vercel.app',
-    'portal-imetro-azure.vercel.app',
+    'https://portal-imetro-azure.vercel.app',
     `http://${LOCAL_IP}:3000`,
     `http://localhost:${PORT}`,
     `http://${LOCAL_IP}:${PORT}`,
